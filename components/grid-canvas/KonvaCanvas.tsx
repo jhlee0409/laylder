@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useRef, useState, useEffect } from "react"
 import { Stage, Layer, Rect } from "react-konva"
 import Konva from "konva"
 import { useLayoutStore } from "@/store/layout-store"
@@ -20,6 +20,7 @@ export function KonvaCanvas({ width = 1200, height = 800 }: KonvaCanvasProps) {
   const stageRef = useRef<Konva.Stage>(null)
   const [stageScale, setStageScale] = useState(1)
   const [stagePosition, setStagePosition] = useState({ x: 0, y: 0 })
+  const [isSpacePressed, setIsSpacePressed] = useState(false)
 
   // Get current breakpoint grid size
   const currentBreakpoint = useLayoutStore((state) => state.currentBreakpoint)
@@ -38,6 +39,31 @@ export function KonvaCanvas({ width = 1200, height = 800 }: KonvaCanvasProps) {
   // Get current layout's areas
   const currentLayout = schema.layouts[currentBreakpoint]
   const areas = currentLayout?.grid.areas ?? []
+
+  // Handle Space key for canvas panning
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === "Space" && !e.repeat) {
+        e.preventDefault()
+        setIsSpacePressed(true)
+      }
+    }
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.code === "Space") {
+        e.preventDefault()
+        setIsSpacePressed(false)
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown)
+    window.addEventListener("keyup", handleKeyUp)
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown)
+      window.removeEventListener("keyup", handleKeyUp)
+    }
+  }, [])
 
   // Calculate component positions and spans from areas
   interface ComponentPosition {
@@ -235,7 +261,7 @@ export function KonvaCanvas({ width = 1200, height = 800 }: KonvaCanvasProps) {
             </span>
           </div>
           <div className="text-xs text-muted-foreground">
-            💡 Ctrl+Wheel: 확대/축소 • Shift+Wheel: 수평 이동 • Wheel: 수직 이동
+            💡 Space+Drag: 캔버스 이동 • Ctrl+Wheel: 확대/축소 • Shift+Wheel: 수평 이동
           </div>
         </div>
       </div>
@@ -251,7 +277,7 @@ export function KonvaCanvas({ width = 1200, height = 800 }: KonvaCanvasProps) {
           x={stagePosition.x}
           y={stagePosition.y}
           onWheel={handleWheel}
-          draggable
+          draggable={isSpacePressed}
           onDragEnd={(e) => {
             setStagePosition({
               x: e.target.x(),
