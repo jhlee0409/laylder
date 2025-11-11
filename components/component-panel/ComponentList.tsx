@@ -4,14 +4,13 @@ import { useLayoutStore } from "@/store/layout-store"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Trash2, GripVertical } from "lucide-react"
+import { Trash2 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useDraggable } from "@dnd-kit/core"
 
 /**
- * DraggableComponent - Individual draggable component item
+ * ComponentItem - Individual component item
  */
-function DraggableComponent({
+function ComponentItem({
   component,
   isSelected,
   isVisible,
@@ -26,39 +25,18 @@ function DraggableComponent({
   onSelect: () => void
   onDelete: () => void
 }) {
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id: component.id,
-    data: {
-      type: "component",
-      component,
-    },
-  })
-
   return (
     <div
-      ref={setNodeRef}
       className={cn(
-        "flex items-center justify-between p-3 rounded-lg border transition-all",
-        isDragging ? "opacity-50" : "",
+        "flex items-center justify-between p-3 rounded-lg border transition-all cursor-pointer",
         isSelected
           ? "border-primary bg-primary/5"
           : "border-border hover:bg-accent"
       )}
+      onClick={onSelect}
     >
-      {/* Drag Handle */}
-      <div
-        {...listeners}
-        {...attributes}
-        className="cursor-grab active:cursor-grabbing mr-2 text-muted-foreground hover:text-foreground"
-      >
-        <GripVertical className="h-4 w-4" />
-      </div>
-
       {/* Component Info */}
-      <div
-        className="flex-1 min-w-0 cursor-pointer"
-        onClick={onSelect}
-      >
+      <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <Badge variant={isSelected ? "default" : "secondary"}>
             {component.id}
@@ -164,14 +142,14 @@ export function ComponentList() {
       <CardContent>
         <div className="space-y-2">
           <p className="text-xs text-muted-foreground mb-3">
-            💡 Drag components to grid cells to place them
+            💡 Click component to edit, or drag/resize in grid
           </p>
           {components.map((component) => {
             const isSelected = selectedComponentId === component.id
             const isVisible = isComponentVisible(component.id)
 
             return (
-              <DraggableComponent
+              <ComponentItem
                 key={component.id}
                 component={component}
                 isSelected={isSelected}

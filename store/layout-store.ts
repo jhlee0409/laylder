@@ -74,10 +74,42 @@ export const useLayoutStore = create<LayoutState>()(
             ...componentData,
           }
 
+          // Auto-place component in current breakpoint's grid
+          const currentLayout = state.schema.layouts[state.currentBreakpoint]
+          const areas = currentLayout?.grid.areas || [[""]]
+
+          // Find first empty cell
+          let placed = false
+          const newAreas = areas.map((row, rowIdx) =>
+            row.map((cell, colIdx) => {
+              if (!placed && cell === "") {
+                placed = true
+                return newId
+              }
+              return cell
+            })
+          )
+
+          // If no empty cell found, add a new row
+          if (!placed) {
+            const cols = areas[0]?.length || 1
+            const newRow = Array(cols).fill("").map((_, idx) => idx === 0 ? newId : "")
+            newAreas.push(newRow)
+          }
+
           return {
             schema: {
               ...state.schema,
               components: [...state.schema.components, newComponent],
+              layouts: {
+                ...state.schema.layouts,
+                [state.currentBreakpoint]: {
+                  grid: {
+                    ...currentLayout.grid,
+                    areas: newAreas,
+                  },
+                },
+              },
             },
           }
         }, false, "addComponent")

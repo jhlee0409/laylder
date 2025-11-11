@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useLayoutStore } from "@/store/layout-store"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import type { SemanticTag } from "@/types/schema"
+import { X } from "lucide-react"
 
 const SEMANTIC_TAGS: SemanticTag[] = [
   "header",
@@ -37,6 +38,30 @@ export function ComponentForm() {
   const [error, setError] = useState<string | null>(null)
 
   const addComponent = useLayoutStore((state) => state.addComponent)
+  const updateComponent = useLayoutStore((state) => state.updateComponent)
+  const selectedComponentId = useLayoutStore((state) => state.selectedComponentId)
+  const setSelectedComponentId = useLayoutStore((state) => state.setSelectedComponentId)
+  const components = useLayoutStore((state) => state.schema.components)
+
+  // Find editing component
+  const editingComponent = selectedComponentId
+    ? components.find((c) => c.id === selectedComponentId)
+    : null
+
+  // Populate form when editing component changes
+  useEffect(() => {
+    if (editingComponent) {
+      setName(editingComponent.name)
+      setSemanticTag(editingComponent.semanticTag)
+      setPropsJson(JSON.stringify(editingComponent.props, null, 2))
+    } else {
+      // Reset form when not editing
+      setName("")
+      setSemanticTag("div")
+      setPropsJson('{"children": ""}')
+    }
+    setError(null)
+  }, [editingComponent])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -64,26 +89,57 @@ export function ComponentForm() {
       }
     }
 
-    // Add component to store
-    addComponent({
-      name,
-      semanticTag,
-      props,
-    })
+    if (editingComponent) {
+      // Update existing component
+      updateComponent(editingComponent.id, {
+        name,
+        semanticTag,
+        props,
+      })
+      // Deselect component after update
+      setSelectedComponentId(null)
+    } else {
+      // Add new component
+      addComponent({
+        name,
+        semanticTag,
+        props,
+      })
+      // Form is auto-reset by useEffect when selectedComponentId becomes null
+    }
+  }
 
-    // Reset form
-    setName("")
-    setSemanticTag("div")
-    setPropsJson('{"children": ""}')
+  const handleCancel = () => {
+    setSelectedComponentId(null)
   }
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">Add Component</CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg">
+            {editingComponent ? "Edit Component" : "Add Component"}
+          </CardTitle>
+          {editingComponent && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleCancel}
+              className="h-6 w-6"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {editingComponent && (
+            <div className="text-sm text-muted-foreground bg-primary/5 p-2 rounded">
+              Editing: <span className="font-mono font-semibold">{editingComponent.id}</span>
+            </div>
+          )}
+
           {/* Component Name */}
           <div className="space-y-2">
             <Label htmlFor="name">Component Name *</Label>
@@ -142,10 +198,22 @@ export function ComponentForm() {
             </div>
           )}
 
-          {/* Submit Button */}
-          <Button type="submit" className="w-full">
-            Add Component
-          </Button>
+          {/* Submit Buttons */}
+          <div className="flex gap-2">
+            {editingComponent && (
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1"
+                onClick={handleCancel}
+              >
+                Cancel
+              </Button>
+            )}
+            <Button type="submit" className={editingComponent ? "flex-1" : "w-full"}>
+              {editingComponent ? "Update Component" : "Add Component"}
+            </Button>
+          </div>
         </form>
       </CardContent>
     </Card>

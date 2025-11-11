@@ -6,62 +6,15 @@ import { BreakpointSwitcher, BreakpointManager } from "@/components/breakpoint-p
 import { GenerationModal } from "@/components/generation-modal"
 import { Button } from "@/components/ui/button"
 import { useLayoutStore } from "@/store/layout-store"
-import { DndContext, DragOverlay, DragEndEvent } from "@dnd-kit/core"
-import { useState } from "react"
-import { Badge } from "@/components/ui/badge"
 
 export default function Home() {
-  const [activeId, setActiveId] = useState<string | null>(null)
   const loadSampleSchema = useLayoutStore((state) => state.loadSampleSchema)
   const resetSchema = useLayoutStore((state) => state.resetSchema)
   const componentCount = useLayoutStore(
     (state) => state.schema.components.length
   )
-  const components = useLayoutStore((state) => state.schema.components)
-  const currentBreakpoint = useLayoutStore((state) => state.currentBreakpoint)
-  const currentLayout = useLayoutStore(
-    (state) => state.schema.layouts[state.currentBreakpoint]
-  )
-  const updateGridAreas = useLayoutStore((state) => state.updateGridAreas)
-
-  const handleDragStart = (event: any) => {
-    setActiveId(event.active.id)
-  }
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event
-    setActiveId(null)
-
-    if (!over) return
-
-    // Get drag data
-    const draggedComponentId = active.id as string
-
-    // Get drop data
-    const dropData = over.data.current
-    if (dropData?.type !== "gridCell") return
-
-    const { rowIndex, colIndex } = dropData
-
-    // Update grid areas
-    if (currentLayout) {
-      const newAreas = currentLayout.grid.areas.map((row, rIdx) =>
-        row.map((cell, cIdx) => {
-          if (rIdx === rowIndex && cIdx === colIndex) {
-            return draggedComponentId
-          }
-          return cell
-        })
-      )
-
-      updateGridAreas(currentBreakpoint, newAreas)
-    }
-  }
-
-  const activeComponent = components.find((c) => c.id === activeId)
 
   return (
-    <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
     <main className="min-h-screen p-8">
       <div className="max-w-[1920px] mx-auto space-y-6">
         {/* Header */}
@@ -102,18 +55,5 @@ export default function Home() {
         </div>
       </div>
     </main>
-
-    {/* Drag Overlay */}
-    <DragOverlay>
-      {activeComponent ? (
-        <div className="p-3 rounded-lg border-2 border-primary bg-primary/10 shadow-lg">
-          <div className="flex items-center gap-2">
-            <Badge variant="default">{activeComponent.id}</Badge>
-            <span className="font-medium text-sm">{activeComponent.name}</span>
-          </div>
-        </div>
-      ) : null}
-    </DragOverlay>
-    </DndContext>
   )
 }
