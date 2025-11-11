@@ -3,6 +3,7 @@
 import { GridCanvas } from "@/components/grid-canvas"
 import { ComponentPanel } from "@/components/component-panel"
 import { BreakpointSwitcher, BreakpointManager } from "@/components/breakpoint-panel"
+import { GenerationModal } from "@/components/generation-modal"
 import { Button } from "@/components/ui/button"
 import { useLayoutStore } from "@/store/layout-store"
 
@@ -29,6 +30,7 @@ export default function Home() {
               Reset
             </Button>
             <Button onClick={loadSampleSchema}>Load Sample</Button>
+            <GenerationModal />
           </div>
         </div>
 

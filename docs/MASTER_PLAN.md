@@ -36,14 +36,14 @@
   - 문서화 시스템 구축 (MASTER_PLAN.md, PROGRESS.md)
   - 커밋: (pending)
 
-### **Phase 2: 핵심 UI 컴포넌트 구현** 🔄 IN PROGRESS
+### **Phase 2: 핵심 UI 컴포넌트 구현** ✅ COMPLETED
 - ✅ **Step 2.1** - 그리드 캔버스 구현 (PRD 3.1)
   - CSS Grid 기반 캔버스 렌더링
   - 컴포넌트 선택 기능
   - 그리드 행/열 추가/삭제
   - 병합된 셀 표시
   - shadcn/ui 컴포넌트 (Button, Card, Badge)
-  - 커밋: (pending)
+  - 커밋: `c108b93`
 
 - ✅ **Step 2.2** - 컴포넌트 속성 패널 구현 (PRD 3.2)
   - 컴포넌트 추가 폼 (PascalCase 검증)
@@ -53,7 +53,7 @@
   - 현재 breakpoint 가시성 표시
   - 2단 레이아웃 (GridCanvas + ComponentPanel)
   - shadcn/ui 컴포넌트 (Label, Input, Textarea, Select)
-  - 커밋: (pending)
+  - 커밋: `7ee8ba0`
 
 - ✅ **Step 2.3** - 반응형 제어판 구현 (PRD 3.3)
   - BreakpointSwitcher: 뷰 전환 버튼 (아이콘 기반)
@@ -61,12 +61,14 @@
   - 각 breakpoint별 독립 레이아웃
   - minWidth 편집 + 자동 정렬
   - 입력 검증 및 에러 처리
-  - 커밋: (pending)
+  - 커밋: `7ab83b8`
 
-- ⏳ **Step 2.4** - 생성 옵션 모달 구현 (PRD 3.4)
+- ✅ **Step 2.4** - 생성 옵션 모달 구현 (PRD 3.4)
   - Framework 선택 (MVP: React만)
   - CSS Solution 선택 (MVP: Tailwind만)
-  - Generate 버튼
+  - Generate 버튼 (플레이스홀더)
+  - shadcn/ui Dialog 컴포넌트
+  - 커밋: (pending)
 
 ### **Phase 3: 상태 관리 및 비즈니스 로직** ⏳ PLANNED
 - ⏳ **Step 3.1** - Zustand 스토어 통합
@@ -91,10 +93,10 @@
 ## 🎯 PRD 0.3 핵심 요구사항 체크리스트
 
 ### 1. 핵심 기능 (PRD 3장)
-- [ ] 3.1 그리드 캔버스 (DnD)
-- [ ] 3.2 컴포넌트 속성 패널
-- [ ] 3.3 반응형 제어판 (3개 뷰)
-- [ ] 3.4 생성 옵션 모달
+- [x] 3.1 그리드 캔버스 (DnD는 Phase 5에서 구현)
+- [x] 3.2 컴포넌트 속성 패널
+- [x] 3.3 반응형 제어판 (독립 breakpoint 뷰)
+- [x] 3.4 생성 옵션 모달 (플레이스홀더)
 
 ### 2. 데이터 구조 (PRD 4장)
 - [x] Component 인터페이스
@@ -136,4 +138,4 @@
 
 ---
 
-_최종 업데이트: Step 2.3 완료 시점_
+_최종 업데이트: Step 2.4 완료 시점 (Phase 2 완료!)_

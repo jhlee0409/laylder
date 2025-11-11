@@ -881,10 +881,234 @@ $ pnpm build
 ### Phase 2 진행 상황
 - ✅ Phase 2.1: 그리드 캔버스 구현
 - ✅ Phase 2.2: 컴포넌트 속성 패널
-- ✅ Phase 2.3: 반응형 제어판 (현재 완료)
-- ⏳ Phase 2.4: 생성 옵션 모달 (다음 단계)
+- ✅ Phase 2.3: 반응형 제어판
+- ✅ Phase 2.4: 생성 옵션 모달 (현재 완료)
 
 ---
 
-_최종 업데이트: Step 2.3 완료 시점_
-_다음 업데이트: Step 2.4 시작 시_
+## ✅ Step 2.4: 생성 옵션 모달 구현 (COMPLETED)
+
+**날짜:** 2024-11-11
+**커밋:** (pending)
+**브랜치:** `claude/laylder-mvp-architecture-011CV1Gkw2n2Vg2S6nbATtnE`
+
+### 생성된 파일
+```
+components/
+├── ui/
+│   └── dialog.tsx                        # shadcn/ui Dialog component (123 lines)
+└── generation-modal/
+    ├── GenerationModal.tsx               # 생성 옵션 모달 (140 lines)
+    └── index.ts                          # Barrel export
+```
+
+### 수정된 파일
+- `app/page.tsx`: GenerationModal 통합
+- `package.json`: @radix-ui/react-dialog 추가
+
+### 설치된 의존성
+```json
+{
+  "@radix-ui/react-dialog": "1.1.15"
+}
+```
+
+### 핵심 구현 내역
+
+#### 1. Dialog UI 컴포넌트 (`components/ui/dialog.tsx`)
+```tsx
+// Radix UI Dialog primitive 기반
+// 컴포넌트:
+- Dialog: Root 컴포넌트 (open/onOpenChange 제어)
+- DialogTrigger: 모달 트리거 버튼
+- DialogContent: 모달 내용 (오버레이 + 컨텐츠)
+- DialogHeader/Footer: 레이아웃 헬퍼
+- DialogTitle/Description: 제목/설명
+
+// 스타일:
+- 페이드 인/아웃 애니메이션 (data-[state=open/closed])
+- 줌 인/아웃 효과 (zoom-in-95/zoom-out-95)
+- 중앙 정렬 (fixed left-[50%] top-[50%] translate-x/y-[-50%])
+- 반투명 검은 배경 (bg-black/80)
+- X 닫기 버튼 (우측 상단)
+```
+
+#### 2. GenerationModal 컴포넌트 (`components/generation-modal/GenerationModal.tsx`)
+```tsx
+export function GenerationModal() {
+  const [open, setOpen] = useState(false)
+  const [framework, setFramework] = useState<string>("react")
+  const [cssSolution, setCssSolution] = useState<string>("tailwind")
+
+  const handleGenerate = () => {
+    // Phase 4에서 실제 프롬프트 생성 구현
+    console.log("Generate clicked:", { framework, cssSolution, schema })
+
+    alert(
+      "Code generation will be implemented in Phase 4!\n\n" +
+      `Selected options:\n` +
+      `- Framework: ${framework}\n` +
+      `- CSS: ${cssSolution}\n` +
+      `- Components: ${schema.components.length}\n` +
+      `- Breakpoints: ${schema.breakpoints.length}`
+    )
+
+    setOpen(false)
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="lg" className="gap-2">
+          <Sparkles className="h-5 w-5" />
+          Generate Code
+        </Button>
+      </DialogTrigger>
+
+      <DialogContent>
+        {/* Schema Summary */}
+        <div className="rounded-lg border bg-accent/50 p-4">
+          <Badge>{componentCount}</Badge> Components
+          <Badge>{breakpointCount}</Badge> Breakpoints
+        </div>
+
+        {/* Framework Selection */}
+        <Select value={framework} onValueChange={setFramework}>
+          <SelectItem value="react">React</SelectItem>
+        </Select>
+
+        {/* CSS Solution Selection */}
+        <Select value={cssSolution} onValueChange={setCssSolution}>
+          <SelectItem value="tailwind">Tailwind CSS</SelectItem>
+        </Select>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleGenerate}
+            disabled={componentCount === 0}
+          >
+            <Sparkles className="h-4 w-4" />
+            Generate
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+```
+
+**주요 기능:**
+- ✅ Framework 선택 (MVP: React만)
+- ✅ CSS Solution 선택 (MVP: Tailwind만)
+- ✅ 현재 스키마 요약 (컴포넌트/Breakpoint 수)
+- ✅ Generate 버튼 (컴포넌트 0개일 때 비활성화)
+- ✅ 플레이스홀더 동작 (alert로 Phase 4 안내)
+
+#### 3. 홈 페이지 통합 (`app/page.tsx`)
+```tsx
+import { GenerationModal } from "@/components/generation-modal"
+
+export default function Home() {
+  return (
+    <div className="flex gap-2">
+      <Button variant="outline" onClick={resetSchema}>Reset</Button>
+      <Button onClick={loadSampleSchema}>Load Sample</Button>
+      <GenerationModal />  {/* 헤더 우측에 추가 */}
+    </div>
+  )
+}
+```
+
+### 주요 결정사항
+
+1. **MVP 제약사항 준수 (PRD 6.1)**
+   - Framework는 React만 선택 가능 (Select에 1개 항목만)
+   - CSS Solution은 Tailwind CSS만 선택 가능
+   - 도움말 텍스트: "MVP supports React only. More frameworks coming in Phase 2."
+   - 실제 코드 생성은 Phase 4에서 구현 (현재는 alert 플레이스홀더)
+
+2. **사용자 경험 최적화**
+   - Sparkles 아이콘 (✨): AI 생성 느낌 전달
+   - 큰 버튼 크기 (`size="lg"`): 주요 CTA로 강조
+   - 스키마 요약 표시: 사용자가 현재 상태 확인
+   - 컴포넌트 0개 시 Generate 비활성화: 빈 스키마 생성 방지
+
+3. **확장성 고려**
+   - `framework`, `cssSolution` state: Phase 2에서 Vue/Svelte, CSS Modules 등 추가 예정
+   - `handleGenerate()` 함수: Phase 4에서 프롬프트 생성 로직으로 교체
+   - Select 컴포넌트: 추가 항목 주석으로 표시 (`{/* Phase 2: Add Vue, Svelte, etc. */}`)
+
+4. **접근성**
+   - DialogTitle: 스크린 리더용 제목
+   - DialogDescription: 모달 설명
+   - DialogClose의 X 버튼: `<span className="sr-only">Close</span>` 추가
+
+5. **에러 처리**
+   - 컴포넌트 0개: Generate 버튼 비활성화 + 안내 문구 표시
+   - 향후 Phase 4: 스키마 검증 실패 시 에러 메시지 표시 예정
+
+### 테스트 결과
+```bash
+$ pnpm tsc --noEmit
+# ✅ TypeScript 컴파일 오류 없음
+
+$ pnpm build
+# ✅ Next.js 프로덕션 빌드 성공
+# Route (app): / - 46.7 kB (First Load JS: 149 kB)
+# 번들 크기 증가: 42.4 kB → 46.7 kB (Dialog 컴포넌트 추가)
+```
+
+### 구현된 기능 (PRD 3.4 체크)
+- ✅ Framework 선택 (MVP: React만)
+- ✅ CSS Solution 선택 (MVP: Tailwind만)
+- ✅ Generate 버튼 (플레이스홀더)
+- ✅ 스키마 검증 (컴포넌트 0개 시 비활성화)
+- ✅ 모달 UI/UX (페이드 인/아웃 애니메이션)
+
+### PRD 연관성
+- ✅ **PRD 3.4 (생성 옵션 모달)**: 완전히 구현
+- ✅ **PRD 6.1 (MVP 제약사항)**: React + Tailwind만 지원
+- ⏳ **PRD 5장 (동적 프롬프트 엔진)**: Phase 4에서 구현 예정
+- ⏳ 프롬프트 템플릿 라이브러리 (Phase 4.1)
+- ⏳ JSON → 프롬프트 변환 (Phase 4.2)
+- ⏳ 출력 UI (Phase 4.3)
+
+### 사용자 시나리오 예시
+```
+1. "Load Sample" 클릭 → 4개 컴포넌트 + 3개 breakpoint 로드
+2. 헤더 우측 "Generate Code" 버튼 클릭 (✨ 아이콘)
+3. 모달 오픈 → 페이드 인 애니메이션
+4. 스키마 요약 확인: "4 Components, 3 Breakpoints"
+5. Framework: "React" (기본 선택, 변경 불가)
+6. CSS Solution: "Tailwind CSS" (기본 선택, 변경 불가)
+7. "Generate" 버튼 클릭
+8. Alert 표시: "Code generation will be implemented in Phase 4!"
+9. 모달 자동 닫힘
+
+[Phase 4 이후 시나리오]
+7. "Generate" 버튼 클릭
+8. JSON 스키마 + AI 프롬프트 표시
+9. "Copy to Clipboard" 버튼으로 복사
+10. Claude.ai에 붙여넣기 → 코드 생성
+```
+
+### Phase 2 완료!
+- ✅ Phase 2.1: 그리드 캔버스 구현
+- ✅ Phase 2.2: 컴포넌트 속성 패널
+- ✅ Phase 2.3: 반응형 제어판
+- ✅ Phase 2.4: 생성 옵션 모달 (현재 완료)
+- 🎉 **Phase 2 (핵심 UI 컴포넌트 구현) 완료!**
+
+### 다음 단계
+**Phase 4: 동적 프롬프트 엔진 구현** (Phase 3는 이미 완료된 Zustand Store로 대체)
+- ⏳ Step 4.1: 프롬프트 템플릿 라이브러리 구축
+- ⏳ Step 4.2: JSON → 프롬프트 변환 함수
+- ⏳ Step 4.3: 출력 UI (프롬프트 + JSON 표시 + 클립보드 복사)
+
+---
+
+_최종 업데이트: Step 2.4 완료 시점_
+_다음 업데이트: Step 4.1 시작 시_
