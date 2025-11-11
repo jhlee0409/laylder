@@ -16,7 +16,9 @@ interface KonvaCanvasProps {
   height?: number
 }
 
-export function KonvaCanvas({ width = 1200, height = 800 }: KonvaCanvasProps) {
+export function KonvaCanvas({ width, height }: KonvaCanvasProps) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [containerSize, setContainerSize] = useState({ width: 1200, height: 800 })
   const stageRef = useRef<Konva.Stage>(null)
   const [stageScale, setStageScale] = useState(1)
   const [stagePosition, setStagePosition] = useState({ x: 0, y: 0 })
@@ -39,6 +41,29 @@ export function KonvaCanvas({ width = 1200, height = 800 }: KonvaCanvasProps) {
   // Get current layout's areas
   const currentLayout = schema.layouts[currentBreakpoint]
   const areas = currentLayout?.grid.areas ?? []
+
+  // Measure container size
+  useEffect(() => {
+    const updateSize = () => {
+      if (containerRef.current) {
+        const { clientWidth, clientHeight } = containerRef.current
+        setContainerSize({ width: clientWidth, height: clientHeight })
+      }
+    }
+
+    // Initial size
+    updateSize()
+
+    // Watch for resize
+    const resizeObserver = new ResizeObserver(updateSize)
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current)
+    }
+
+    return () => {
+      resizeObserver.disconnect()
+    }
+  }, [])
 
   // Handle Space key for canvas panning
   useEffect(() => {
@@ -64,6 +89,10 @@ export function KonvaCanvas({ width = 1200, height = 800 }: KonvaCanvasProps) {
       window.removeEventListener("keyup", handleKeyUp)
     }
   }, [])
+
+  // Use provided dimensions or container size
+  const canvasWidth = width ?? containerSize.width
+  const canvasHeight = height ?? containerSize.height
 
   // Calculate component positions and spans from areas
   interface ComponentPosition {
@@ -245,7 +274,7 @@ export function KonvaCanvas({ width = 1200, height = 800 }: KonvaCanvasProps) {
   }
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
+    <div ref={containerRef} className="h-full flex flex-col overflow-hidden">
       {/* Canvas Toolbar */}
       <div className="flex-shrink-0 px-4 py-3 border-b bg-background/50">
         <div className="flex items-center justify-between">
@@ -270,8 +299,8 @@ export function KonvaCanvas({ width = 1200, height = 800 }: KonvaCanvasProps) {
       <div className="flex-1 overflow-hidden bg-slate-50">
         <Stage
           ref={stageRef}
-          width={width}
-          height={height}
+          width={canvasWidth}
+          height={canvasHeight}
           scaleX={stageScale}
           scaleY={stageScale}
           x={stagePosition.x}

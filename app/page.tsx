@@ -15,10 +15,10 @@ export default function Home() {
   )
 
   return (
-    <main className="min-h-screen p-8">
-      <div className="max-w-[1920px] mx-auto space-y-6">
+    <main className="h-screen flex flex-col p-8">
+      <div className="max-w-[1920px] mx-auto w-full flex flex-col flex-1 min-h-0">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex-shrink-0 flex items-center justify-between mb-6">
           <div>
             <h1 className="text-4xl font-bold mb-2">Laylder MVP</h1>
             <p className="text-muted-foreground">
@@ -35,20 +35,22 @@ export default function Home() {
         </div>
 
         {/* Status */}
-        <div className="text-sm text-muted-foreground">
+        <div className="flex-shrink-0 text-sm text-muted-foreground mb-6">
           Components: {componentCount}
         </div>
 
         {/* Main Layout: Grid Canvas (70%) + Side Panels (30%) */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-6">
+        <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-6 min-h-0">
           {/* Left: Konva Canvas */}
-          <div className="min-w-0 space-y-4">
+          <div className="min-w-0 flex flex-col min-h-0">
             <BreakpointSwitcher />
-            <KonvaCanvas width={1200} height={800} />
+            <div className="flex-1 min-h-0 mt-4">
+              <KonvaCanvas />
+            </div>
           </div>
 
           {/* Right: Component Panel + Breakpoint Manager */}
-          <div className="min-w-0 space-y-6">
+          <div className="min-w-0 space-y-6 overflow-y-auto">
             <ComponentPanel />
             <BreakpointManager />
           </div>
