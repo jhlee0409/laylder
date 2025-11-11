@@ -17,6 +17,8 @@ interface ComponentNodeProps {
   isSelected: boolean
   /** Click handler */
   onClick: () => void
+  /** Drag end handler - returns new grid position */
+  onDragEnd?: (newGridRow: number, newGridCol: number) => void
 }
 
 /**
@@ -36,6 +38,7 @@ export function ComponentNode({
   colSpan,
   isSelected,
   onClick,
+  onDragEnd,
 }: ComponentNodeProps) {
   const x = gridCol * CELL_SIZE
   const y = gridRow * CELL_SIZE
@@ -48,12 +51,39 @@ export function ComponentNode({
   const strokeWidth = isSelected ? 3 : 2
   const shadowOpacity = isSelected ? 0.2 : 0.1
 
+  // Snap to grid helper
+  const snapToGrid = (value: number) => {
+    return Math.round(value / CELL_SIZE) * CELL_SIZE
+  }
+
+  // Handle drag end - snap to grid and update position
+  const handleDragEnd = (e: any) => {
+    const node = e.target
+    const newX = snapToGrid(node.x())
+    const newY = snapToGrid(node.y())
+
+    // Update visual position immediately
+    node.x(newX)
+    node.y(newY)
+
+    // Calculate new grid position
+    const newGridCol = Math.round(newX / CELL_SIZE)
+    const newGridRow = Math.round(newY / CELL_SIZE)
+
+    // Notify parent component
+    if (onDragEnd) {
+      onDragEnd(newGridRow, newGridCol)
+    }
+  }
+
   return (
     <Group
       x={x}
       y={y}
+      draggable
       onClick={onClick}
       onTap={onClick}
+      onDragEnd={handleDragEnd}
     >
       {/* Component background */}
       <Rect

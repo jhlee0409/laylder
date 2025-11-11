@@ -237,11 +237,42 @@ function konvaPositionsToAreas(positions: KonvaComponent[]): string[][]
 
 - **빌드 성공:** Route (app) / - 261 kB
 
-### ⏳ Step 5: 컴포넌트 D&D
-- [ ] Draggable 설정
-- [ ] 드래그 중 그리드 스냅
-- [ ] 드래그 종료 시 store 업데이트
-- [ ] 충돌 방지 로직
+### ✅ Step 5: 컴포넌트 Drag & Drop
+- [x] Draggable 설정
+- [x] 드래그 중 그리드 스냅
+- [x] 드래그 종료 시 store 업데이트
+- [x] 충돌 방지 로직
+
+**상세 내역:**
+- **ComponentNode.tsx 업데이트**:
+  - `draggable` 속성 추가
+  - `onDragEnd` prop 추가 (새 그리드 위치 반환)
+  - `snapToGrid()` 헬퍼 함수 - 100px 단위로 스냅
+  - `handleDragEnd()` 핸들러:
+    - 드래그 종료 시 픽셀 좌표를 그리드 셀로 변환
+    - 시각적으로 즉시 스냅된 위치로 이동
+    - 부모 컴포넌트에 새 그리드 위치 전달
+
+- **KonvaCanvas.tsx 업데이트**:
+  - `updateGridAreas` store action import
+  - `handleComponentDragEnd()` 함수 구현:
+    - **경계 검증**: 새 위치가 그리드 범위 내인지 확인
+    - **충돌 감지**: 다른 컴포넌트와 겹치는지 검사
+    - **areas 업데이트 로직**:
+      1. 기존 위치의 모든 셀을 빈 문자열("")로 클리어
+      2. 새 위치의 모든 셀에 컴포넌트 ID 설정
+      3. store의 areas 업데이트
+    - **검증 실패 시**: console.warn 출력 후 이동 취소
+  - ComponentNode에 onDragEnd 핸들러 연결
+
+- **주요 기능**:
+  - 100px 그리드 단위로 정확히 스냅
+  - 다른 컴포넌트와 충돌 방지
+  - 그리드 경계 밖으로 이동 방지
+  - 드래그 후 즉시 store 동기화
+  - rowSpan/colSpan 유지하면서 이동
+
+- **빌드 성공:** Route (app) / - 261 kB
 
 ### ⏳ Step 6: 컴포넌트 Resize
 - [ ] Resize 핸들 추가
@@ -292,8 +323,8 @@ function konvaPositionsToAreas(positions: KonvaComponent[]): string[][]
 | Step 1.5: 브레이크포인트 그리드 | ✅ | f639ca7 | 2025-11-11 | 브레이크포인트별 gridCols/gridRows 정의 (4/8/12 × 20) |
 | Step 2: 그리드 배경 | ✅ | 69ba9d8 | 2025-11-11 | 브레이크포인트 크기 기반 그리드 렌더링 |
 | Step 3: Pan & Zoom | ✅ | 62545ac | 2025-11-11 | Step 1에서 이미 완전히 구현됨 |
-| Step 4: 컴포넌트 렌더링 | ✅ | TBD | 2025-11-11 | areas 분석 + ComponentNode 렌더링 |
-| Step 5: 컴포넌트 D&D | ⏳ | - | - | 드래그 앤 드롭 |
+| Step 4: 컴포넌트 렌더링 | ✅ | 521c8c9 | 2025-11-11 | areas 분석 + ComponentNode 렌더링 |
+| Step 5: 컴포넌트 D&D | ✅ | TBD | 2025-11-11 | 그리드 스냅 + 충돌 감지 + areas 업데이트 |
 | Step 6: 컴포넌트 Resize | ⏳ | - | - | 크기 조절 |
 | Step 7: 라이브러리 D&D | ⏳ | - | - | 외부 → 캔버스 |
 | Step 8: 통합 테스트 | ⏳ | - | - | 전체 기능 검증 |
@@ -379,4 +410,4 @@ function konvaPositionsToAreas(positions: KonvaComponent[]): string[][]
 ---
 
 _최초 작성: 2025-11-11_
-_최종 업데이트: 2025-11-11 - Step 4 완료 (컴포넌트 렌더링 및 선택 기능)_
+_최종 업데이트: 2025-11-11 - Step 5 완료 (컴포넌트 Drag & Drop)_

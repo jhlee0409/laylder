@@ -29,6 +29,7 @@ export function KonvaCanvas({ width = 1200, height = 800 }: KonvaCanvasProps) {
   const setSelectedComponentId = useLayoutStore(
     (state) => state.setSelectedComponentId
   )
+  const updateGridAreas = useLayoutStore((state) => state.updateGridAreas)
 
   const bp = breakpoints.find((b) => b.name === currentBreakpoint)
   const gridCols = bp?.gridCols ?? 12
@@ -102,6 +103,68 @@ export function KonvaCanvas({ width = 1200, height = 800 }: KonvaCanvasProps) {
       })
     })
   })
+
+  // Handle component drag end - update areas in store
+  const handleComponentDragEnd = (
+    componentId: string,
+    oldRow: number,
+    oldCol: number,
+    rowSpan: number,
+    colSpan: number,
+    newRow: number,
+    newCol: number
+  ) => {
+    // Create a copy of current areas
+    const newAreas = areas.map((row) => [...row])
+
+    // Validate new position is within bounds
+    if (
+      newRow < 0 ||
+      newCol < 0 ||
+      newRow + rowSpan > gridRows ||
+      newCol + colSpan > gridCols
+    ) {
+      console.warn("Component position out of bounds, reverting")
+      return
+    }
+
+    // Check for collision with other components
+    let hasCollision = false
+    for (let r = newRow; r < newRow + rowSpan; r++) {
+      for (let c = newCol; c < newCol + colSpan; c++) {
+        const cellId = newAreas[r]?.[c]
+        if (cellId && cellId !== componentId) {
+          hasCollision = true
+          break
+        }
+      }
+      if (hasCollision) break
+    }
+
+    if (hasCollision) {
+      console.warn("Component collision detected, reverting")
+      return
+    }
+
+    // Clear old position
+    for (let r = oldRow; r < oldRow + rowSpan; r++) {
+      for (let c = oldCol; c < oldCol + colSpan; c++) {
+        if (newAreas[r]?.[c] === componentId) {
+          newAreas[r][c] = ""
+        }
+      }
+    }
+
+    // Set new position
+    for (let r = newRow; r < newRow + rowSpan; r++) {
+      for (let c = newCol; c < newCol + colSpan; c++) {
+        newAreas[r][c] = componentId
+      }
+    }
+
+    // Update store
+    updateGridAreas(currentBreakpoint, newAreas)
+  }
 
   // Handle wheel for Pan & Zoom
   const handleWheel = (e: Konva.KonvaEventObject<WheelEvent>) => {
@@ -219,6 +282,17 @@ export function KonvaCanvas({ width = 1200, height = 800 }: KonvaCanvasProps) {
                 colSpan={pos.colSpan}
                 isSelected={selectedComponentId === pos.component.id}
                 onClick={() => setSelectedComponentId(pos.component.id)}
+                onDragEnd={(newRow, newCol) =>
+                  handleComponentDragEnd(
+                    pos.component.id,
+                    pos.gridRow,
+                    pos.gridCol,
+                    pos.rowSpan,
+                    pos.colSpan,
+                    newRow,
+                    newCol
+                  )
+                }
               />
             ))}
           </Layer>
