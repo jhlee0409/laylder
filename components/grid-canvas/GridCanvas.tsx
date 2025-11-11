@@ -195,7 +195,7 @@ export function GridCanvas() {
           onLayoutChange={handleLayoutChange}
           draggableHandle=".drag-handle"
           compactType={null}
-          preventCollision={false}
+          preventCollision={true}
           autoSize={true}
           maxRows={Infinity}
           isResizable={true}
