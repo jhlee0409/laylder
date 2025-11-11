@@ -3,6 +3,7 @@
 import { useRef, useState } from "react"
 import { Stage, Layer, Rect, Text } from "react-konva"
 import Konva from "konva"
+import { useLayoutStore } from "@/store/layout-store"
 
 // Grid constants
 const CELL_SIZE = 100
@@ -17,6 +18,14 @@ export function KonvaCanvas({ width = 1200, height = 800 }: KonvaCanvasProps) {
   const stageRef = useRef<Konva.Stage>(null)
   const [stageScale, setStageScale] = useState(1)
   const [stagePosition, setStagePosition] = useState({ x: 0, y: 0 })
+
+  // Get current breakpoint grid size
+  const currentBreakpoint = useLayoutStore((state) => state.currentBreakpoint)
+  const breakpoints = useLayoutStore((state) => state.schema.breakpoints)
+
+  const bp = breakpoints.find((b) => b.name === currentBreakpoint)
+  const gridCols = bp?.gridCols ?? 12
+  const gridRows = bp?.gridRows ?? 20
 
   // Handle wheel for Pan & Zoom
   const handleWheel = (e: Konva.KonvaEventObject<WheelEvent>) => {
@@ -74,6 +83,10 @@ export function KonvaCanvas({ width = 1200, height = 800 }: KonvaCanvasProps) {
             <span className="text-xs text-muted-foreground">
               무한 캔버스 • Pan & Zoom
             </span>
+            <div className="h-4 w-px bg-border" />
+            <span className="text-xs font-mono text-muted-foreground">
+              Grid: {gridCols} × {gridRows}
+            </span>
           </div>
           <div className="text-xs text-muted-foreground">
             💡 Ctrl+Wheel: 확대/축소 • Shift+Wheel: 수평 이동 • Wheel: 수직 이동
@@ -102,9 +115,9 @@ export function KonvaCanvas({ width = 1200, height = 800 }: KonvaCanvasProps) {
         >
           {/* Grid Layer */}
           <Layer>
-            {/* Temporary: Draw simple grid background */}
-            {Array.from({ length: 20 }).map((_, row) =>
-              Array.from({ length: 20 }).map((_, col) => (
+            {/* Breakpoint-specific grid background */}
+            {Array.from({ length: gridRows }).map((_, row) =>
+              Array.from({ length: gridCols }).map((_, col) => (
                 <Rect
                   key={`grid-${row}-${col}`}
                   x={col * CELL_SIZE}
