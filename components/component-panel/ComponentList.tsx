@@ -4,8 +4,100 @@ import { useLayoutStore } from "@/store/layout-store"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Trash2 } from "lucide-react"
+import { Trash2, GripVertical } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useDraggable } from "@dnd-kit/core"
+
+/**
+ * DraggableComponent - Individual draggable component item
+ */
+function DraggableComponent({
+  component,
+  isSelected,
+  isVisible,
+  currentBreakpoint,
+  onSelect,
+  onDelete,
+}: {
+  component: { id: string; name: string; semanticTag: string }
+  isSelected: boolean
+  isVisible: boolean
+  currentBreakpoint: string
+  onSelect: () => void
+  onDelete: () => void
+}) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: component.id,
+    data: {
+      type: "component",
+      component,
+    },
+  })
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={cn(
+        "flex items-center justify-between p-3 rounded-lg border transition-all",
+        isDragging ? "opacity-50" : "",
+        isSelected
+          ? "border-primary bg-primary/5"
+          : "border-border hover:bg-accent"
+      )}
+    >
+      {/* Drag Handle */}
+      <div
+        {...listeners}
+        {...attributes}
+        className="cursor-grab active:cursor-grabbing mr-2 text-muted-foreground hover:text-foreground"
+      >
+        <GripVertical className="h-4 w-4" />
+      </div>
+
+      {/* Component Info */}
+      <div
+        className="flex-1 min-w-0 cursor-pointer"
+        onClick={onSelect}
+      >
+        <div className="flex items-center gap-2">
+          <Badge variant={isSelected ? "default" : "secondary"}>
+            {component.id}
+          </Badge>
+          <span className="font-medium text-sm truncate">
+            {component.name}
+          </span>
+        </div>
+        <div className="flex items-center gap-2 mt-1">
+          <span className="text-xs text-muted-foreground">
+            &lt;{component.semanticTag}&gt;
+          </span>
+          {isVisible ? (
+            <Badge variant="outline" className="text-xs">
+              Visible in {currentBreakpoint}
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="text-xs opacity-50">
+              Hidden in {currentBreakpoint}
+            </Badge>
+          )}
+        </div>
+      </div>
+
+      {/* Delete Button */}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="ml-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+        onClick={(e) => {
+          e.stopPropagation()
+          onDelete()
+        }}
+      >
+        <Trash2 className="h-4 w-4" />
+      </Button>
+    </div>
+  )
+}
 
 /**
  * ComponentList - List of all components with select/delete actions
@@ -71,58 +163,23 @@ export function ComponentList() {
       </CardHeader>
       <CardContent>
         <div className="space-y-2">
+          <p className="text-xs text-muted-foreground mb-3">
+            💡 Drag components to grid cells to place them
+          </p>
           {components.map((component) => {
             const isSelected = selectedComponentId === component.id
             const isVisible = isComponentVisible(component.id)
 
             return (
-              <div
+              <DraggableComponent
                 key={component.id}
-                className={cn(
-                  "flex items-center justify-between p-3 rounded-lg border transition-all cursor-pointer",
-                  isSelected
-                    ? "border-primary bg-primary/5"
-                    : "border-border hover:bg-accent"
-                )}
-                onClick={() => handleSelect(component.id)}
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <Badge variant={isSelected ? "default" : "secondary"}>
-                      {component.id}
-                    </Badge>
-                    <span className="font-medium text-sm truncate">
-                      {component.name}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-xs text-muted-foreground">
-                      &lt;{component.semanticTag}&gt;
-                    </span>
-                    {isVisible ? (
-                      <Badge variant="outline" className="text-xs">
-                        Visible in {currentBreakpoint}
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="text-xs opacity-50">
-                        Hidden in {currentBreakpoint}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="ml-2 text-destructive hover:text-destructive hover:bg-destructive/10"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleDelete(component.id, component.name)
-                  }}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
+                component={component}
+                isSelected={isSelected}
+                isVisible={isVisible}
+                currentBreakpoint={currentBreakpoint}
+                onSelect={() => handleSelect(component.id)}
+                onDelete={() => handleDelete(component.id, component.name)}
+              />
             )
           })}
         </div>
