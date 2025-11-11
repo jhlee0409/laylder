@@ -45,10 +45,15 @@
   - shadcn/ui 컴포넌트 (Button, Card, Badge)
   - 커밋: (pending)
 
-- ⏳ **Step 2.2** - 컴포넌트 속성 패널 구현 (PRD 3.2)
-  - 컴포넌트 추가 폼
-  - 속성 편집 UI
-  - defaultProps JSON 편집기
+- ✅ **Step 2.2** - 컴포넌트 속성 패널 구현 (PRD 3.2)
+  - 컴포넌트 추가 폼 (PascalCase 검증)
+  - SemanticTag 드롭다운 선택
+  - defaultProps JSON 편집기 (Textarea)
+  - 컴포넌트 목록 + 선택/삭제
+  - 현재 breakpoint 가시성 표시
+  - 2단 레이아웃 (GridCanvas + ComponentPanel)
+  - shadcn/ui 컴포넌트 (Label, Input, Textarea, Select)
+  - 커밋: (pending)
 
 - ⏳ **Step 2.3** - 반응형 제어판 구현 (PRD 3.3)
   - 모바일/태블릿/데스크톱 뷰 전환
@@ -128,4 +133,4 @@
 
 ---
 
-_최종 업데이트: Step 2.1 완료 시점_
+_최종 업데이트: Step 2.2 완료 시점_

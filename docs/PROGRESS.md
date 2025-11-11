@@ -451,10 +451,227 @@ $ pnpm build
    - 새 컴포넌트 추가 폼
 
 ### Phase 2 진행 상황
-- ✅ Phase 2.1: 그리드 캔버스 구현 (현재 완료)
-- ⏳ Phase 2.2: 컴포넌트 속성 패널 (다음 단계)
+- ✅ Phase 2.1: 그리드 캔버스 구현
+- ✅ Phase 2.2: 컴포넌트 속성 패널 (현재 완료)
+- ⏳ Phase 2.3: 반응형 제어판 (다음 단계)
 
 ---
 
-_최종 업데이트: Step 2.1 완료 시점_
-_다음 업데이트: Step 2.2 시작 시_
+## ✅ Step 2.2: 컴포넌트 속성 패널 구현 (COMPLETED)
+
+**날짜:** 2024-11-11
+**커밋:** (pending)
+
+### 생성된 파일
+```
+components/
+├── ui/
+│   ├── label.tsx             # Label 컴포넌트 (28줄)
+│   ├── input.tsx             # Input 컴포넌트 (28줄)
+│   ├── textarea.tsx          # Textarea 컴포넌트 (24줄)
+│   └── select.tsx            # Select 컴포넌트 (157줄)
+└── component-panel/
+    ├── ComponentForm.tsx     # 컴포넌트 추가 폼 (140줄)
+    ├── ComponentList.tsx     # 컴포넌트 목록 (120줄)
+    ├── ComponentPanel.tsx    # 패널 컨테이너 (15줄)
+    └── index.ts              # 내보내기
+
+app/
+└── page.tsx                  # 2단 레이아웃으로 변경
+
+package.json
+└── dependencies: @radix-ui/react-label, @radix-ui/react-select, lucide-react 추가
+```
+
+### 핵심 구현 내용
+
+#### 1. ComponentForm.tsx - 컴포넌트 추가 폼
+
+**기능:**
+- 새 컴포넌트 생성 폼
+- PascalCase 이름 검증
+- SemanticTag 드롭다운 선택
+- JSON props 편집 및 검증
+
+**폼 필드:**
+```typescript
+- Component Name (required): PascalCase 검증 (^[A-Z][a-zA-Z0-9]*$)
+- Semantic Tag (required): 8가지 옵션 (header, nav, main, aside, footer, section, article, div)
+- Default Props (optional): JSON 객체 (자동 파싱 및 검증)
+```
+
+**검증 로직:**
+```typescript
+// 1. PascalCase 검증
+const nameRegex = /^[A-Z][a-zA-Z0-9]*$/
+if (!nameRegex.test(name)) {
+  setError("Component name must be PascalCase (e.g., MyComponent)")
+  return
+}
+
+// 2. JSON props 검증
+try {
+  props = JSON.parse(propsJson)
+  if (typeof props !== "object" || Array.isArray(props)) {
+    setError("Props must be a valid JSON object")
+    return
+  }
+} catch (err) {
+  setError("Invalid JSON in props")
+  return
+}
+
+// 3. 컴포넌트 추가
+addComponent({ name, semanticTag, props })
+```
+
+**사용자 경험:**
+- 에러 메시지는 빨간 배경 박스로 표시
+- 성공 시 폼 자동 초기화
+- Props 기본값: `{"children": ""}`
+
+#### 2. ComponentList.tsx - 컴포넌트 목록
+
+**기능:**
+- 모든 컴포넌트 표시 (ID + 이름 + SemanticTag)
+- 현재 breakpoint에서의 가시성 표시
+- 클릭으로 선택/해제
+- 삭제 버튼 (확인 다이얼로그 포함)
+
+**시각적 피드백:**
+- **선택된 컴포넌트**: primary 색상 테두리 + 배경
+- **가시성 배지**: "Visible in mobile" 또는 "Hidden in mobile"
+- **삭제 버튼**: 휴지통 아이콘 (lucide-react Trash2)
+
+**가시성 체크 로직:**
+```typescript
+const isComponentVisible = (componentId: string) => {
+  if (!currentLayout) return false
+  const { areas } = currentLayout.grid
+  return areas.some((row) => row.includes(componentId))
+}
+```
+
+**삭제 확인:**
+```typescript
+if (confirm(`Are you sure you want to delete "${componentName}"? This will remove it from all layouts.`)) {
+  deleteComponent(componentId)
+}
+```
+
+#### 3. ComponentPanel.tsx - 패널 컨테이너
+
+**구조:**
+```typescript
+<div className="space-y-6">
+  <ComponentForm />   {/* 상단: 컴포넌트 추가 */}
+  <ComponentList />   {/* 하단: 컴포넌트 목록 */}
+</div>
+```
+
+**스크롤 동작:**
+- ComponentList가 길어지면 자동 스크롤
+- ComponentForm은 항상 상단에 고정 (sticky 아님)
+
+#### 4. 홈 페이지 2단 레이아웃
+
+**변경 사항:**
+```typescript
+// 이전: 단일 컬럼 (max-w-7xl)
+<div className="max-w-7xl mx-auto space-y-8">
+  <GridCanvas />
+</div>
+
+// 변경: 2단 레이아웃 (max-w-[1920px])
+<div className="max-w-[1920px] mx-auto space-y-6">
+  <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-6">
+    <GridCanvas />        {/* 좌측: 가변 크기 */}
+    <ComponentPanel />    {/* 우측: 400px 고정 */}
+  </div>
+</div>
+```
+
+**반응형 동작:**
+- **모바일 (< 1024px)**: 세로 스택 (GridCanvas 위, ComponentPanel 아래)
+- **데스크톱 (>= 1024px)**: 가로 2단 (GridCanvas 왼쪽, ComponentPanel 오른쪽 400px)
+
+### 주요 결정사항
+
+1. **shadcn/ui 컴포넌트 수동 추가**
+   - Label, Input, Textarea, Select 수동 생성
+   - Radix UI 의존성 추가: `@radix-ui/react-label`, `@radix-ui/react-select`
+   - lucide-react 아이콘 라이브러리 추가 (Trash2, Check, ChevronDown 등)
+
+2. **SemanticTag 드롭다운 구현**
+   - 8가지 HTML5 시맨틱 태그 제공
+   - PRD 핵심 철학인 "시맨틱 우선" 반영
+   - Select 컴포넌트로 사용자 친화적 UI
+
+3. **Props JSON 편집기**
+   - 단순 Textarea 사용 (Monaco Editor는 MVP 이후)
+   - `font-mono text-xs`로 코드 스타일 적용
+   - 실시간 JSON 파싱 및 검증
+
+4. **컴포넌트 가시성 표시**
+   - 각 컴포넌트가 현재 breakpoint에서 보이는지 표시
+   - PRD 3.3 (반응형 제어판) 연계 기능
+   - Badge로 명확하게 시각화
+
+5. **삭제 시 확인 다이얼로그**
+   - 실수로 삭제 방지
+   - "모든 레이아웃에서 제거됨" 경고 포함
+   - 브라우저 기본 `confirm()` 사용 (MVP 단계)
+
+6. **400px 고정 너비 패널**
+   - ComponentPanel은 우측 400px 고정
+   - GridCanvas는 나머지 공간 차지 (flex-grow)
+   - 모바일에서는 100% 너비로 스택
+
+### 테스트 결과
+```bash
+$ pnpm tsc --noEmit
+# ✅ TypeScript 컴파일 오류 없음
+
+$ pnpm build
+# ✅ Next.js 프로덕션 빌드 성공
+# Route (app): / - 41 kB (First Load JS: 143 kB)
+# 번들 크기 증가: 13 kB → 41 kB (Radix UI Select + lucide-react 추가)
+```
+
+### 구현된 기능 (PRD 3.2 체크)
+- ✅ 컴포넌트 추가 폼
+- ✅ componentName 입력 (PascalCase 검증)
+- ✅ semanticTag 셀렉트 박스
+- ✅ defaultProps JSON 편집기
+- ✅ 컴포넌트 목록 표시
+- ✅ 컴포넌트 선택/삭제
+- ✅ 현재 breakpoint에서 가시성 표시
+- ⏸️ 선택된 컴포넌트 속성 편집 (향후 개선 - 현재는 재추가 필요)
+
+### PRD 연관성
+- ✅ **PRD 3.2 (컴포넌트 속성 패널)**: 핵심 기능 구현 완료
+- ✅ Store 연동: `addComponent`, `deleteComponent`, `setSelectedComponentId` 사용
+- ✅ 시맨틱 우선: SemanticTag 필수 선택
+- ✅ 반응형 준비: 컴포넌트 가시성 표시로 3.3 연계
+
+### 미구현 항목 (향후 작업)
+1. **컴포넌트 속성 편집** (현재는 재추가 필요)
+   - ComponentForm을 편집 모드로 전환
+   - 선택된 컴포넌트의 속성 로드
+   - "Update Component" 버튼
+2. **Monaco Editor 통합** (Phase 2 이후)
+   - props JSON 고급 편집
+   - 문법 하이라이팅 + 자동완성
+3. **드래그로 컴포넌트 배치** (Step 2.5 예정)
+   - ComponentList에서 GridCanvas로 드래그
+   - 빈 셀에 드롭하여 배치
+
+### Phase 2 진행 상황
+- ✅ Phase 2.1: 그리드 캔버스 구현
+- ✅ Phase 2.2: 컴포넌트 속성 패널 (현재 완료)
+- ⏳ Phase 2.3: 반응형 제어판 (다음 단계)
+
+---
+
+_최종 업데이트: Step 2.2 완료 시점_
+_다음 업데이트: Step 2.3 시작 시_

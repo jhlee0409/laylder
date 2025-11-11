@@ -1,6 +1,7 @@
 "use client"
 
 import { GridCanvas } from "@/components/grid-canvas"
+import { ComponentPanel } from "@/components/component-panel"
 import { Button } from "@/components/ui/button"
 import { useLayoutStore } from "@/store/layout-store"
 
@@ -13,7 +14,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen p-8">
-      <div className="max-w-7xl mx-auto space-y-8">
+      <div className="max-w-[1920px] mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -26,9 +27,7 @@ export default function Home() {
             <Button variant="outline" onClick={resetSchema}>
               Reset
             </Button>
-            <Button onClick={loadSampleSchema}>
-              Load Sample
-            </Button>
+            <Button onClick={loadSampleSchema}>Load Sample</Button>
           </div>
         </div>
 
@@ -37,8 +36,18 @@ export default function Home() {
           Components: {componentCount}
         </div>
 
-        {/* Grid Canvas */}
-        <GridCanvas />
+        {/* Main Layout: Grid Canvas (70%) + Component Panel (30%) */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-6">
+          {/* Left: Grid Canvas */}
+          <div className="min-w-0">
+            <GridCanvas />
+          </div>
+
+          {/* Right: Component Panel */}
+          <div className="min-w-0">
+            <ComponentPanel />
+          </div>
+        </div>
       </div>
     </main>
   )
