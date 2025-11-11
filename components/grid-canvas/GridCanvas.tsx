@@ -65,8 +65,28 @@ function areasToLayout(
 /**
  * Convert react-grid-layout format back to CSS Grid areas
  * For backward compatibility with existing store
+ * Dynamically calculates required rows and cols from layout
  */
-function layoutToAreas(layout: Layout[], cols: number, rows: number): string[][] {
+function layoutToAreas(layout: Layout[]): string[][] {
+  if (layout.length === 0) {
+    return [[""]]
+  }
+
+  // Calculate required dimensions from layout
+  let maxCol = 0
+  let maxRow = 0
+
+  layout.forEach((item) => {
+    const rightEdge = item.x + item.w
+    const bottomEdge = item.y + item.h
+    if (rightEdge > maxCol) maxCol = rightEdge
+    if (bottomEdge > maxRow) maxRow = bottomEdge
+  })
+
+  // Ensure minimum grid size
+  const cols = Math.max(maxCol, 12)
+  const rows = Math.max(maxRow, 12)
+
   const areas: string[][] = Array.from({ length: rows }, () =>
     Array.from({ length: cols }, () => "")
   )
@@ -127,8 +147,17 @@ export function GridCanvas() {
     setLayout(newLayout)
 
     // Convert back to areas format and update store
-    const newAreas = layoutToAreas(newLayout, cols, rows)
+    // layoutToAreas now calculates dimensions dynamically
+    const newAreas = layoutToAreas(newLayout)
     updateGridAreas(currentBreakpoint, newAreas)
+
+    // Update cols and rows based on new layout
+    if (newAreas.length > 0) {
+      const newCols = Math.max(...newAreas.map((row) => row.length), 12)
+      const newRows = Math.max(newAreas.length, 12)
+      if (newCols !== cols) setCols(newCols)
+      if (newRows !== rows) setRows(newRows)
+    }
   }
 
   const getComponentName = (id: string) => {
@@ -167,6 +196,10 @@ export function GridCanvas() {
           draggableHandle=".drag-handle"
           compactType={null}
           preventCollision={false}
+          autoSize={true}
+          maxRows={Infinity}
+          isResizable={true}
+          isDraggable={true}
         >
           {layout.map((item) => {
             const isSelected = selectedComponentId === item.i
