@@ -1099,16 +1099,379 @@ $ pnpm build
 - ✅ Phase 2.1: 그리드 캔버스 구현
 - ✅ Phase 2.2: 컴포넌트 속성 패널
 - ✅ Phase 2.3: 반응형 제어판
-- ✅ Phase 2.4: 생성 옵션 모달 (현재 완료)
+- ✅ Phase 2.4: 생성 옵션 모달
 - 🎉 **Phase 2 (핵심 UI 컴포넌트 구현) 완료!**
-
-### 다음 단계
-**Phase 4: 동적 프롬프트 엔진 구현** (Phase 3는 이미 완료된 Zustand Store로 대체)
-- ⏳ Step 4.1: 프롬프트 템플릿 라이브러리 구축
-- ⏳ Step 4.2: JSON → 프롬프트 변환 함수
-- ⏳ Step 4.3: 출력 UI (프롬프트 + JSON 표시 + 클립보드 복사)
 
 ---
 
-_최종 업데이트: Step 2.4 완료 시점_
-_다음 업데이트: Step 4.1 시작 시_
+## ✅ Step 4.1: 프롬프트 템플릿 라이브러리 구축 (COMPLETED)
+
+**날짜:** 2024-11-11
+**커밋:** (pending)
+**브랜치:** `claude/laylder-mvp-architecture-011CV1Gkw2n2Vg2S6nbATtnE`
+
+### 생성된 파일
+```
+lib/
+├── prompt-templates.ts               # 템플릿 정의 (130 lines)
+├── prompt-generator.ts               # 프롬프트 생성기 (120 lines)
+└── test-prompt-generation.ts         # 테스트 스크립트 (191 lines)
+```
+
+### 핵심 구현 내역
+
+#### 1. 프롬프트 템플릿 시스템 (`lib/prompt-templates.ts`)
+```typescript
+export interface PromptTemplate {
+  framework: string
+  cssSolution: string
+  systemPrompt: string
+  componentSection: (components: Component[]) => string
+  layoutSection: (breakpoints, layouts) => string
+  instructionsSection: () => string
+}
+
+export const reactTailwindTemplate: PromptTemplate = {
+  framework: "react",
+  cssSolution: "tailwind",
+  systemPrompt: "You are an expert React developer...",
+  componentSection: (components) => {
+    // 각 컴포넌트를 마크다운 섹션으로 변환
+    // - Semantic Tag
+    // - Component Name
+    // - Default Props (JSON)
+  },
+  layoutSection: (breakpoints, layouts) => {
+    // 각 breakpoint별로:
+    // - Grid Configuration (rows, columns)
+    // - Grid Areas (시각화)
+    // - CSS Grid Template Areas (코드)
+    // - Tailwind CSS Classes
+  },
+  instructionsSection: () => {
+    // 구현 지침:
+    // 1. Main Layout Component
+    // 2. Child Components
+    // 3. Styling Guidelines
+    // 4. Responsive Behavior
+    // 5. Code Quality
+  },
+}
+
+export const templateRegistry: Record<string, Record<string, PromptTemplate>> = {
+  react: {
+    tailwind: reactTailwindTemplate,
+    // Future: css-modules, styled-components, etc.
+  },
+  // Future: vue, svelte, angular, etc.
+}
+
+export function getTemplate(framework, cssSolution): PromptTemplate | null
+```
+
+**주요 기능:**
+- ✅ React + Tailwind CSS 템플릿 구현
+- ✅ 확장 가능한 템플릿 레지스트리
+- ✅ Framework/CSS별 템플릿 선택
+- ✅ 시맨틱 태그 포함
+- ✅ CSS Grid 설명 (grid-template-rows/columns/areas)
+- ✅ Tailwind breakpoint 매핑 (sm/md/lg/xl/2xl)
+
+#### 2. 프롬프트 생성기 (`lib/prompt-generator.ts`)
+```typescript
+export interface GenerationResult {
+  success: boolean
+  prompt?: string
+  schema?: LaydlerSchema
+  errors?: string[]
+}
+
+export function generatePrompt(
+  schema: LaydlerSchema,
+  framework: string,
+  cssSolution: string
+): GenerationResult {
+  // 1. Schema 검증 (Zod)
+  const zodResult = safeValidateSchema(schema)
+  if (!zodResult.success) return { success: false, errors: [...] }
+
+  // 2. 컴포넌트 참조 검증
+  const refErrors = validateComponentReferences(schema)
+  if (refErrors.length > 0) return { success: false, errors: [...] }
+
+  // 3. 템플릿 가져오기
+  const template = getTemplate(framework, cssSolution)
+  if (!template) return { success: false, errors: [...] }
+
+  // 4. 프롬프트 섹션 생성
+  const sections = [
+    template.systemPrompt,
+    template.componentSection(schema.components),
+    template.layoutSection(schema.breakpoints, schema.layouts),
+    template.instructionsSection(),
+    "## Full Schema (JSON)\n" + JSON.stringify(schema, null, 2),
+  ]
+
+  return {
+    success: true,
+    prompt: sections.join("\n"),
+    schema,
+  }
+}
+
+// 유틸리티 함수
+export function generateSchemaSummary(schema: LaydlerSchema): string
+export function estimateTokenCount(prompt: string): number
+export function getRecommendedModel(tokenCount: number): string
+```
+
+**주요 기능:**
+- ✅ LaydlerSchema → AI 프롬프트 변환
+- ✅ 입력 검증 (Zod + 컴포넌트 참조)
+- ✅ 템플릿 기반 섹션 생성
+- ✅ JSON 스키마 포함
+- ✅ 토큰 수 추정 (1 token ≈ 4 characters)
+- ✅ AI 모델 추천 (Haiku/Sonnet/Opus)
+
+#### 3. 테스트 스크립트 (`lib/test-prompt-generation.ts`)
+```bash
+$ npx tsx lib/test-prompt-generation.ts
+
+🧪 Testing Prompt Generation System
+============================================================
+
+📝 Test 1: Generate prompt from sample 'default' schema
+✅ PASSED: Prompt generated successfully
+
+📝 Test 2: Verify prompt structure
+✅ "You are an expert React developer..."
+✅ "## Components..."
+✅ "## Responsive Grid Layouts..."
+✅ "## Implementation Instructions..."
+✅ "## Full Schema (JSON)..."
+✅ PASSED: All required sections present
+
+📝 Test 3: Verify component information
+✅ Component: GlobalHeader
+✅ Component: Sidebar
+✅ Component: MainContent
+✅ Component: AdBanner
+✅ PASSED: All components present
+
+📝 Test 4: Verify breakpoint layouts
+✅ Breakpoint: Mobile
+✅ Breakpoint: Tablet
+✅ Breakpoint: Desktop
+✅ PASSED: All breakpoints present
+
+📝 Test 5: Verify grid layout syntax
+✅ Keyword: grid-template-rows
+✅ Keyword: grid-template-columns
+✅ Keyword: grid-template-areas
+✅ Keyword: CSS Grid
+✅ PASSED: All grid keywords present
+
+📝 Test 6: Generate schema summary
+Schema Summary:
+- Components (4): GlobalHeader, Sidebar, MainContent, AdBanner
+- Breakpoints (3): mobile, tablet, desktop
+- Framework: React
+- CSS Solution: Tailwind CSS
+✅ PASSED: Schema summary generated
+
+📝 Test 7: Estimate token count
+Prompt length: 5415 characters
+Estimated tokens: 1354
+Recommended model: Claude 3.5 Sonnet (balanced)
+✅ PASSED: Token estimation completed
+
+📝 Test 8: Handle invalid schema
+✅ PASSED: Invalid schema rejected
+
+📝 Test 9: Handle unsupported framework/CSS
+✅ PASSED: Unsupported framework/CSS rejected
+
+============================================================
+🎉 ALL TESTS PASSED!
+============================================================
+```
+
+**테스트 커버리지:**
+- ✅ 프롬프트 생성 성공
+- ✅ 프롬프트 구조 검증
+- ✅ 컴포넌트 정보 포함
+- ✅ Breakpoint 레이아웃 포함
+- ✅ CSS Grid 문법 포함
+- ✅ 스키마 요약 생성
+- ✅ 토큰 수 추정
+- ✅ 잘못된 스키마 거부
+- ✅ 지원되지 않는 framework/CSS 거부
+
+### 생성된 프롬프트 예시 (일부)
+
+```markdown
+You are an expert React developer. Generate a responsive layout component based on the following specifications.
+
+**Requirements:**
+- Use React functional components with TypeScript
+- Use Tailwind CSS for styling
+- Implement responsive design using CSS Grid
+- Follow semantic HTML principles
+- Use the exact grid layout specifications provided
+- Component names and semantic tags must match exactly
+
+---
+
+## Components
+
+You need to create 4 components with the following specifications:
+
+### 1. GlobalHeader (c1)
+- **Semantic Tag:** `<header>`
+- **Component Name:** `GlobalHeader`
+- **Default Props:**
+```json
+{
+  "children": "Header"
+}
+```
+
+### 2. Sidebar (c2)
+- **Semantic Tag:** `<nav>`
+- **Component Name:** `Sidebar`
+...
+
+---
+
+## Responsive Grid Layouts
+
+Implement the following responsive layouts using CSS Grid and Tailwind CSS:
+
+### 1. Mobile (≥0px)
+
+**Grid Configuration:**
+- **Rows:** `60px auto 1fr 80px`
+- **Columns:** `1fr`
+
+**Grid Areas (Component Placement):**
+```
+Row 1: [c1]
+Row 2: [c2]
+Row 3: [c3]
+Row 4: [c4]
+```
+
+**CSS Grid Template Areas:**
+```css
+grid-template-rows: 60px auto 1fr 80px;
+grid-template-columns: 1fr;
+grid-template-areas:
+  "c1"
+  "c2"
+  "c3"
+  "c4"
+```
+
+**Tailwind CSS Classes (for ≥0px):**
+- Use `:grid` for grid container
+- Apply custom grid template using `style` prop or custom Tailwind config
+
+### 2. Tablet (≥768px)
+...
+```
+
+### 주요 결정사항
+
+1. **템플릿 기반 아키텍처**
+   - Framework/CSS별 템플릿을 독립적으로 관리
+   - 확장 가능한 레지스트리 패턴
+   - 향후 Vue, Svelte, CSS Modules 등 추가 용이
+
+2. **명확한 프롬프트 구조**
+   - System Prompt: AI 역할 정의
+   - Components Section: 각 컴포넌트 상세 정보
+   - Layouts Section: Breakpoint별 그리드 설명
+   - Instructions Section: 구현 가이드라인
+   - Full Schema: JSON 참조용
+
+3. **CSS Grid 설명 방식**
+   - 시각화: `Row 1: [c1]` 형식으로 직관적 표현
+   - CSS 문법: `grid-template-areas: "c1"` 정확한 코드
+   - Tailwind 가이드: Breakpoint prefix (sm/md/lg) 안내
+
+4. **검증 레이어**
+   - Zod schema 검증 (safeValidateSchema)
+   - 컴포넌트 참조 검증 (validateComponentReferences)
+   - 템플릿 존재 여부 확인
+   - 3단계 검증으로 안정성 확보
+
+5. **유틸리티 함수**
+   - `generateSchemaSummary()`: UI에서 미리보기
+   - `estimateTokenCount()`: 비용 추정
+   - `getRecommendedModel()`: 복잡도별 모델 추천
+
+### 테스트 결과
+```bash
+$ pnpm tsc --noEmit
+# ✅ TypeScript 컴파일 오류 없음
+
+$ npx tsx lib/test-prompt-generation.ts
+# ✅ 9개 테스트 모두 PASS
+# Prompt length: 5415 characters
+# Estimated tokens: 1354
+# Recommended model: Claude 3.5 Sonnet (balanced)
+```
+
+### 구현된 기능 (PRD 5.1 체크)
+- ✅ 프롬프트 템플릿 라이브러리
+- ✅ React + Tailwind CSS 템플릿
+- ✅ 시맨틱 태그 기반 프롬프트
+- ✅ 반응형 레이아웃 설명
+- ✅ CSS Grid 문법 포함
+- ✅ 확장 가능한 템플릿 시스템
+
+### PRD 연관성
+- ✅ **PRD 5.1 (프롬프트 템플릿 라이브러리)**: 완전히 구현
+- ✅ **PRD 5.2 (JSON → 프롬프트 변환)**: `generatePrompt()` 함수 구현
+- ✅ Framework-neutral 원칙: 템플릿 레지스트리로 확장성 확보
+- ✅ Semantic-first 원칙: 시맨틱 태그를 프롬프트에 명시
+
+### 사용자 시나리오 예시
+```typescript
+import { generatePrompt } from "@/lib/prompt-generator"
+import { useLayoutStore } from "@/store/layout-store"
+
+// 1. Store에서 현재 스키마 가져오기
+const schema = useLayoutStore.getState().schema
+
+// 2. 프롬프트 생성
+const result = generatePrompt(schema, "react", "tailwind")
+
+if (result.success) {
+  console.log(result.prompt)
+  // → 5415 characters
+  // → 1354 tokens
+  // → Ready to paste into Claude.ai!
+}
+```
+
+### Phase 4 진행 상황
+- ✅ Phase 4.1: 프롬프트 템플릿 라이브러리 구축 (현재 완료)
+- ⏳ Phase 4.2: JSON → 프롬프트 변환 함수 (이미 구현됨!)
+- ⏳ Phase 4.3: 출력 UI (프롬프트 + JSON 표시 + 클립보드 복사)
+
+**참고:** Step 4.1과 4.2는 밀접하게 연관되어 함께 구현되었습니다.
+
+### 다음 단계
+**Step 4.3: 출력 UI 구현**
+- 생성된 프롬프트 표시
+- JSON 스키마 표시
+- 클립보드 복사 기능
+- 코드 하이라이팅
+- 토큰 수 표시
+- AI 모델 추천 표시
+
+---
+
+_최종 업데이트: Step 4.1 완료 시점_
+_다음 업데이트: Step 4.3 시작 시_

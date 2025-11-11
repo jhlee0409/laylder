@@ -70,15 +70,29 @@
   - shadcn/ui Dialog 컴포넌트
   - 커밋: (pending)
 
-### **Phase 3: 상태 관리 및 비즈니스 로직** ⏳ PLANNED
-- ⏳ **Step 3.1** - Zustand 스토어 통합
-- ⏳ **Step 3.2** - 그리드 레이아웃 계산 로직
-- ⏳ **Step 3.3** - 반응형 레이아웃 관리
+### **Phase 3: 상태 관리 및 비즈니스 로직** ✅ COMPLETED (Step 1.2에서 완료)
+- ✅ **Step 3.1** - Zustand 스토어 통합 (Step 1.2에서 완료)
+- ✅ **Step 3.2** - 그리드 레이아웃 계산 로직 (Store에 구현됨)
+- ✅ **Step 3.3** - 반응형 레이아웃 관리 (Breakpoint 기능으로 완료)
 
-### **Phase 4: 동적 프롬프트 엔진 구현** ⏳ PLANNED
-- ⏳ **Step 4.1** - 프롬프트 템플릿 라이브러리 구축
-- ⏳ **Step 4.2** - JSON → 프롬프트 변환 함수
+### **Phase 4: 동적 프롬프트 엔진 구현** 🔄 IN PROGRESS
+- ✅ **Step 4.1** - 프롬프트 템플릿 라이브러리 구축
+  - React + Tailwind CSS 템플릿
+  - 템플릿 레지스트리 시스템
+  - 확장 가능한 아키텍처
+  - 커밋: (pending)
+
+- ✅ **Step 4.2** - JSON → 프롬프트 변환 함수 (Step 4.1과 함께 완료)
+  - generatePrompt() 함수
+  - Schema 검증 통합
+  - 유틸리티 함수 (summary, tokenCount, modelRecommendation)
+  - 9개 테스트 모두 PASS
+
 - ⏳ **Step 4.3** - 출력 UI
+  - 프롬프트 표시
+  - JSON 스키마 표시
+  - 클립보드 복사
+  - 코드 하이라이팅
 
 ### **Phase 5: 통합 및 워크플로우 완성** ⏳ PLANNED
 - ⏳ **Step 5.1** - 전체 워크플로우 연결
@@ -138,4 +152,4 @@
 
 ---
 
-_최종 업데이트: Step 2.4 완료 시점 (Phase 2 완료!)_
+_최종 업데이트: Step 4.1-4.2 완료 시점 (프롬프트 엔진 구축 완료!)_
