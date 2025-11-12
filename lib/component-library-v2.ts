@@ -25,7 +25,7 @@ export const COMPONENT_LIBRARY: ComponentTemplate[] = [
   {
     id: "header-sticky",
     name: "Sticky Header",
-    description: "상단 고정 헤더",
+    description: "Fixed header at the top",
     category: "layout",
     icon: "LayoutHeader",
     template: {
@@ -56,7 +56,7 @@ export const COMPONENT_LIBRARY: ComponentTemplate[] = [
   {
     id: "main-content",
     name: "Main Content",
-    description: "메인 콘텐츠 영역",
+    description: "Main content area",
     category: "layout",
     icon: "LayoutGrid",
     template: {
@@ -84,7 +84,7 @@ export const COMPONENT_LIBRARY: ComponentTemplate[] = [
   {
     id: "footer-standard",
     name: "Footer",
-    description: "하단 푸터",
+    description: "Bottom footer",
     category: "layout",
     icon: "LayoutFooter",
     template: {
@@ -115,7 +115,7 @@ export const COMPONENT_LIBRARY: ComponentTemplate[] = [
   {
     id: "sidebar-left",
     name: "Left Sidebar",
-    description: "왼쪽 사이드바",
+    description: "Left sidebar navigation",
     category: "navigation",
     icon: "PanelLeft",
     template: {
@@ -145,7 +145,7 @@ export const COMPONENT_LIBRARY: ComponentTemplate[] = [
   {
     id: "navbar-horizontal",
     name: "Horizontal Navbar",
-    description: "수평 네비게이션",
+    description: "Horizontal navigation bar",
     category: "navigation",
     icon: "Menu",
     template: {
@@ -179,7 +179,7 @@ export const COMPONENT_LIBRARY: ComponentTemplate[] = [
   {
     id: "section-standard",
     name: "Section",
-    description: "콘텐츠 섹션",
+    description: "Content section",
     category: "content",
     icon: "Box",
     template: {
@@ -206,7 +206,7 @@ export const COMPONENT_LIBRARY: ComponentTemplate[] = [
   {
     id: "article-blog",
     name: "Article",
-    description: "블로그 아티클",
+    description: "Blog article",
     category: "content",
     icon: "FileText",
     template: {
@@ -233,7 +233,7 @@ export const COMPONENT_LIBRARY: ComponentTemplate[] = [
   {
     id: "div-container",
     name: "Container Div",
-    description: "범용 컨테이너",
+    description: "General purpose container",
     category: "content",
     icon: "Square",
     template: {
@@ -261,7 +261,7 @@ export const COMPONENT_LIBRARY: ComponentTemplate[] = [
   {
     id: "form-standard",
     name: "Form",
-    description: "폼 컨테이너",
+    description: "Form container",
     category: "form",
     icon: "FormInput",
     template: {
@@ -290,7 +290,7 @@ export const COMPONENT_LIBRARY: ComponentTemplate[] = [
   {
     id: "hero-section",
     name: "Hero Section",
-    description: "히어로 섹션 (대형 배너)",
+    description: "Hero section with large banner",
     category: "content",
     icon: "Layout",
     template: {
@@ -319,7 +319,7 @@ export const COMPONENT_LIBRARY: ComponentTemplate[] = [
   {
     id: "card-container",
     name: "Card",
-    description: "카드 레이아웃",
+    description: "Card layout",
     category: "content",
     icon: "Square",
     template: {
@@ -346,7 +346,7 @@ export const COMPONENT_LIBRARY: ComponentTemplate[] = [
   {
     id: "grid-container",
     name: "Grid Container",
-    description: "그리드 레이아웃 (2열)",
+    description: "Grid layout (2 columns)",
     category: "layout",
     icon: "LayoutGrid",
     template: {
@@ -373,7 +373,7 @@ export const COMPONENT_LIBRARY: ComponentTemplate[] = [
   {
     id: "cta-section",
     name: "CTA Section",
-    description: "Call-to-Action 영역",
+    description: "Call-to-Action area",
     category: "content",
     icon: "Box",
     template: {
@@ -402,7 +402,7 @@ export const COMPONENT_LIBRARY: ComponentTemplate[] = [
   {
     id: "image-banner",
     name: "Image Banner",
-    description: "이미지 배너",
+    description: "Image banner",
     category: "content",
     icon: "Layout",
     template: {
@@ -430,7 +430,7 @@ export const COMPONENT_LIBRARY: ComponentTemplate[] = [
   {
     id: "button-group",
     name: "Button Group",
-    description: "버튼 그룹",
+    description: "Button group",
     category: "form",
     icon: "FormInput",
     template: {

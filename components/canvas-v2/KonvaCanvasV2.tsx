@@ -467,11 +467,11 @@ export function KonvaCanvasV2({
             <span className="text-sm font-medium">Konva Canvas V2</span>
             <div className="h-4 w-px bg-border" />
             <span className="text-xs text-muted-foreground">
-              무한 캔버스 • Pan & Zoom
+              Pan & Zoom
             </span>
             <div className="h-4 w-px bg-border" />
             <span className="text-xs font-mono text-muted-foreground">
-              Grid: {gridCols} × {gridRows}
+              Grid: {gridRows} × {gridCols}
             </span>
           </div>
           <div className="relative group">

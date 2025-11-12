@@ -124,12 +124,11 @@ export default function Home() {
 
         <PanelResizeHandle className="w-1 bg-gray-200 hover:bg-blue-500 transition-colors" />
 
-        {/* Right Panel: Layers + Properties (Vertical Split + Collapsible) */}
+        {/* Right Panel: Layers + Properties (Vertical Split) */}
         <Panel
           defaultSize={22}
           minSize={15}
           maxSize={40}
-          collapsible
           className="border-l bg-white"
         >
           <PanelGroup direction="vertical">

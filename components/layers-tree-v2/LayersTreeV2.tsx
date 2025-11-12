@@ -3,33 +3,14 @@
 import { useLayoutStoreV2 } from "@/store/layout-store-v2"
 import { Card } from "@/components/ui/card"
 import { useState } from "react"
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-} from "@dnd-kit/core"
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable"
-import { SortableLayerItem } from "./SortableLayerItem"
+import { LayerItem } from "./LayerItem"
 
 /**
- * Layers Tree V2 - 컴포넌트 계층 구조 with Drag & Drop
+ * Layers Tree V2 - 컴포넌트 계층 구조
  *
- * 현재 breakpoint의 컴포넌트 목록을 드래그 가능한 트리 형태로 표시
+ * 현재 breakpoint의 컴포넌트 목록을 트리 형태로 표시
  */
 export function LayersTreeV2() {
-  const [collapsedComponents, setCollapsedComponents] = useState<Set<string>>(
-    new Set()
-  )
-
   const schema = useLayoutStoreV2((state) => state.schema)
   const currentBreakpoint = useLayoutStoreV2((state) => state.currentBreakpoint)
   const selectedComponentId = useLayoutStoreV2(
@@ -40,39 +21,20 @@ export function LayersTreeV2() {
   )
   const deleteComponent = useLayoutStoreV2((state) => state.deleteComponent)
   const duplicateComponent = useLayoutStoreV2((state) => state.duplicateComponent)
-  const reorderComponentsInLayout = useLayoutStoreV2(
-    (state) => state.reorderComponentsInLayout
-  )
 
   const currentLayout =
     schema.layouts[currentBreakpoint as keyof typeof schema.layouts]
+
+  // 기본값: 모든 컴포넌트를 접힌 상태로 시작
+  const [collapsedComponents, setCollapsedComponents] = useState<Set<string>>(
+    () => new Set(currentLayout.components)
+  )
 
   // 현재 레이아웃의 컴포넌트를 순서대로 가져오기
   const componentIds = currentLayout.components
   const componentsInLayout = componentIds
     .map((id) => schema.components.find((c) => c.id === id))
     .filter((c) => c !== undefined)
-
-  // Drag & Drop sensors
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  )
-
-  // Drag end handler
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event
-
-    if (over && active.id !== over.id) {
-      const oldIndex = componentIds.indexOf(active.id as string)
-      const newIndex = componentIds.indexOf(over.id as string)
-
-      const newOrder = arrayMove(componentIds, oldIndex, newIndex)
-      reorderComponentsInLayout(currentBreakpoint, newOrder)
-    }
-  }
 
   // Collapse/Expand 토글
   const toggleCollapse = (componentId: string) => {
@@ -109,7 +71,7 @@ export function LayersTreeV2() {
         </p>
       </div>
 
-      {/* Component List with Drag & Drop */}
+      {/* Component List */}
       <div className="flex-1 overflow-y-auto space-y-1">
         {componentsInLayout.length === 0 ? (
           <div className="text-center py-8 text-gray-400">
@@ -119,29 +81,18 @@ export function LayersTreeV2() {
             </div>
           </div>
         ) : (
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-          >
-            <SortableContext
-              items={componentIds}
-              strategy={verticalListSortingStrategy}
-            >
-              {componentsInLayout.map((component) => (
-                <SortableLayerItem
-                  key={component.id}
-                  component={component}
-                  isSelected={selectedComponentId === component.id}
-                  isCollapsed={collapsedComponents.has(component.id)}
-                  onSelect={() => setSelectedComponentId(component.id)}
-                  onToggleCollapse={() => toggleCollapse(component.id)}
-                  onDuplicate={() => handleDuplicate(component.id)}
-                  onDelete={() => handleDelete(component.id)}
-                />
-              ))}
-            </SortableContext>
-          </DndContext>
+          componentsInLayout.map((component) => (
+            <LayerItem
+              key={component.id}
+              component={component}
+              isSelected={selectedComponentId === component.id}
+              isCollapsed={collapsedComponents.has(component.id)}
+              onSelect={() => setSelectedComponentId(component.id)}
+              onToggleCollapse={() => toggleCollapse(component.id)}
+              onDuplicate={() => handleDuplicate(component.id)}
+              onDelete={() => handleDelete(component.id)}
+            />
+          ))
         )}
       </div>
 

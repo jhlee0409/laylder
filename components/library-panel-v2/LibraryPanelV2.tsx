@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import { useLayoutStoreV2 } from "@/store/layout-store-v2"
 import {
   COMPONENT_LIBRARY,
@@ -32,10 +32,33 @@ import {
 export function LibraryPanelV2() {
   const [selectedCategory, setSelectedCategory] = useState<string>("layout")
   const [searchQuery, setSearchQuery] = useState("")
+  const categoryScrollRef = useRef<HTMLDivElement>(null)
 
   const addComponent = useLayoutStoreV2((state) => state.addComponent)
   const currentBreakpoint = useLayoutStoreV2((state) => state.currentBreakpoint)
   const addComponentToLayout = useLayoutStoreV2((state) => state.addComponentToLayout)
+
+  // 휠 스크롤로 가로 스크롤 처리
+  useEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+      if (categoryScrollRef.current) {
+        // deltaY(세로 스크롤)을 가로 스크롤로 변환
+        e.preventDefault()
+        categoryScrollRef.current.scrollLeft += e.deltaY
+      }
+    }
+
+    const element = categoryScrollRef.current
+    if (element) {
+      element.addEventListener('wheel', handleWheel, { passive: false })
+    }
+
+    return () => {
+      if (element) {
+        element.removeEventListener('wheel', handleWheel)
+      }
+    }
+  }, [])
 
   // 아이콘 매핑
   const getCategoryIcon = (iconName: string) => {
@@ -109,14 +132,17 @@ export function LibraryPanelV2() {
       </div>
 
       {/* Category Tabs */}
-      <div className="flex gap-2 overflow-x-auto pb-2">
+      <div
+        ref={categoryScrollRef}
+        className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
+      >
         {COMPONENT_CATEGORIES.map((category) => (
           <Button
             key={category.id}
             variant={selectedCategory === category.id ? "default" : "outline"}
             size="sm"
             onClick={() => setSelectedCategory(category.id)}
-            className="gap-2 whitespace-nowrap"
+            className="gap-2 whitespace-nowrap flex-shrink-0"
           >
             {getCategoryIcon(category.icon)}
             {category.name}

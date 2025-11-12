@@ -1,16 +1,13 @@
-import { useSortable } from "@dnd-kit/sortable"
-import { CSS } from "@dnd-kit/utilities"
 import { Badge } from "@/components/ui/badge"
 import {
   ChevronDown,
   ChevronRight,
   Trash2,
   Copy,
-  GripVertical,
 } from "lucide-react"
 import type { Component } from "@/types/schema-v2"
 
-interface SortableLayerItemProps {
+interface LayerItemProps {
   component: Component
   isSelected: boolean
   isCollapsed: boolean
@@ -20,7 +17,7 @@ interface SortableLayerItemProps {
   onDelete: () => void
 }
 
-export function SortableLayerItem({
+export function LayerItem({
   component,
   isSelected,
   isCollapsed,
@@ -28,26 +25,9 @@ export function SortableLayerItem({
   onToggleCollapse,
   onDuplicate,
   onDelete,
-}: SortableLayerItemProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: component.id })
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  }
-
+}: LayerItemProps) {
   return (
     <div
-      ref={setNodeRef}
-      style={style}
       className={`
         group relative border rounded-lg transition-all
         ${
@@ -55,20 +35,10 @@ export function SortableLayerItem({
             ? "border-blue-500 bg-blue-50"
             : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
         }
-        ${isDragging ? "z-50 shadow-lg" : ""}
       `}
     >
       {/* Main Row */}
       <div className="flex items-center gap-2 p-2 cursor-pointer" onClick={onSelect}>
-        {/* Drag Handle */}
-        <div
-          {...attributes}
-          {...listeners}
-          className="cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
-        >
-          <GripVertical className="w-4 h-4 text-gray-400" />
-        </div>
-
         {/* Collapse Toggle */}
         <button
           onClick={(e) => {
