@@ -5,6 +5,7 @@
 
 import { create } from "zustand"
 import { devtools } from "zustand/middleware"
+import { useShallow } from "zustand/react/shallow"
 
 interface HistoryActions {
   undo: () => void
@@ -537,18 +538,13 @@ export const useSelectedComponentV2 = () => {
 
 export const useComponentsInCurrentLayoutV2 = () => {
   return useLayoutStoreV2(
-    (state) => {
+    useShallow((state) => {
       const breakpoint = state.currentBreakpoint
       const layout = state.schema.layouts[breakpoint as keyof typeof state.schema.layouts]
       if (!layout) return []
 
       const componentIds = new Set(layout.components)
       return state.schema.components.filter((c) => componentIds.has(c.id))
-    },
-    (a, b) => {
-      // Shallow equality check: 배열 길이와 각 ID가 같으면 같은 배열로 간주
-      if (a.length !== b.length) return false
-      return a.every((compA, idx) => compA.id === b[idx]?.id)
-    }
+    })
   )
 }
