@@ -28,9 +28,9 @@ const invalidVersion: LaydlerSchemaV2 = {
     },
   ],
   breakpoints: [
-    { name: "mobile", minWidth: 0 },
-    { name: "tablet", minWidth: 768 },
-    { name: "desktop", minWidth: 1024 },
+    { name: "mobile", minWidth: 0, gridCols: 6, gridRows: 24 },
+    { name: "tablet", minWidth: 768, gridCols: 8, gridRows: 20 },
+    { name: "desktop", minWidth: 1024, gridCols: 12, gridRows: 20 },
   ],
   layouts: {
     mobile: {
@@ -71,9 +71,9 @@ const duplicateIds: LaydlerSchemaV2 = {
     },
   ],
   breakpoints: [
-    { name: "mobile", minWidth: 0 },
-    { name: "tablet", minWidth: 768 },
-    { name: "desktop", minWidth: 1024 },
+    { name: "mobile", minWidth: 0, gridCols: 6, gridRows: 24 },
+    { name: "tablet", minWidth: 768, gridCols: 8, gridRows: 20 },
+    { name: "desktop", minWidth: 1024, gridCols: 12, gridRows: 20 },
   ],
   layouts: {
     mobile: {
@@ -107,9 +107,9 @@ const invalidName: LaydlerSchemaV2 = {
     },
   ],
   breakpoints: [
-    { name: "mobile", minWidth: 0 },
-    { name: "tablet", minWidth: 768 },
-    { name: "desktop", minWidth: 1024 },
+    { name: "mobile", minWidth: 0, gridCols: 6, gridRows: 24 },
+    { name: "tablet", minWidth: 768, gridCols: 8, gridRows: 20 },
+    { name: "desktop", minWidth: 1024, gridCols: 12, gridRows: 20 },
   ],
   layouts: {
     mobile: {
@@ -143,9 +143,9 @@ const invalidReference: LaydlerSchemaV2 = {
     },
   ],
   breakpoints: [
-    { name: "mobile", minWidth: 0 },
-    { name: "tablet", minWidth: 768 },
-    { name: "desktop", minWidth: 1024 },
+    { name: "mobile", minWidth: 0, gridCols: 6, gridRows: 24 },
+    { name: "tablet", minWidth: 768, gridCols: 8, gridRows: 20 },
+    { name: "desktop", minWidth: 1024, gridCols: 12, gridRows: 20 },
   ],
   layouts: {
     mobile: {
@@ -179,9 +179,9 @@ const missingBreakpoint: LaydlerSchemaV2 = {
     },
   ],
   breakpoints: [
-    { name: "mobile", minWidth: 0 },
+    { name: "mobile", minWidth: 0, gridCols: 6, gridRows: 24 },
     // tablet 누락!
-    { name: "desktop", minWidth: 1024 },
+    { name: "desktop", minWidth: 1024, gridCols: 12, gridRows: 20 },
   ],
   layouts: {
     mobile: {
@@ -215,9 +215,9 @@ const headerStatic: LaydlerSchemaV2 = {
     },
   ],
   breakpoints: [
-    { name: "mobile", minWidth: 0 },
-    { name: "tablet", minWidth: 768 },
-    { name: "desktop", minWidth: 1024 },
+    { name: "mobile", minWidth: 0, gridCols: 6, gridRows: 24 },
+    { name: "tablet", minWidth: 768, gridCols: 8, gridRows: 20 },
+    { name: "desktop", minWidth: 1024, gridCols: 12, gridRows: 20 },
   ],
   layouts: {
     mobile: {

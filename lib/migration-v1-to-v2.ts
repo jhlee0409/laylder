@@ -22,10 +22,12 @@ import type {
  * const v2Schema = migrateV1ToV2(v1Schema)
  */
 export function migrateV1ToV2(v1Schema: LaydlerSchema): LaydlerSchemaV2 {
-  // 1. Breakpoints (unchanged)
+  // 1. Breakpoints (V1의 gridCols/gridRows 유지)
   const breakpoints = v1Schema.breakpoints.map((bp) => ({
     name: bp.name,
     minWidth: bp.minWidth,
+    gridCols: bp.gridCols,
+    gridRows: bp.gridRows,
   }))
 
   // 2. Components (add V2 properties with defaults)

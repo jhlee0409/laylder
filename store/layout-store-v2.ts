@@ -27,6 +27,7 @@ import {
   createEmptySchemaV2,
   generateComponentId,
   cloneSchemaV2,
+  normalizeSchemaV2,
 } from "@/lib/schema-utils-v2"
 import { sampleSchemasV2 } from "@/lib/sample-data-v2"
 
@@ -107,18 +108,24 @@ export const useLayoutStoreV2 = create<LayoutStateV2>()(
           // Layout is managed through LayoutConfig.components array
           const currentLayout = state.schema.layouts[state.currentBreakpoint as keyof typeof state.schema.layouts]
 
-          return {
-            schema: {
-              ...state.schema,
-              components: [...state.schema.components, newComponent],
-              layouts: {
-                ...state.schema.layouts,
-                [state.currentBreakpoint]: {
-                  ...currentLayout,
-                  components: [...currentLayout.components, newId],
-                },
+          // 업데이트된 스키마 (현재 breakpoint에만 추가)
+          const updatedSchema: LaydlerSchemaV2 = {
+            ...state.schema,
+            components: [...state.schema.components, newComponent],
+            layouts: {
+              ...state.schema.layouts,
+              [state.currentBreakpoint]: {
+                ...currentLayout,
+                components: [...currentLayout.components, newId],
               },
             },
+          }
+
+          // Breakpoint Inheritance 적용: Mobile → Tablet → Desktop
+          const normalizedSchema = normalizeSchemaV2(updatedSchema)
+
+          return {
+            schema: normalizedSchema,
           }
         }, false, "addComponent")
       },
@@ -298,17 +305,23 @@ export const useLayoutStoreV2 = create<LayoutStateV2>()(
             return state
           }
 
-          return {
-            schema: {
-              ...state.schema,
-              layouts: {
-                ...state.schema.layouts,
-                [breakpoint]: {
-                  ...currentLayout,
-                  components: [...currentLayout.components, componentId],
-                },
+          // 업데이트된 스키마 (특정 breakpoint에만 추가)
+          const updatedSchema: LaydlerSchemaV2 = {
+            ...state.schema,
+            layouts: {
+              ...state.schema.layouts,
+              [breakpoint]: {
+                ...currentLayout,
+                components: [...currentLayout.components, componentId],
               },
             },
+          }
+
+          // Breakpoint Inheritance 적용: Mobile → Tablet → Desktop
+          const normalizedSchema = normalizeSchemaV2(updatedSchema)
+
+          return {
+            schema: normalizedSchema,
           }
         }, false, "addComponentToLayout")
       },

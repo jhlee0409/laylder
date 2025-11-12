@@ -5,7 +5,11 @@
  */
 
 import type { GenerationPackageV2 } from "@/types/schema-v2"
-import { generatePromptFromSchemaV2 } from "./prompt-generator-v2"
+import { generatePromptV2 } from "./prompt-generator-v2"
+
+// Note: ai-service-v2.ts는 더 이상 사용하지 않음
+// Laylder는 AI API를 직접 호출하지 않고, 사용자가 복붙할 프롬프트만 제공
+// 이 파일은 이전 버전의 유산이며, 실제로는 generatePromptV2()만 사용
 
 export interface AIGenerationRequest {
   pkg: GenerationPackageV2
@@ -39,7 +43,14 @@ export async function generateCodeWithAI(
   const { pkg, model = "gpt-4-turbo-preview", temperature = 0.2 } = request
 
   // 1. Generate prompt
-  const prompt = generatePromptFromSchemaV2(pkg)
+  const result = generatePromptV2(pkg.schema, pkg.options.framework, pkg.options.cssSolution)
+  if (!result.success) {
+    return {
+      success: false,
+      error: result.errors?.join(", "),
+    }
+  }
+  const prompt = result.prompt!
 
   // 2. Call OpenAI API
   try {
@@ -105,7 +116,14 @@ export async function generateCodeWithClaude(
   const { pkg, model = "claude-3-5-sonnet-20241022", temperature = 0.2 } = request
 
   // 1. Generate prompt
-  const prompt = generatePromptFromSchemaV2(pkg)
+  const result = generatePromptV2(pkg.schema, pkg.options.framework, pkg.options.cssSolution)
+  if (!result.success) {
+    return {
+      success: false,
+      error: result.errors?.join(", "),
+    }
+  }
+  const prompt = result.prompt!
 
   // 2. Call Anthropic API
   try {

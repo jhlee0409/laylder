@@ -262,13 +262,17 @@ export interface LayoutConfig {
 /**
  * Breakpoint 정의 (V2)
  *
- * gridCols/gridRows 제거 - 더 이상 grid-template-areas를 강제하지 않음
+ * Canvas의 그리드 사이즈를 브레이크포인트별로 다르게 설정 가능
  */
 export interface Breakpoint {
   /** Breakpoint name: mobile, tablet, desktop */
   name: string
   /** Min width: 최소 너비 (px) */
   minWidth: number
+  /** Grid columns: Canvas 그리드 열 개수 */
+  gridCols: number
+  /** Grid rows: Canvas 그리드 행 개수 */
+  gridRows: number
 }
 
 /**

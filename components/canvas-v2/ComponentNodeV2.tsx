@@ -13,10 +13,10 @@ interface ComponentNodeV2Props {
   isSelected: boolean
   /** Click handler */
   onClick: () => void
-  /** Drag end handler - returns new grid position */
-  onDragEnd?: (newX: number, newY: number) => void
-  /** Resize end handler - returns new span */
-  onResizeEnd?: (newWidth: number, newHeight: number) => void
+  /** Drag end handler - returns true if successful, false if blocked */
+  onDragEnd?: (newX: number, newY: number) => boolean
+  /** Resize end handler - returns true if successful, false if blocked */
+  onResizeEnd?: (newWidth: number, newHeight: number) => boolean
   /** Grid bounds for validation */
   gridRows: number
   gridCols: number
@@ -54,19 +54,27 @@ export function ComponentNodeV2({
 
   const [isResizing, setIsResizing] = useState(false)
   const [resizeSize, setResizeSize] = useState({ width: baseWidth, height: baseHeight })
+  const [resizePosition, setResizePosition] = useState({ x, y })
+
+  // Store original values when resize starts
+  const originalValuesRef = useRef({ x, y, width: baseWidth, height: baseHeight })
 
   // Always use latest size (resizeSize is updated during resize, baseWidth/baseHeight for non-resize)
   const width = isResizing ? resizeSize.width : baseWidth
   const height = isResizing ? resizeSize.height : baseHeight
+  const groupX = isResizing ? resizePosition.x : x
+  const groupY = isResizing ? resizePosition.y : y
 
-  // Ref to track latest width/height for use in closures
+  // Ref to track latest width/height/position for use in closures
   const widthRef = useRef(width)
   const heightRef = useRef(height)
+  const positionRef = useRef({ x: groupX, y: groupY })
 
   useEffect(() => {
     widthRef.current = width
     heightRef.current = height
-  }, [width, height])
+    positionRef.current = { x: groupX, y: groupY }
+  }, [width, height, groupX, groupY])
 
   // Visual styling based on selection state
   const fillColor = isSelected ? "#eff6ff" : "#ffffff"
@@ -118,21 +126,28 @@ export function ComponentNodeV2({
     const newX = snapToGrid(node.x())
     const newY = snapToGrid(node.y())
 
-    // Update visual position immediately
-    node.x(newX)
-    node.y(newY)
-
     // Calculate new grid position
     const newGridX = Math.round(newX / CELL_SIZE)
     const newGridY = Math.round(newY / CELL_SIZE)
 
-    // Notify parent component
+    // Notify parent component and check if move is allowed
+    let moveAllowed = true
     if (onDragEnd) {
-      onDragEnd(newGridX, newGridY)
+      moveAllowed = onDragEnd(newGridX, newGridY)
+    }
+
+    if (moveAllowed) {
+      // Update visual position to snapped position
+      node.x(newX)
+      node.y(newY)
+    } else {
+      // Revert to original position
+      node.x(x)
+      node.y(y)
     }
   }
 
-  // Handle resize - called during drag of resize handle
+  // Handle resize - called during drag of resize handle (right, bottom, bottom-right)
   const handleResize = (newWidth: number, newHeight: number) => {
     // Calculate max allowed size based on grid bounds
     const maxWidth = (gridCols - gridX) * CELL_SIZE
@@ -148,30 +163,56 @@ export function ComponentNodeV2({
     // Update resize state with latest values
     setResizeSize({ width: snappedWidth, height: snappedHeight })
 
+    // Update refs immediately for use in closures
+    widthRef.current = snappedWidth
+    heightRef.current = snappedHeight
+
     // Return the snapped values for immediate use
     return { width: snappedWidth, height: snappedHeight }
   }
 
   // Handle resize end
   const handleResizeEnd = () => {
-    // Calculate new grid span from LATEST resizeSize
+    // Calculate new grid position and span from LATEST resize states
+    const newGridX = Math.round(resizePosition.x / CELL_SIZE)
+    const newGridY = Math.round(resizePosition.y / CELL_SIZE)
     const newGridWidth = Math.max(1, Math.round(resizeSize.width / CELL_SIZE))
     const newGridHeight = Math.max(1, Math.round(resizeSize.height / CELL_SIZE))
 
-    // Notify parent if size changed
-    if (onResizeEnd && (newGridWidth !== gridWidth || newGridHeight !== gridHeight)) {
-      onResizeEnd(newGridWidth, newGridHeight)
+    // Check if position or size changed
+    const positionChanged = newGridX !== gridX || newGridY !== gridY
+    const sizeChanged = newGridWidth !== gridWidth || newGridHeight !== gridHeight
+
+    let resizeAllowed = true
+
+    // If position changed, need to check drag callback
+    if (positionChanged && onDragEnd) {
+      resizeAllowed = onDragEnd(newGridX, newGridY)
     }
 
-    // Reset resize state
+    // If size changed, check resize callback
+    if (resizeAllowed && sizeChanged && onResizeEnd) {
+      resizeAllowed = onResizeEnd(newGridWidth, newGridHeight)
+    }
+
+    // Reset resize state (always reset to clear resizing mode)
     setIsResizing(false)
-    setResizeSize({ width: baseWidth, height: baseHeight })
+
+    if (resizeAllowed) {
+      // Keep the new size and position
+      setResizeSize({ width: baseWidth, height: baseHeight })
+      setResizePosition({ x, y })
+    } else {
+      // Revert to original size and position
+      setResizeSize({ width: baseWidth, height: baseHeight })
+      setResizePosition({ x, y })
+    }
   }
 
   return (
     <Group
-      x={x}
-      y={y}
+      x={groupX}
+      y={groupY}
       draggable
       onClick={onClick}
       onTap={onClick}
@@ -259,6 +300,10 @@ export function ComponentNodeV2({
             draggable
             onDragStart={(e) => {
               e.cancelBubble = true
+              // Store original values when resize starts
+              originalValuesRef.current = { x, y, width: baseWidth, height: baseHeight }
+              setResizeSize({ width: baseWidth, height: baseHeight })
+              setResizePosition({ x, y })
               setIsResizing(true)
             }}
             onDragMove={(e) => {
@@ -268,7 +313,7 @@ export function ComponentNodeV2({
               const currentHeight = heightRef.current
               const snappedSize = handleResize(newWidth, currentHeight)
               node.x(snappedSize.width)
-              node.y(currentHeight / 2)
+              node.y(snappedSize.height / 2)
             }}
             onDragEnd={(e) => {
               e.cancelBubble = true
@@ -287,6 +332,10 @@ export function ComponentNodeV2({
             draggable
             onDragStart={(e) => {
               e.cancelBubble = true
+              // Store original values when resize starts
+              originalValuesRef.current = { x, y, width: baseWidth, height: baseHeight }
+              setResizeSize({ width: baseWidth, height: baseHeight })
+              setResizePosition({ x, y })
               setIsResizing(true)
             }}
             onDragMove={(e) => {
@@ -295,7 +344,7 @@ export function ComponentNodeV2({
               const newHeight = node.y()
               const currentWidth = widthRef.current
               const snappedSize = handleResize(currentWidth, newHeight)
-              node.x(currentWidth / 2)
+              node.x(snappedSize.width / 2)
               node.y(snappedSize.height)
             }}
             onDragEnd={(e) => {
@@ -315,6 +364,10 @@ export function ComponentNodeV2({
             draggable
             onDragStart={(e) => {
               e.cancelBubble = true
+              // Store original values when resize starts
+              originalValuesRef.current = { x, y, width: baseWidth, height: baseHeight }
+              setResizeSize({ width: baseWidth, height: baseHeight })
+              setResizePosition({ x, y })
               setIsResizing(true)
             }}
             onDragMove={(e) => {

@@ -12,21 +12,15 @@ import type { ComponentTemplate } from "@/lib/component-library-v2"
 // Grid constants
 const CELL_SIZE = 100
 const GRID_COLOR = "rgba(128, 128, 128, 0.2)"
-const DEFAULT_GRID_COLS = 12
-const DEFAULT_GRID_ROWS = 20
 
 interface KonvaCanvasV2Props {
   width?: number
   height?: number
-  gridCols?: number
-  gridRows?: number
 }
 
 export function KonvaCanvasV2({
   width,
   height,
-  gridCols = DEFAULT_GRID_COLS,
-  gridRows = DEFAULT_GRID_ROWS,
 }: KonvaCanvasV2Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [containerSize, setContainerSize] = useState({ width: 1200, height: 800 })
@@ -43,6 +37,11 @@ export function KonvaCanvasV2({
   const addComponent = useLayoutStoreV2((state) => state.addComponent)
   const currentBreakpoint = useLayoutStoreV2((state) => state.currentBreakpoint)
   const addComponentToLayout = useLayoutStoreV2((state) => state.addComponentToLayout)
+
+  // Get current breakpoint's grid size
+  const currentBreakpointConfig = schema.breakpoints.find((bp) => bp.name === currentBreakpoint)
+  const gridCols = currentBreakpointConfig?.gridCols ?? 12
+  const gridRows = currentBreakpointConfig?.gridRows ?? 20
 
   // Measure container size
   useEffect(() => {
@@ -118,16 +117,18 @@ export function KonvaCanvasV2({
     componentId: string,
     newX: number,
     newY: number
-  ) => {
-    const component = schema.components.find((c) => c.id === componentId)
-    if (!component) return
+  ): boolean => {
+    // Get fresh state
+    const freshState = useLayoutStoreV2.getState()
+    const component = freshState.schema.components.find((c) => c.id === componentId)
+    if (!component) return false
 
     // Get current layout
     const currentLayout =
       component.responsiveCanvasLayout?.[currentBreakpoint as keyof typeof component.responsiveCanvasLayout] ||
       component.canvasLayout
 
-    if (!currentLayout) return
+    if (!currentLayout) return false
 
     const { width: w, height: h } = currentLayout
 
@@ -138,12 +139,23 @@ export function KonvaCanvasV2({
       newX + w > gridCols ||
       newY + h > gridRows
     ) {
-      console.warn("Component position out of bounds, reverting")
-      return
+      console.warn("❌ Component position out of bounds, reverting")
+      return false
     }
 
+    // Get fresh components with canvas layout
+    const freshComponentsWithCanvas = freshState.schema.components
+      .map((c) => {
+        const layout =
+          c.responsiveCanvasLayout?.[currentBreakpoint as keyof typeof c.responsiveCanvasLayout] ||
+          c.canvasLayout
+        if (!layout) return null
+        return { ...c, currentCanvasLayout: layout }
+      })
+      .filter((c): c is NonNullable<typeof c> => c !== null)
+
     // Check for collision with other components (STRICT)
-    const hasCollision = componentsWithCanvas.some((other) => {
+    const hasCollision = freshComponentsWithCanvas.some((other) => {
       if (other.id === componentId) return false
 
       const otherLayout = other.currentCanvasLayout
@@ -163,7 +175,7 @@ export function KonvaCanvasV2({
 
     if (hasCollision) {
       console.warn("❌ Collision detected - position blocked")
-      return
+      return false
     }
 
     // Update component with responsive layout support
@@ -189,6 +201,7 @@ export function KonvaCanvasV2({
     }
 
     updateComponent(componentId, updatedComponent)
+    return true
   }
 
   // Handle component resize - update canvasLayout
@@ -196,16 +209,18 @@ export function KonvaCanvasV2({
     componentId: string,
     newWidth: number,
     newHeight: number
-  ) => {
-    const component = schema.components.find((c) => c.id === componentId)
-    if (!component) return
+  ): boolean => {
+    // Get fresh state
+    const freshState = useLayoutStoreV2.getState()
+    const component = freshState.schema.components.find((c) => c.id === componentId)
+    if (!component) return false
 
     // Get current layout
     const currentLayout =
       component.responsiveCanvasLayout?.[currentBreakpoint as keyof typeof component.responsiveCanvasLayout] ||
       component.canvasLayout
 
-    if (!currentLayout) return
+    if (!currentLayout) return false
 
     const { x, y } = currentLayout
 
@@ -216,12 +231,23 @@ export function KonvaCanvasV2({
       x + newWidth > gridCols ||
       y + newHeight > gridRows
     ) {
-      console.warn("Component size out of bounds, reverting")
-      return
+      console.warn("❌ Component size out of bounds, reverting")
+      return false
     }
 
+    // Get fresh components with canvas layout
+    const freshComponentsWithCanvas = freshState.schema.components
+      .map((c) => {
+        const layout =
+          c.responsiveCanvasLayout?.[currentBreakpoint as keyof typeof c.responsiveCanvasLayout] ||
+          c.canvasLayout
+        if (!layout) return null
+        return { ...c, currentCanvasLayout: layout }
+      })
+      .filter((c): c is NonNullable<typeof c> => c !== null)
+
     // Check for collision with other components (STRICT)
-    const hasCollision = componentsWithCanvas.some((other) => {
+    const hasCollision = freshComponentsWithCanvas.some((other) => {
       if (other.id === componentId) return false
 
       const otherLayout = other.currentCanvasLayout
@@ -241,7 +267,7 @@ export function KonvaCanvasV2({
 
     if (hasCollision) {
       console.warn("❌ Collision detected during resize - size blocked")
-      return
+      return false
     }
 
     // Update component with responsive layout support
@@ -267,6 +293,7 @@ export function KonvaCanvasV2({
     }
 
     updateComponent(componentId, updatedComponent)
+    return true
   }
 
   // Handle drop from Library to Canvas
@@ -309,8 +336,20 @@ export function KonvaCanvasV2({
         return
       }
 
+      // Get fresh components with canvas layout for collision check
+      const freshState = useLayoutStoreV2.getState()
+      const freshComponentsWithCanvas = freshState.schema.components
+        .map((c) => {
+          const layout =
+            c.responsiveCanvasLayout?.[currentBreakpoint as keyof typeof c.responsiveCanvasLayout] ||
+            c.canvasLayout
+          if (!layout) return null
+          return { ...c, currentCanvasLayout: layout }
+        })
+        .filter((c): c is NonNullable<typeof c> => c !== null)
+
       // Check for collision at drop position
-      const hasCollision = componentsWithCanvas.some((other) => {
+      const hasCollision = freshComponentsWithCanvas.some((other) => {
         const otherLayout = other.currentCanvasLayout
         const otherRight = otherLayout.x + otherLayout.width
         const otherBottom = otherLayout.y + otherLayout.height
@@ -343,9 +382,8 @@ export function KonvaCanvasV2({
         },
       }
 
-      // Add to store
+      // Add to store (addComponent already handles layout inheritance via normalizeSchemaV2)
       addComponent(newComponent)
-      addComponentToLayout(currentBreakpoint, newComponent.id)
 
       // Select the newly added component
       setSelectedComponentId(newComponent.id)

@@ -85,7 +85,7 @@ export default function V2Page() {
             <BreakpointSwitcherV2 />
           </div>
 
-          {/* Konva Canvas - 자유 배치 */}
+          {/* Konva Canvas - 브레이크포인트별 동적 그리드 */}
           <div className="flex-1 overflow-hidden">
             <KonvaCanvasV2 />
           </div>
