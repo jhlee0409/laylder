@@ -275,17 +275,13 @@ export function normalizeSchemaV2(schema: LaydlerSchemaV2): LaydlerSchemaV2 {
   // Tablet이 명시되지 않으면 Mobile 복사
   if (!normalized.layouts.tablet ||
       normalized.layouts.tablet.components.length === 0) {
-    normalized.layouts.tablet = {
-      ...cloneSchemaV2(normalized.layouts.mobile),
-    }
+    normalized.layouts.tablet = JSON.parse(JSON.stringify(normalized.layouts.mobile))
   }
 
   // Desktop이 명시되지 않으면 Tablet 복사
   if (!normalized.layouts.desktop ||
       normalized.layouts.desktop.components.length === 0) {
-    normalized.layouts.desktop = {
-      ...cloneSchemaV2(normalized.layouts.tablet),
-    }
+    normalized.layouts.desktop = JSON.parse(JSON.stringify(normalized.layouts.tablet))
   }
 
   // 2. Canvas Layout Inheritance per Component
