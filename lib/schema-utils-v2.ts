@@ -323,15 +323,17 @@ export function normalizeSchemaV2(schema: LaydlerSchemaV2): LaydlerSchemaV2 {
   const normalized = cloneSchemaV2(schema)
 
   // 1. Layout Inheritance: Mobile → Tablet → Desktop
-  // Tablet이 명시되지 않으면 Mobile 복사
-  if (!normalized.layouts.tablet ||
-      normalized.layouts.tablet.components.length === 0) {
+  // Tablet이 명시되지 않으면 Mobile 복사 (Mobile이 있는 경우에만)
+  if ((!normalized.layouts.tablet ||
+      normalized.layouts.tablet.components.length === 0) &&
+      normalized.layouts.mobile) {
     normalized.layouts.tablet = JSON.parse(JSON.stringify(normalized.layouts.mobile))
   }
 
-  // Desktop이 명시되지 않으면 Tablet 복사
-  if (!normalized.layouts.desktop ||
-      normalized.layouts.desktop.components.length === 0) {
+  // Desktop이 명시되지 않으면 Tablet 복사 (Tablet이 있는 경우에만)
+  if ((!normalized.layouts.desktop ||
+      normalized.layouts.desktop.components.length === 0) &&
+      normalized.layouts.tablet) {
     normalized.layouts.desktop = JSON.parse(JSON.stringify(normalized.layouts.tablet))
   }
 
