@@ -3,7 +3,7 @@
 import { useRef, useState, useEffect } from "react"
 import { Stage, Layer, Rect } from "react-konva"
 import Konva from "konva"
-import { useLayoutStoreV2 } from "@/store/layout-store-v2"
+import { useLayoutStoreV2, useComponentsInCurrentLayoutV2 } from "@/store/layout-store-v2"
 import { ComponentNodeV2 } from "./ComponentNodeV2"
 import { createComponentFromTemplate } from "@/lib/component-library-v2"
 import type { Component } from "@/types/schema-v2"
@@ -95,8 +95,11 @@ export function KonvaCanvasV2({
   const canvasWidth = width ?? containerSize.width
   const canvasHeight = height ?? containerSize.height
 
+  // Get components in current layout (동기화: LayersTree와 동일한 selector 사용)
+  const componentsInCurrentLayout = useComponentsInCurrentLayoutV2()
+
   // Get current breakpoint's canvas layout for each component
-  const componentsWithCanvas = schema.components
+  const componentsWithCanvas = componentsInCurrentLayout
     .map((c) => {
       // Try responsive layout first, fallback to legacy canvasLayout
       const layout =
@@ -143,8 +146,12 @@ export function KonvaCanvasV2({
       return false
     }
 
-    // Get fresh components with canvas layout
-    const freshComponentsWithCanvas = freshState.schema.components
+    // Get fresh components in current layout (동기화: currentLayout.components 기준)
+    const freshCurrentLayout = freshState.schema.layouts[currentBreakpoint as keyof typeof freshState.schema.layouts]
+    const freshComponentIds = new Set(freshCurrentLayout.components)
+    const freshComponentsInLayout = freshState.schema.components.filter((c) => freshComponentIds.has(c.id))
+
+    const freshComponentsWithCanvas = freshComponentsInLayout
       .map((c) => {
         const layout =
           c.responsiveCanvasLayout?.[currentBreakpoint as keyof typeof c.responsiveCanvasLayout] ||
@@ -235,8 +242,12 @@ export function KonvaCanvasV2({
       return false
     }
 
-    // Get fresh components with canvas layout
-    const freshComponentsWithCanvas = freshState.schema.components
+    // Get fresh components in current layout (동기화: currentLayout.components 기준)
+    const freshCurrentLayout = freshState.schema.layouts[currentBreakpoint as keyof typeof freshState.schema.layouts]
+    const freshComponentIds = new Set(freshCurrentLayout.components)
+    const freshComponentsInLayout = freshState.schema.components.filter((c) => freshComponentIds.has(c.id))
+
+    const freshComponentsWithCanvas = freshComponentsInLayout
       .map((c) => {
         const layout =
           c.responsiveCanvasLayout?.[currentBreakpoint as keyof typeof c.responsiveCanvasLayout] ||
@@ -336,9 +347,13 @@ export function KonvaCanvasV2({
         return
       }
 
-      // Get fresh components with canvas layout for collision check
+      // Get fresh components in current layout for collision check (동기화)
       const freshState = useLayoutStoreV2.getState()
-      const freshComponentsWithCanvas = freshState.schema.components
+      const freshCurrentLayout = freshState.schema.layouts[currentBreakpoint as keyof typeof freshState.schema.layouts]
+      const freshComponentIds = new Set(freshCurrentLayout.components)
+      const freshComponentsInLayout = freshState.schema.components.filter((c) => freshComponentIds.has(c.id))
+
+      const freshComponentsWithCanvas = freshComponentsInLayout
         .map((c) => {
           const layout =
             c.responsiveCanvasLayout?.[currentBreakpoint as keyof typeof c.responsiveCanvasLayout] ||
