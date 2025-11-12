@@ -2,195 +2,245 @@
 
 import { useState } from "react"
 import { useLayoutStoreV2 } from "@/store/layout-store-v2"
-import { exportToZip, type ExportOptions } from "@/lib/file-exporter-v2"
+import {
+  generatePromptV2,
+  generateSchemaSummaryV2,
+  estimateTokenCountV2,
+  getRecommendedModelV2,
+} from "@/lib/prompt-generator-v2"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Download, FileCode, Package, Loader2 } from "lucide-react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Badge } from "@/components/ui/badge"
+import { FileCode, Sparkles, Check, Copy } from "lucide-react"
 
 /**
- * Export Modal V2 - Schema V2 Export UI
+ * Export Modal V2 - Schema V2 AI Prompt Generation UI
  *
- * file-exporter-v2.ts와 통합하여 ZIP 다운로드 제공
+ * V1 GenerationModal 방식 참조:
+ * - 2-step workflow: Config → Result
+ * - AI Prompt / JSON Schema 탭
+ * - Copy to Clipboard 기능
+ * - Token count & Model recommendation
  */
 export function ExportModalV2() {
   const [open, setOpen] = useState(false)
-  const [isExporting, setIsExporting] = useState(false)
-  const [options, setOptions] = useState<ExportOptions>({
-    framework: "react",
-    cssSolution: "tailwind",
-    includeTypes: true,
-    includeComments: true,
-  })
+  const [step, setStep] = useState<"config" | "result">("config")
+  const [framework, setFramework] = useState<"react">("react")
+  const [cssSolution, setCssSolution] = useState<"tailwind">("tailwind")
+  const [generatedPrompt, setGeneratedPrompt] = useState("")
+  const [generatedJson, setGeneratedJson] = useState("")
+  const [tokenCount, setTokenCount] = useState(0)
+  const [recommendedModel, setRecommendedModel] = useState("")
+  const [copiedPrompt, setCopiedPrompt] = useState(false)
+  const [copiedJson, setCopiedJson] = useState(false)
 
   const schema = useLayoutStoreV2((state) => state.schema)
 
-  const handleExport = async () => {
-    setIsExporting(true)
+  const handleGenerate = () => {
+    // Generate AI prompt from Schema V2
+    const result = generatePromptV2(schema, framework, cssSolution)
 
-    try {
-      await exportToZip(
-        {
-          schema,
-          options,
-        },
-        `laylder-export-${Date.now()}.zip`
-      )
-
-      // Success - close modal after short delay
-      setTimeout(() => {
-        setOpen(false)
-        setIsExporting(false)
-      }, 1000)
-    } catch (error) {
-      console.error("Export failed:", error)
-      alert("Export failed. Please try again.")
-      setIsExporting(false)
+    if (!result.success) {
+      alert(`Generation failed:\n${result.errors?.join("\n")}`)
+      return
     }
+
+    setGeneratedPrompt(result.prompt!)
+    setGeneratedJson(JSON.stringify(schema, null, 2))
+
+    // Calculate token count and recommend model
+    const tokens = estimateTokenCountV2(result.prompt!)
+    setTokenCount(tokens)
+    setRecommendedModel(getRecommendedModelV2(tokens))
+
+    // Move to result step
+    setStep("result")
+  }
+
+  const handleCopyPrompt = async () => {
+    await navigator.clipboard.writeText(generatedPrompt)
+    setCopiedPrompt(true)
+    setTimeout(() => setCopiedPrompt(false), 2000)
+  }
+
+  const handleCopyJson = async () => {
+    await navigator.clipboard.writeText(generatedJson)
+    setCopiedJson(true)
+    setTimeout(() => setCopiedJson(false), 2000)
+  }
+
+  const handleBack = () => {
+    setStep("config")
+    setCopiedPrompt(false)
+    setCopiedJson(false)
   }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="default" className="gap-2">
-          <Download className="w-4 h-4" />
-          Export Code
+          <Sparkles className="w-4 h-4" />
+          Generate Prompt
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[900px] max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Package className="w-5 h-5" />
-            Export Your Layout
+            <Sparkles className="w-5 h-5" />
+            {step === "config" ? "Configure Generation" : "AI Prompt Generated"}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
-          {/* Schema Info */}
-          <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <FileCode className="w-4 h-4" />
-              <span className="font-semibold">Schema V2 ({schema.schemaVersion})</span>
+        {step === "config" ? (
+          // Step 1: Configuration
+          <div className="space-y-6 py-4 overflow-y-auto">
+            {/* Schema Info */}
+            <div className="bg-blue-50 rounded-lg p-4 space-y-2">
+              <div className="flex items-center gap-2 text-sm text-blue-900">
+                <FileCode className="w-4 h-4" />
+                <span className="font-semibold">Schema V2 ({schema.schemaVersion})</span>
+              </div>
+              <div className="text-sm text-blue-800">
+                Components: <span className="font-semibold">{schema.components.length}</span>
+              </div>
+              <div className="text-sm text-blue-800">
+                Breakpoints: <span className="font-semibold">{schema.breakpoints.length}</span>
+              </div>
             </div>
-            <div className="text-sm text-gray-600">
-              Components: <span className="font-semibold">{schema.components.length}</span>
+
+            {/* Framework Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="framework">Framework</Label>
+              <Select value={framework} onValueChange={(value) => setFramework(value as "react")}>
+                <SelectTrigger id="framework">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="react">React</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <div className="text-sm text-gray-600">
-              Breakpoints: <span className="font-semibold">{schema.breakpoints.length}</span>
-            </div>
-          </div>
 
-          {/* Framework Selection */}
-          <div className="space-y-2">
-            <Label htmlFor="framework">Framework</Label>
-            <Select
-              value={options.framework}
-              onValueChange={(value) =>
-                setOptions({ ...options, framework: value as "react" | "vue" | "svelte" })
-              }
-            >
-              <SelectTrigger id="framework">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="react">React</SelectItem>
-                <SelectItem value="vue">Vue (Coming Soon)</SelectItem>
-                <SelectItem value="svelte">Svelte (Coming Soon)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* CSS Solution Selection */}
-          <div className="space-y-2">
-            <Label htmlFor="css">CSS Solution</Label>
-            <Select
-              value={options.cssSolution}
-              onValueChange={(value) =>
-                setOptions({ ...options, cssSolution: value as "tailwind" | "css-modules" | "styled-components" })
-              }
-            >
-              <SelectTrigger id="css">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="tailwind">Tailwind CSS</SelectItem>
-                <SelectItem value="css-modules">CSS Modules (Coming Soon)</SelectItem>
-                <SelectItem value="styled-components">Styled Components (Coming Soon)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Additional Options */}
-          <div className="space-y-3">
-            <Label>Additional Options</Label>
-
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="types"
-                checked={options.includeTypes}
-                onChange={(e) =>
-                  setOptions({ ...options, includeTypes: e.target.checked })
-                }
-                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
-              />
-              <label
-                htmlFor="types"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            {/* CSS Solution Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="css">CSS Solution</Label>
+              <Select
+                value={cssSolution}
+                onValueChange={(value) => setCssSolution(value as "tailwind")}
               >
-                Include TypeScript types
-              </label>
+                <SelectTrigger id="css">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="tailwind">Tailwind CSS</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="comments"
-                checked={options.includeComments}
-                onChange={(e) =>
-                  setOptions({ ...options, includeComments: e.target.checked })
-                }
-                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
-              />
-              <label
-                htmlFor="comments"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            {/* Generate Button */}
+            <div className="pt-4">
+              <Button
+                onClick={handleGenerate}
+                disabled={schema.components.length === 0}
+                className="w-full gap-2"
+                size="lg"
               >
-                Include code comments
-              </label>
-            </div>
-          </div>
+                <Sparkles className="w-4 h-4" />
+                Generate AI Prompt
+              </Button>
 
-          {/* Export Button */}
-          <div className="pt-4">
-            <Button
-              onClick={handleExport}
-              disabled={isExporting || schema.components.length === 0}
-              className="w-full gap-2"
-              size="lg"
-            >
-              {isExporting ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Exporting...
-                </>
-              ) : (
-                <>
-                  <Download className="w-4 h-4" />
-                  Download ZIP
-                </>
+              {schema.components.length === 0 && (
+                <p className="text-sm text-gray-500 text-center mt-2">
+                  Add components to your layout first
+                </p>
               )}
-            </Button>
-
-            {schema.components.length === 0 && (
-              <p className="text-sm text-gray-500 text-center mt-2">
-                Add components to your layout first
-              </p>
-            )}
+            </div>
           </div>
-        </div>
+        ) : (
+          // Step 2: Result
+          <div className="flex flex-col gap-4 py-4 flex-1 min-h-0">
+            {/* Token Count & Model Recommendation */}
+            <div className="flex items-center justify-between bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 border border-blue-200">
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="text-sm font-semibold">
+                    {tokenCount.toLocaleString()} tokens
+                  </Badge>
+                  <span className="text-xs text-gray-500">estimated</span>
+                </div>
+                <p className="text-sm font-medium text-gray-700">
+                  Recommended: <span className="text-blue-700">{recommendedModel}</span>
+                </p>
+              </div>
+              <Button variant="ghost" size="sm" onClick={handleBack}>
+                Back
+              </Button>
+            </div>
+
+            {/* Tabs: AI Prompt / JSON Schema */}
+            <Tabs defaultValue="prompt" className="flex flex-col flex-1 min-h-0">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="prompt">AI Prompt</TabsTrigger>
+                <TabsTrigger value="json">JSON Schema</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="prompt" className="flex-1 flex flex-col gap-3 mt-4 min-h-0">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-gray-600">
+                    Copy this prompt and paste it into Claude or GPT
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCopyPrompt}
+                    className="gap-2"
+                  >
+                    {copiedPrompt ? (
+                      <>
+                        <Check className="w-4 h-4" />
+                        Copied!
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-4 h-4" />
+                        Copy
+                      </>
+                    )}
+                  </Button>
+                </div>
+                <pre className="flex-1 bg-gray-900 text-gray-100 p-4 rounded-lg text-xs overflow-auto font-mono">
+                  {generatedPrompt}
+                </pre>
+              </TabsContent>
+
+              <TabsContent value="json" className="flex-1 flex flex-col gap-3 mt-4 min-h-0">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-gray-600">Schema V2 in JSON format</p>
+                  <Button variant="outline" size="sm" onClick={handleCopyJson} className="gap-2">
+                    {copiedJson ? (
+                      <>
+                        <Check className="w-4 h-4" />
+                        Copied!
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-4 h-4" />
+                        Copy
+                      </>
+                    )}
+                  </Button>
+                </div>
+                <pre className="flex-1 bg-gray-900 text-gray-100 p-4 rounded-lg text-xs overflow-auto font-mono">
+                  {generatedJson}
+                </pre>
+              </TabsContent>
+            </Tabs>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   )

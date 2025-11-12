@@ -1,109 +1,316 @@
-# Layout Code Generation Request
+You are an expert React developer. Generate a responsive layout component based on the following Schema V2 specifications.
 
-Generate a responsive layout using REACT and TAILWIND.
+**Schema V2 Architecture:**
+- **Component Independence**: Each component has its own positioning, layout, styling, and responsive behavior
+- **Flexbox First**: Use Flexbox for page structure, CSS Grid only for card/content layouts
+- **Semantic HTML**: Follow HTML5 semantic principles
+- **Mobile First**: Implement responsive design with mobile-first approach
 
-## Requirements
+**Requirements:**
+- Use React functional components with TypeScript
+- Use Tailwind CSS utility classes for all styling
+- Each component must implement its specified positioning, layout, and styling
+- Follow the exact specifications provided for each component
 
-- Framework: react
-- CSS Solution: tailwind
-- TypeScript: Yes
-- Schema Version: 2.0
+---
 
-## Components (2)
+## Components
 
-1. **PageHeader** (`<header>`)
-   - Positioning: sticky (top: 0, zIndex: 50)
-   - Layout: container
-   - Responsive: No
-2. **CardGrid** (`<main>`)
-   - Positioning: static
-   - Layout: grid
-   - Responsive: Yes
+You need to create 2 components with the following specifications:
 
-## Breakpoints
+### 1. PageHeader (c1)
+- **Semantic Tag:** `<header>`
+- **Component Name:** `PageHeader`
 
-- **mobile**: 0px+
-- **tablet**: 768px+
-- **desktop**: 1024px+
+**Positioning:**
+- Type: `sticky`
+- Position values: top: 0, zIndex: 50
 
-## Layout Structure
+**Layout:**
+- Type: `container`
+- Max width: `7xl`
+- Padding: `1rem 2rem`
+- Centered: true
 
-Structure Type: **vertical**
+**Styling:**
+- Background: `white`
+- Border: `b`
 
-Component Order:
-1. PageHeader (c1)
-2. CardGrid (c2)
-
-
-Roles:
-- header: c1
-- main: c2
-
-## Expected Code Structure
-
-### Component Files
-
-#### `components/PageHeader.tsx`
-
-```tsx
-export function PageHeader({ children }: { children?: React.ReactNode }) {
-  return (
-    <header className="sticky top-0 z-50 bg-white border-b">
-      <div className="container max-w-7xl mx-auto">
-        {children || "Gallery"}
-      </div>
-    </header>
-  )
+**Default Props:**
+```json
+{
+  "children": "Gallery"
 }
 ```
 
-#### `components/CardGrid.tsx`
+### 2. CardGrid (c2)
+- **Semantic Tag:** `<main>`
+- **Component Name:** `CardGrid`
 
-```tsx
-export function CardGrid({ children }: { children?: React.ReactNode }) {
-  return (
-    <main className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-6 flex-1 container mx-auto max-w-7xl px-8 py-8">
-      {children || "Card items will be placed here"}
-    </main>
-  )
+**Positioning:**
+- Type: `static`
+
+**Layout:**
+- Type: `grid`
+- Columns: `repeat(auto-fill, minmax(300px, 1fr))`
+- Gap: `1.5rem`
+
+**Styling:**
+- Custom classes: `flex-1 container mx-auto max-w-7xl px-8 py-8`
+
+**Responsive Behavior:**
+
+**Default Props:**
+```json
+{
+  "children": "Card items will be placed here"
 }
 ```
 
-### Layout Composition
 
-#### `app/page.tsx` or `app/layout.tsx`
+---
 
-```tsx
-import { PageHeader } from "@/components/PageHeader"
-import { CardGrid } from "@/components/CardGrid"
+## Responsive Page Structure
 
-export default function Layout() {
-  return (
-    <div className="flex flex-col min-h-screen">
-      <PageHeader />
-      <CardGrid />
-    </div>
-  )
+Implement the following page structures for each breakpoint:
+
+### 1. Mobile (≥0px)
+
+**Layout Structure:** `vertical`
+
+**Component Order:**
+1. c1
+2. c2
+
+**Layout Roles:**
+- **Header:** c1
+- **Main:** c2
+
+**Implementation Guidance:**
+- Use a flex column container (`flex flex-col`)
+- Stack components vertically in the order specified
+- Each component will use its individual positioning/layout settings
+
+### 2. Tablet (≥768px)
+
+**Layout Structure:** `vertical`
+
+**Component Order:**
+1. c1
+2. c2
+
+**Layout Roles:**
+- **Header:** c1
+- **Main:** c2
+
+**Implementation Guidance:**
+- Use a flex column container (`flex flex-col`)
+- Stack components vertically in the order specified
+- Each component will use its individual positioning/layout settings
+
+### 3. Desktop (≥1024px)
+
+**Layout Structure:** `vertical`
+
+**Component Order:**
+1. c1
+2. c2
+
+**Layout Roles:**
+- **Header:** c1
+- **Main:** c2
+
+**Implementation Guidance:**
+- Use a flex column container (`flex flex-col`)
+- Stack components vertically in the order specified
+- Each component will use its individual positioning/layout settings
+
+
+---
+
+## Implementation Instructions
+
+1. **Main Layout Component:**
+   - Create a main container component (e.g., `ResponsiveLayout` or `RootLayout`)
+   - Implement responsive structure changes using Tailwind breakpoints
+   - Follow the structure specifications for each breakpoint (vertical/horizontal/sidebar-main)
+
+2. **Component Implementation:**
+   - Each component MUST use its specified semantic tag
+   - Apply positioning classes according to component specifications
+   - Implement layout (flex/grid/container) as specified
+   - Add styling classes as specified
+   - Implement responsive behavior for each breakpoint
+
+3. **Positioning Guidelines:**
+   - `static`: Default flow (no position class needed)
+   - `fixed`: Use Tailwind `fixed` with specified position values (e.g., `fixed top-0 left-0 right-0 z-50`)
+   - `sticky`: Use Tailwind `sticky` with specified position values
+   - `absolute`: Use Tailwind `absolute` with specified position values
+   - `relative`: Use Tailwind `relative`
+
+4. **Layout Guidelines:**
+   - `flex`: Use Tailwind flex utilities (`flex`, `flex-col`, `justify-center`, etc.)
+   - `grid`: Use Tailwind grid utilities (`grid`, `grid-cols-3`, `gap-4`, etc.)
+   - `container`: Wrap content in a container div with max-width and centering
+   - `none`: No specific layout - let content flow naturally
+
+5. **Responsive Behavior:**
+   - Implement mobile-first approach
+   - Use Tailwind responsive prefixes (`md:`, `lg:`) for tablet and desktop
+   - Handle visibility changes (hidden/block) as specified
+   - Apply responsive width/order changes as specified
+
+6. **Code Quality:**
+   - Use TypeScript with proper type definitions
+   - Follow React best practices (functional components, hooks)
+   - Use semantic HTML5 tags as specified
+   - Add placeholder content for demonstration
+   - Keep component code clean and maintainable
+
+---
+
+## Full Schema V2 (JSON)
+
+
+For reference, here is the complete Schema V2 in JSON format:
+
+
+```json
+
+{
+  "schemaVersion": "2.0",
+  "components": [
+    {
+      "id": "c1",
+      "name": "PageHeader",
+      "semanticTag": "header",
+      "positioning": {
+        "type": "sticky",
+        "position": {
+          "top": 0,
+          "zIndex": 50
+        }
+      },
+      "layout": {
+        "type": "container",
+        "container": {
+          "maxWidth": "7xl",
+          "padding": "1rem 2rem",
+          "centered": true
+        }
+      },
+      "styling": {
+        "background": "white",
+        "border": "b"
+      },
+      "props": {
+        "children": "Gallery"
+      }
+    },
+    {
+      "id": "c2",
+      "name": "CardGrid",
+      "semanticTag": "main",
+      "positioning": {
+        "type": "static"
+      },
+      "layout": {
+        "type": "grid",
+        "grid": {
+          "cols": "repeat(auto-fill, minmax(300px, 1fr))",
+          "gap": "1.5rem"
+        }
+      },
+      "styling": {
+        "className": "flex-1 container mx-auto max-w-7xl px-8 py-8"
+      },
+      "responsive": {
+        "mobile": {},
+        "tablet": {},
+        "desktop": {}
+      },
+      "props": {
+        "children": "Card items will be placed here"
+      }
+    }
+  ],
+  "breakpoints": [
+    {
+      "name": "mobile",
+      "minWidth": 0,
+      "gridCols": 6,
+      "gridRows": 24
+    },
+    {
+      "name": "tablet",
+      "minWidth": 768,
+      "gridCols": 8,
+      "gridRows": 20
+    },
+    {
+      "name": "desktop",
+      "minWidth": 1024,
+      "gridCols": 12,
+      "gridRows": 20
+    }
+  ],
+  "layouts": {
+    "mobile": {
+      "structure": "vertical",
+      "components": [
+        "c1",
+        "c2"
+      ],
+      "containerLayout": {
+        "type": "flex",
+        "flex": {
+          "direction": "column",
+          "gap": 0
+        }
+      },
+      "roles": {
+        "header": "c1",
+        "main": "c2"
+      }
+    },
+    "tablet": {
+      "structure": "vertical",
+      "components": [
+        "c1",
+        "c2"
+      ],
+      "containerLayout": {
+        "type": "flex",
+        "flex": {
+          "direction": "column",
+          "gap": 0
+        }
+      },
+      "roles": {
+        "header": "c1",
+        "main": "c2"
+      }
+    },
+    "desktop": {
+      "structure": "vertical",
+      "components": [
+        "c1",
+        "c2"
+      ],
+      "containerLayout": {
+        "type": "flex",
+        "flex": {
+          "direction": "column",
+          "gap": 0
+        }
+      },
+      "roles": {
+        "header": "c1",
+        "main": "c2"
+      }
+    }
+  }
 }
+
 ```
-
-## Responsive Behavior
-
-- **CardGrid**: 
-
-## Additional Requirements
-
-1. **Component Independence**: Each component should be self-contained with its own positioning, layout, and styling.
-2. **Semantic HTML**: Use appropriate HTML5 semantic tags (`<header>`, `<nav>`, `<main>`, `<footer>`, etc.).
-3. **Flexbox First**: Use Flexbox for page structure, Grid only for card layouts.
-4. **Tailwind Classes**: Use Tailwind utility classes for all styling.
-5. **Responsive Design**: Follow mobile-first approach with responsive modifiers (`md:`, `lg:`).
-6. **Clean Code**: Generate production-ready, clean, and maintainable code.
-
-## Output Format
-
-Please generate:
-1. Individual component files (`components/[ComponentName].tsx`)
-2. Main layout file (`app/page.tsx` or `app/layout.tsx`)
-3. All components should be properly typed with TypeScript
-4. Use React functional components with proper props typing

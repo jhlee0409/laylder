@@ -1,135 +1,385 @@
-# Layout Code Generation Request
+You are an expert React developer. Generate a responsive layout component based on the following Schema V2 specifications.
 
-Generate a responsive layout using REACT and TAILWIND.
+**Schema V2 Architecture:**
+- **Component Independence**: Each component has its own positioning, layout, styling, and responsive behavior
+- **Flexbox First**: Use Flexbox for page structure, CSS Grid only for card/content layouts
+- **Semantic HTML**: Follow HTML5 semantic principles
+- **Mobile First**: Implement responsive design with mobile-first approach
 
-## Requirements
+**Requirements:**
+- Use React functional components with TypeScript
+- Use Tailwind CSS utility classes for all styling
+- Each component must implement its specified positioning, layout, and styling
+- Follow the exact specifications provided for each component
 
-- Framework: react
-- CSS Solution: tailwind
-- TypeScript: Yes
-- Schema Version: 2.0
+---
 
-## Components (3)
+## Components
 
-1. **GlobalHeader** (`<header>`)
-   - Positioning: fixed (top: 0, left: 0, right: 0, zIndex: 50)
-   - Layout: container
-   - Responsive: No
-2. **Sidebar** (`<nav>`)
-   - Positioning: sticky (top: 4rem)
-   - Layout: flex
-   - Responsive: Yes
-3. **MainContent** (`<main>`)
-   - Positioning: static
-   - Layout: container
-   - Responsive: No
+You need to create 3 components with the following specifications:
 
-## Breakpoints
+### 1. GlobalHeader (c1)
+- **Semantic Tag:** `<header>`
+- **Component Name:** `GlobalHeader`
 
-- **mobile**: 0px+
-- **tablet**: 768px+
-- **desktop**: 1024px+
+**Positioning:**
+- Type: `fixed`
+- Position values: top: 0, right: 0, left: 0, zIndex: 50
 
-## Layout Structure
+**Layout:**
+- Type: `container`
+- Max width: `full`
+- Padding: `1rem`
+- Centered: true
 
-Structure Type: **sidebar-main**
+**Styling:**
+- Background: `white`
+- Border: `b`
+- Shadow: `sm`
 
-Component Order:
-1. GlobalHeader (c1)
-2. Sidebar (c2)
-3. MainContent (c3)
-
-
-Roles:
-- header: c1
-- sidebar: c2
-- main: c3
-
-## Expected Code Structure
-
-### Component Files
-
-#### `components/GlobalHeader.tsx`
-
-```tsx
-export function GlobalHeader({ children }: { children?: React.ReactNode }) {
-  return (
-    <header className="fixed top-0 right-0 left-0 z-50 bg-white border-b shadow-sm">
-      <div className="container mx-auto px-4">
-        {children || "Global Header"}
-      </div>
-    </header>
-  )
+**Default Props:**
+```json
+{
+  "children": "Global Header"
 }
 ```
 
-#### `components/Sidebar.tsx`
+### 2. Sidebar (c2)
+- **Semantic Tag:** `<nav>`
+- **Component Name:** `Sidebar`
 
-```tsx
-export function Sidebar({ children }: { children?: React.ReactNode }) {
-  return (
-    <nav className="sticky top-16 flex flex-col gap-2 w-64 border-r hidden md:hidden lg:block">
-      {children || "Navigation Menu"}
-    </nav>
-  )
+**Positioning:**
+- Type: `sticky`
+- Position values: top: 4rem
+
+**Layout:**
+- Type: `flex`
+- Direction: `column`
+- Gap: `0.5rem`
+
+**Styling:**
+- Width: `16rem`
+- Border: `r`
+
+**Responsive Behavior:**
+- Mobile: hidden
+- Tablet (md:): hidden
+- Desktop (lg:): visible
+
+**Default Props:**
+```json
+{
+  "children": "Navigation Menu"
 }
 ```
 
-#### `components/MainContent.tsx`
+### 3. MainContent (c3)
+- **Semantic Tag:** `<main>`
+- **Component Name:** `MainContent`
 
-```tsx
-export function MainContent({ children }: { children?: React.ReactNode }) {
-  return (
-    <main className="flex-1">
-      <div className="container max-w-7xl mx-auto px-8">
-        {children || "Main Content Area"}
-      </div>
-    </main>
-  )
+**Positioning:**
+- Type: `static`
+
+**Layout:**
+- Type: `container`
+- Max width: `7xl`
+- Padding: `2rem`
+- Centered: true
+
+**Styling:**
+- Custom classes: `flex-1`
+
+**Default Props:**
+```json
+{
+  "children": "Main Content Area"
 }
 ```
 
-### Layout Composition
 
-#### `app/page.tsx` or `app/layout.tsx`
+---
 
-```tsx
-import { GlobalHeader } from "@/components/GlobalHeader"
-import { Sidebar } from "@/components/Sidebar"
-import { MainContent } from "@/components/MainContent"
+## Responsive Page Structure
 
-export default function Layout() {
-  return (
-    <>
-      <GlobalHeader />
-      <div className="flex pt-16">
-        <Sidebar />
-        <MainContent>
-          {/* Page content goes here */}
-        </MainContent>
-      </div>
-    </>
-  )
+Implement the following page structures for each breakpoint:
+
+### 1. Mobile (≥0px)
+
+**Layout Structure:** `vertical`
+
+**Component Order:**
+1. c1
+2. c3
+
+**Layout Roles:**
+- **Header:** c1
+- **Main:** c3
+
+**Implementation Guidance:**
+- Use a flex column container (`flex flex-col`)
+- Stack components vertically in the order specified
+- Each component will use its individual positioning/layout settings
+
+### 2. Tablet (≥768px)
+
+**Layout Structure:** `vertical`
+
+**Component Order:**
+1. c1
+2. c3
+
+**Layout Roles:**
+- **Header:** c1
+- **Main:** c3
+
+**Implementation Guidance:**
+- Use a flex column container (`flex flex-col`)
+- Stack components vertically in the order specified
+- Each component will use its individual positioning/layout settings
+
+### 3. Desktop (≥1024px)
+
+**Layout Structure:** `sidebar-main`
+
+**Component Order:**
+1. c1
+2. c2
+3. c3
+
+**Layout Roles:**
+- **Header:** c1
+- **Sidebar:** c2
+- **Main:** c3
+
+**Implementation Guidance:**
+- Implement classic sidebar-main layout structure
+- Header at top (if specified), Sidebar on left, Main content area
+- Use Flexbox for the main layout structure
+- Each component will use its individual positioning/layout settings
+
+
+---
+
+## Implementation Instructions
+
+1. **Main Layout Component:**
+   - Create a main container component (e.g., `ResponsiveLayout` or `RootLayout`)
+   - Implement responsive structure changes using Tailwind breakpoints
+   - Follow the structure specifications for each breakpoint (vertical/horizontal/sidebar-main)
+
+2. **Component Implementation:**
+   - Each component MUST use its specified semantic tag
+   - Apply positioning classes according to component specifications
+   - Implement layout (flex/grid/container) as specified
+   - Add styling classes as specified
+   - Implement responsive behavior for each breakpoint
+
+3. **Positioning Guidelines:**
+   - `static`: Default flow (no position class needed)
+   - `fixed`: Use Tailwind `fixed` with specified position values (e.g., `fixed top-0 left-0 right-0 z-50`)
+   - `sticky`: Use Tailwind `sticky` with specified position values
+   - `absolute`: Use Tailwind `absolute` with specified position values
+   - `relative`: Use Tailwind `relative`
+
+4. **Layout Guidelines:**
+   - `flex`: Use Tailwind flex utilities (`flex`, `flex-col`, `justify-center`, etc.)
+   - `grid`: Use Tailwind grid utilities (`grid`, `grid-cols-3`, `gap-4`, etc.)
+   - `container`: Wrap content in a container div with max-width and centering
+   - `none`: No specific layout - let content flow naturally
+
+5. **Responsive Behavior:**
+   - Implement mobile-first approach
+   - Use Tailwind responsive prefixes (`md:`, `lg:`) for tablet and desktop
+   - Handle visibility changes (hidden/block) as specified
+   - Apply responsive width/order changes as specified
+
+6. **Code Quality:**
+   - Use TypeScript with proper type definitions
+   - Follow React best practices (functional components, hooks)
+   - Use semantic HTML5 tags as specified
+   - Add placeholder content for demonstration
+   - Keep component code clean and maintainable
+
+---
+
+## Full Schema V2 (JSON)
+
+
+For reference, here is the complete Schema V2 in JSON format:
+
+
+```json
+
+{
+  "schemaVersion": "2.0",
+  "components": [
+    {
+      "id": "c1",
+      "name": "GlobalHeader",
+      "semanticTag": "header",
+      "positioning": {
+        "type": "fixed",
+        "position": {
+          "top": 0,
+          "left": 0,
+          "right": 0,
+          "zIndex": 50
+        }
+      },
+      "layout": {
+        "type": "container",
+        "container": {
+          "maxWidth": "full",
+          "padding": "1rem",
+          "centered": true
+        }
+      },
+      "styling": {
+        "background": "white",
+        "border": "b",
+        "shadow": "sm"
+      },
+      "props": {
+        "children": "Global Header"
+      }
+    },
+    {
+      "id": "c2",
+      "name": "Sidebar",
+      "semanticTag": "nav",
+      "positioning": {
+        "type": "sticky",
+        "position": {
+          "top": "4rem"
+        }
+      },
+      "layout": {
+        "type": "flex",
+        "flex": {
+          "direction": "column",
+          "gap": "0.5rem"
+        }
+      },
+      "styling": {
+        "width": "16rem",
+        "border": "r"
+      },
+      "responsive": {
+        "mobile": {
+          "hidden": true
+        },
+        "tablet": {
+          "hidden": true
+        },
+        "desktop": {
+          "hidden": false
+        }
+      },
+      "props": {
+        "children": "Navigation Menu"
+      }
+    },
+    {
+      "id": "c3",
+      "name": "MainContent",
+      "semanticTag": "main",
+      "positioning": {
+        "type": "static"
+      },
+      "layout": {
+        "type": "container",
+        "container": {
+          "maxWidth": "7xl",
+          "padding": "2rem",
+          "centered": true
+        }
+      },
+      "styling": {
+        "className": "flex-1"
+      },
+      "props": {
+        "children": "Main Content Area"
+      }
+    }
+  ],
+  "breakpoints": [
+    {
+      "name": "mobile",
+      "minWidth": 0,
+      "gridCols": 6,
+      "gridRows": 24
+    },
+    {
+      "name": "tablet",
+      "minWidth": 768,
+      "gridCols": 8,
+      "gridRows": 20
+    },
+    {
+      "name": "desktop",
+      "minWidth": 1024,
+      "gridCols": 12,
+      "gridRows": 20
+    }
+  ],
+  "layouts": {
+    "mobile": {
+      "structure": "vertical",
+      "components": [
+        "c1",
+        "c3"
+      ],
+      "containerLayout": {
+        "type": "flex",
+        "flex": {
+          "direction": "column",
+          "gap": "4rem"
+        }
+      },
+      "roles": {
+        "header": "c1",
+        "main": "c3"
+      }
+    },
+    "tablet": {
+      "structure": "vertical",
+      "components": [
+        "c1",
+        "c3"
+      ],
+      "containerLayout": {
+        "type": "flex",
+        "flex": {
+          "direction": "column",
+          "gap": "4rem"
+        }
+      },
+      "roles": {
+        "header": "c1",
+        "main": "c3"
+      }
+    },
+    "desktop": {
+      "structure": "sidebar-main",
+      "components": [
+        "c1",
+        "c2",
+        "c3"
+      ],
+      "containerLayout": {
+        "type": "flex",
+        "flex": {
+          "direction": "row",
+          "gap": 0
+        }
+      },
+      "roles": {
+        "header": "c1",
+        "sidebar": "c2",
+        "main": "c3"
+      }
+    }
+  }
 }
+
 ```
-
-## Responsive Behavior
-
-- **Sidebar**: Hidden on mobile, Hidden on tablet, Visible on desktop
-
-## Additional Requirements
-
-1. **Component Independence**: Each component should be self-contained with its own positioning, layout, and styling.
-2. **Semantic HTML**: Use appropriate HTML5 semantic tags (`<header>`, `<nav>`, `<main>`, `<footer>`, etc.).
-3. **Flexbox First**: Use Flexbox for page structure, Grid only for card layouts.
-4. **Tailwind Classes**: Use Tailwind utility classes for all styling.
-5. **Responsive Design**: Follow mobile-first approach with responsive modifiers (`md:`, `lg:`).
-6. **Clean Code**: Generate production-ready, clean, and maintainable code.
-
-## Output Format
-
-Please generate:
-1. Individual component files (`components/[ComponentName].tsx`)
-2. Main layout file (`app/page.tsx` or `app/layout.tsx`)
-3. All components should be properly typed with TypeScript
-4. Use React functional components with proper props typing

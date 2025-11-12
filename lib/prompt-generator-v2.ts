@@ -2,229 +2,174 @@
  * Prompt Generator V2
  *
  * Schema V2를 AI가 이해할 수 있는 프롬프트로 변환
+ * V1 방식 참조: 코드 생성 없이 순수 스펙 설명만 제공
  */
 
-import type { LaydlerSchemaV2, GenerationPackageV2 } from "@/types/schema-v2"
-import { generateComponentCode } from "./code-generator-v2"
+import type { LaydlerSchemaV2 } from "@/types/schema-v2"
+import { getTemplateV2 } from "./prompt-templates-v2"
+import { validateSchemaV2 } from "./schema-validation-v2"
 
 /**
- * Schema V2를 AI 프롬프트로 변환
+ * Prompt Generation Result for Schema V2
  *
- * AI가 생성해야 할 코드의 명확한 예시를 포함
+ * V1과 동일한 구조이지만 V2 검증 결과 포함
  */
-export function generatePromptFromSchemaV2(
-  pkg: GenerationPackageV2
-): string {
-  const { schema, options } = pkg
-  const { framework, cssSolution } = options
+export interface GenerationResultV2 {
+  success: boolean
+  prompt?: string
+  schema?: LaydlerSchemaV2
+  errors?: string[]
+  warnings?: string[]
+}
 
+/**
+ * Generate AI prompt from Laylder Schema V2
+ *
+ * V1과 동일한 패턴: validation → template → sections → prompt
+ * V2 특성: positioning, layout, styling, responsive 스펙 포함
+ *
+ * @param schema - Schema V2 (Component Independence)
+ * @param framework - Target framework (e.g., "react")
+ * @param cssSolution - Target CSS solution (e.g., "tailwind")
+ * @returns Generation result with prompt and schema
+ *
+ * @example
+ * const result = generatePromptV2(schemaV2, "react", "tailwind")
+ * if (result.success) {
+ *   // 사용자가 Claude/GPT에 복붙
+ *   navigator.clipboard.writeText(result.prompt!)
+ * }
+ */
+export function generatePromptV2(
+  schema: LaydlerSchemaV2,
+  framework: string,
+  cssSolution: string
+): GenerationResultV2 {
+  // 1. Validate schema using V2 validation
+  const validationResult = validateSchemaV2(schema)
+
+  if (!validationResult.valid) {
+    return {
+      success: false,
+      errors: validationResult.errors.map((e) => {
+        const location = e.componentId
+          ? `${e.componentId}${e.field ? `.${e.field}` : ""}`
+          : e.field || "schema"
+        return `${location}: ${e.message}`
+      }),
+    }
+  }
+
+  // 2. Get template for framework + CSS solution
+  const template = getTemplateV2(framework, cssSolution)
+  if (!template) {
+    return {
+      success: false,
+      errors: [
+        `No template found for framework: ${framework}, CSS: ${cssSolution}`,
+      ],
+    }
+  }
+
+  // 3. Generate prompt sections (V1과 동일한 패턴)
   const sections: string[] = []
 
-  // 1. 헤더
-  sections.push(`# Layout Code Generation Request
+  // System prompt - V2 아키텍처 설명
+  sections.push(template.systemPrompt)
+  sections.push("\n---\n")
 
-Generate a responsive layout using ${framework.toUpperCase()} and ${cssSolution.toUpperCase()}.
+  // Components section - positioning, layout, styling, responsive 포함
+  sections.push(template.componentSection(schema.components))
+  sections.push("---\n")
 
-## Requirements
+  // Layouts section - structure 기반 (vertical/horizontal/sidebar-main)
+  sections.push(template.layoutSection(schema.breakpoints, schema.layouts))
+  sections.push("---\n")
 
-- Framework: ${framework}
-- CSS Solution: ${cssSolution}
-${options.typescript ? "- TypeScript: Yes" : ""}
-- Schema Version: ${schema.schemaVersion}`)
+  // Instructions section - V2 특화 구현 지침
+  sections.push(template.instructionsSection())
+  sections.push("---\n")
 
-  // 2. Components 목록
-  sections.push(`\n## Components (${schema.components.length})
+  // Schema JSON for reference
+  sections.push("## Full Schema V2 (JSON)\n\n")
+  sections.push(
+    "For reference, here is the complete Schema V2 in JSON format:\n\n"
+  )
+  sections.push("```json\n")
+  sections.push(JSON.stringify(schema, null, 2))
+  sections.push("\n```\n")
 
-${schema.components.map((c, i) => `${i + 1}. **${c.name}** (\`<${c.semanticTag}>\`)
-   - Positioning: ${c.positioning.type}${c.positioning.position ? ` (${Object.entries(c.positioning.position).map(([k, v]) => `${k}: ${v}`).join(", ")})` : ""}
-   - Layout: ${c.layout.type}
-   - Responsive: ${c.responsive ? "Yes" : "No"}`).join("\n")}`)
+  const prompt = sections.join("\n")
 
-  // 3. Breakpoints
-  sections.push(`\n## Breakpoints
-
-${schema.breakpoints.map((bp) => `- **${bp.name}**: ${bp.minWidth}px+`).join("\n")}`)
-
-  // 4. Layout Structure
-  const desktopLayout = schema.layouts.desktop
-  sections.push(`\n## Layout Structure
-
-Structure Type: **${desktopLayout.structure}**
-
-Component Order:
-${desktopLayout.components.map((id, i) => {
-    const comp = schema.components.find((c) => c.id === id)
-    return `${i + 1}. ${comp?.name || id} (${id})`
-  }).join("\n")}
-
-${desktopLayout.roles ? `\nRoles:
-${Object.entries(desktopLayout.roles).map(([role, id]) => `- ${role}: ${id}`).join("\n")}` : ""}`)
-
-  // 5. 생성될 코드 예시
-  sections.push(`\n## Expected Code Structure
-
-### Component Files
-
-${schema.components.map((component) => {
-    const code = generateComponentCode(component, framework as "react", cssSolution as "tailwind")
-    return `#### \`components/${component.name}.tsx\`
-
-\`\`\`tsx
-${code}
-\`\`\``
-  }).join("\n\n")}`)
-
-  // 6. Layout 조합 예시
-  const layoutExample = generateLayoutExample(schema, framework as "react")
-  sections.push(`\n### Layout Composition
-
-#### \`app/page.tsx\` or \`app/layout.tsx\`
-
-\`\`\`tsx
-${layoutExample}
-\`\`\``)
-
-  // 7. Responsive Behavior 설명
-  const responsiveComponents = schema.components.filter((c) => c.responsive)
-  if (responsiveComponents.length > 0) {
-    sections.push(`\n## Responsive Behavior
-
-${responsiveComponents.map((c) => {
-      const behaviors: string[] = []
-      if (c.responsive?.mobile?.hidden) behaviors.push("Hidden on mobile")
-      if (c.responsive?.tablet?.hidden) behaviors.push("Hidden on tablet")
-      if (c.responsive?.desktop?.hidden === false) behaviors.push("Visible on desktop")
-      return `- **${c.name}**: ${behaviors.join(", ")}`
-    }).join("\n")}`)
+  return {
+    success: true,
+    prompt,
+    schema,
+    warnings: validationResult.warnings.map((w) => {
+      const location = w.componentId
+        ? `${w.componentId}${w.field ? `.${w.field}` : ""}`
+        : w.field || "schema"
+      return `${location}: ${w.message}`
+    }),
   }
-
-  // 8. 추가 요구사항
-  sections.push(`\n## Additional Requirements
-
-1. **Component Independence**: Each component should be self-contained with its own positioning, layout, and styling.
-2. **Semantic HTML**: Use appropriate HTML5 semantic tags (\`<header>\`, \`<nav>\`, \`<main>\`, \`<footer>\`, etc.).
-3. **Flexbox First**: Use Flexbox for page structure, Grid only for card layouts.
-4. **Tailwind Classes**: Use Tailwind utility classes for all styling.
-5. **Responsive Design**: Follow mobile-first approach with responsive modifiers (\`md:\`, \`lg:\`).
-6. **Clean Code**: Generate production-ready, clean, and maintainable code.
-
-## Output Format
-
-Please generate:
-1. Individual component files (\`components/[ComponentName].tsx\`)
-2. Main layout file (\`app/page.tsx\` or \`app/layout.tsx\`)
-3. All components should be properly typed with TypeScript
-4. Use React functional components with proper props typing`)
-
-  return sections.join("\n")
 }
 
 /**
- * Layout 조합 예시 생성
+ * Generate compact summary of Schema V2
+ *
+ * V2는 컴포넌트별 positioning/layout 정보가 있으므로
+ * 요약에 이를 포함
  */
-function generateLayoutExample(
-  schema: LaydlerSchemaV2,
-  framework: "react" | "vue"
-): string {
-  if (framework !== "react") {
-    throw new Error("Currently only React is supported")
-  }
+export function generateSchemaSummaryV2(schema: LaydlerSchemaV2): string {
+  const componentCount = schema.components.length
+  const breakpointCount = schema.breakpoints.length
+  const componentNames = schema.components.map((c) => c.name).join(", ")
+  const breakpointNames = schema.breakpoints.map((b) => b.name).join(", ")
 
-  const desktopLayout = schema.layouts.desktop
-  const structure = desktopLayout.structure
-
-  // Component imports
-  const imports = schema.components
-    .map((c) => `import { ${c.name} } from "@/components/${c.name}"`)
-    .join("\n")
-
-  let layoutCode = ""
-
-  switch (structure) {
-    case "vertical":
-      // 수직 배치: Header → Main → Footer
-      layoutCode = `export default function Layout() {
-  return (
-    <div className="flex flex-col min-h-screen">
-${desktopLayout.components.map((id) => {
-        const comp = schema.components.find((c) => c.id === id)
-        return `      <${comp?.name} />`
-      }).join("\n")}
-    </div>
+  // 컴포넌트별 positioning 타입 카운트
+  const positioningTypes = schema.components.reduce(
+    (acc, c) => {
+      const type = c.positioning.type
+      acc[type] = (acc[type] || 0) + 1
+      return acc
+    },
+    {} as Record<string, number>
   )
-}`
-      break
 
-    case "sidebar-main":
-      // Sidebar + Main 구조
-      const header = desktopLayout.roles?.header
-      const sidebar = desktopLayout.roles?.sidebar
-      const main = desktopLayout.roles?.main
+  const positioningSummary = Object.entries(positioningTypes)
+    .map(([type, count]) => `${type}(${count})`)
+    .join(", ")
 
-      const headerComp = header
-        ? schema.components.find((c) => c.id === header)
-        : null
-      const sidebarComp = sidebar
-        ? schema.components.find((c) => c.id === sidebar)
-        : null
-      const mainComp = main
-        ? schema.components.find((c) => c.id === main)
-        : null
-
-      layoutCode = `export default function Layout() {
   return (
-    <>
-${headerComp ? `      <${headerComp.name} />` : ""}
-      <div className="flex${headerComp?.positioning.type === "fixed" ? " pt-16" : ""}">
-${sidebarComp ? `        <${sidebarComp.name} />` : ""}
-${mainComp ? `        <${mainComp.name}>` : ""}
-          {/* Page content goes here */}
-${mainComp ? `        </${mainComp.name}>` : ""}
-      </div>
-    </>
+    `Schema V2 Summary:\n` +
+    `- Components (${componentCount}): ${componentNames}\n` +
+    `- Positioning: ${positioningSummary}\n` +
+    `- Breakpoints (${breakpointCount}): ${breakpointNames}\n` +
+    `- Framework: React\n` +
+    `- CSS Solution: Tailwind CSS`
   )
-}`
-      break
-
-    case "horizontal":
-      // 수평 배치
-      layoutCode = `export default function Layout() {
-  return (
-    <div className="flex">
-${desktopLayout.components.map((id) => {
-        const comp = schema.components.find((c) => c.id === id)
-        return `      <${comp?.name} />`
-      }).join("\n")}
-    </div>
-  )
-}`
-      break
-
-    default:
-      // Custom structure
-      layoutCode = `export default function Layout() {
-  return (
-    <>
-${desktopLayout.components.map((id) => {
-        const comp = schema.components.find((c) => c.id === id)
-        return `      <${comp?.name} />`
-      }).join("\n")}
-    </>
-  )
-}`
-  }
-
-  return `${imports}
-
-${layoutCode}`
 }
 
 /**
- * 간단한 프롬프트 생성 (디버깅용)
+ * Estimate token count for the generated prompt
+ *
+ * V2는 positioning/layout/styling/responsive 정보가 추가되어
+ * V1보다 평균적으로 30-50% 더 긴 프롬프트 생성
+ *
+ * Rough estimate: 1 token ≈ 4 characters
  */
-export function generateSimplePrompt(schema: LaydlerSchemaV2): string {
-  return `Generate a ${schema.layouts.desktop.structure} layout with:
-${schema.components.map((c) => `- ${c.name} (${c.semanticTag}): ${c.positioning.type} positioning`).join("\n")}
+export function estimateTokenCountV2(prompt: string): number {
+  return Math.ceil(prompt.length / 4)
+}
 
-Use React + Tailwind CSS.`
+/**
+ * Get recommended AI model based on prompt complexity
+ *
+ * V2는 더 복잡한 컴포넌트 구조를 다루므로
+ * 임계값을 약간 낮춤 (더 강력한 모델 권장)
+ */
+export function getRecommendedModelV2(tokenCount: number): string {
+  if (tokenCount < 800) return "Claude 3.5 Haiku (fast, simple layouts)"
+  if (tokenCount < 3000) return "Claude 3.5 Sonnet (recommended for V2)"
+  return "Claude 3.5 Opus (complex responsive layouts)"
 }
