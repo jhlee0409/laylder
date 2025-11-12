@@ -37,6 +37,7 @@ export function KonvaCanvasV2({
   const addComponent = useLayoutStoreV2((state) => state.addComponent)
   const currentBreakpoint = useLayoutStoreV2((state) => state.currentBreakpoint)
   const addComponentToLayout = useLayoutStoreV2((state) => state.addComponentToLayout)
+  const deleteComponent = useLayoutStoreV2((state) => state.deleteComponent)
 
   // Get current breakpoint's grid size
   const currentBreakpointConfig = schema.breakpoints.find((bp) => bp.name === currentBreakpoint)
@@ -66,12 +67,17 @@ export function KonvaCanvasV2({
     }
   }, [])
 
-  // Handle Space key for canvas panning
+  // Handle Space key for canvas panning and Delete key for component deletion
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === "Space" && !e.repeat) {
         e.preventDefault()
         setIsSpacePressed(true)
+      }
+      // Delete 또는 Backspace 키로 선택된 컴포넌트 삭제
+      if ((e.key === "Delete" || e.key === "Backspace") && selectedComponentId) {
+        e.preventDefault()
+        deleteComponent(selectedComponentId)
       }
     }
 
@@ -89,7 +95,7 @@ export function KonvaCanvasV2({
       window.removeEventListener("keydown", handleKeyDown)
       window.removeEventListener("keyup", handleKeyUp)
     }
-  }, [])
+  }, [selectedComponentId, deleteComponent])
 
   // Use provided dimensions or container size
   const canvasWidth = width ?? containerSize.width
@@ -468,8 +474,60 @@ export function KonvaCanvasV2({
               Grid: {gridCols} × {gridRows}
             </span>
           </div>
-          <div className="text-xs text-muted-foreground">
-            💡 Space+Drag: 캔버스 이동 • Ctrl+Wheel: 확대/축소 • Shift+Wheel: 수평 이동
+          <div className="relative group">
+            <button className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-md transition-colors">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                <path d="M12 17h.01" />
+              </svg>
+              <span>단축키</span>
+            </button>
+            {/* Tooltip */}
+            <div className="absolute right-0 top-full mt-2 w-96 p-5 bg-white text-gray-900 rounded-xl shadow-2xl border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+              <div className="text-base font-bold mb-4 text-gray-900">키보드 단축키</div>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-gray-600 w-28 flex-shrink-0">캔버스 이동</span>
+                  <div className="flex items-center gap-2">
+                    <kbd className="px-3 py-1.5 bg-gray-100 border border-gray-300 rounded-md text-gray-900 font-mono text-sm shadow-sm min-w-[80px] text-center">Space</kbd>
+                    <span className="text-gray-500 text-sm">+ Drag</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-gray-600 w-28 flex-shrink-0">확대/축소</span>
+                  <div className="flex items-center gap-2">
+                    <kbd className="px-3 py-1.5 bg-gray-100 border border-gray-300 rounded-md text-gray-900 font-mono text-sm shadow-sm min-w-[80px] text-center">Ctrl</kbd>
+                    <span className="text-gray-500 text-sm">+ Wheel</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-gray-600 w-28 flex-shrink-0">수평 이동</span>
+                  <div className="flex items-center gap-2">
+                    <kbd className="px-3 py-1.5 bg-gray-100 border border-gray-300 rounded-md text-gray-900 font-mono text-sm shadow-sm min-w-[80px] text-center">Shift</kbd>
+                    <span className="text-gray-500 text-sm">+ Wheel</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-gray-600 w-28 flex-shrink-0">컴포넌트 삭제</span>
+                  <div className="flex items-center gap-2">
+                    <kbd className="px-3 py-1.5 bg-gray-100 border border-gray-300 rounded-md text-gray-900 font-mono text-sm shadow-sm min-w-[80px] text-center">Delete</kbd>
+                    <span className="text-gray-500 text-sm">또는</span>
+                    <kbd className="px-3 py-1.5 bg-gray-100 border border-gray-300 rounded-md text-gray-900 font-mono text-sm shadow-sm">⌫</kbd>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -517,27 +575,58 @@ export function KonvaCanvasV2({
 
           {/* Component Layer */}
           <Layer>
-            {componentsWithCanvas.map((componentWithLayout) => {
-              return (
-                <ComponentNodeV2
-                  key={componentWithLayout.id}
-                  component={{
-                    ...componentWithLayout,
-                    canvasLayout: componentWithLayout.currentCanvasLayout,
-                  }}
-                  gridCols={gridCols}
-                  gridRows={gridRows}
-                  isSelected={selectedComponentId === componentWithLayout.id}
-                  onClick={() => setSelectedComponentId(componentWithLayout.id)}
-                  onDragEnd={(newX, newY) =>
-                    handleComponentDragEnd(componentWithLayout.id, newX, newY)
-                  }
-                  onResizeEnd={(newWidth, newHeight) =>
-                    handleComponentResize(componentWithLayout.id, newWidth, newHeight)
-                  }
-                />
-              )
-            })}
+            {/* Render non-selected components first */}
+            {componentsWithCanvas
+              .filter((c) => selectedComponentId !== c.id)
+              .map((componentWithLayout) => {
+                return (
+                  <ComponentNodeV2
+                    key={componentWithLayout.id}
+                    component={{
+                      ...componentWithLayout,
+                      canvasLayout: componentWithLayout.currentCanvasLayout,
+                    }}
+                    gridCols={gridCols}
+                    gridRows={gridRows}
+                    isSelected={false}
+                    onClick={() => setSelectedComponentId(componentWithLayout.id)}
+                    onDelete={() => deleteComponent(componentWithLayout.id)}
+                    onDragEnd={(newX, newY) =>
+                      handleComponentDragEnd(componentWithLayout.id, newX, newY)
+                    }
+                    onResizeEnd={(newWidth, newHeight) =>
+                      handleComponentResize(componentWithLayout.id, newWidth, newHeight)
+                    }
+                  />
+                )
+              })}
+
+            {/* Render selected component last (on top) */}
+            {selectedComponentId &&
+              componentsWithCanvas
+                .filter((c) => selectedComponentId === c.id)
+                .map((componentWithLayout) => {
+                  return (
+                    <ComponentNodeV2
+                      key={componentWithLayout.id}
+                      component={{
+                        ...componentWithLayout,
+                        canvasLayout: componentWithLayout.currentCanvasLayout,
+                      }}
+                      gridCols={gridCols}
+                      gridRows={gridRows}
+                      isSelected={true}
+                      onClick={() => setSelectedComponentId(componentWithLayout.id)}
+                      onDelete={() => deleteComponent(componentWithLayout.id)}
+                      onDragEnd={(newX, newY) =>
+                        handleComponentDragEnd(componentWithLayout.id, newX, newY)
+                      }
+                      onResizeEnd={(newWidth, newHeight) =>
+                        handleComponentResize(componentWithLayout.id, newWidth, newHeight)
+                      }
+                    />
+                  )
+                })}
           </Layer>
         </Stage>
       </div>

@@ -13,6 +13,8 @@ interface ComponentNodeV2Props {
   isSelected: boolean
   /** Click handler */
   onClick: () => void
+  /** Delete handler */
+  onDelete?: () => void
   /** Drag end handler - returns true if successful, false if blocked */
   onDragEnd?: (newX: number, newY: number) => boolean
   /** Resize end handler - returns true if successful, false if blocked */
@@ -35,6 +37,7 @@ export function ComponentNodeV2({
   component,
   isSelected,
   onClick,
+  onDelete,
   onDragEnd,
   onResizeEnd,
   gridRows,
@@ -286,6 +289,53 @@ export function ComponentNodeV2({
         align="right"
       />
 
+      {/* Delete Button - only show when selected */}
+      {isSelected && onDelete && (
+        <Group
+          x={width - 16}
+          y={-16}
+          onClick={(e) => {
+            e.cancelBubble = true
+            onDelete()
+          }}
+          onTap={(e) => {
+            e.cancelBubble = true
+            onDelete()
+          }}
+          onMouseEnter={(e) => {
+            const container = e.target.getStage()?.container()
+            if (container) container.style.cursor = "pointer"
+          }}
+          onMouseLeave={(e) => {
+            const container = e.target.getStage()?.container()
+            if (container) container.style.cursor = "default"
+          }}
+        >
+          {/* Delete button background */}
+          <Circle
+            radius={14}
+            fill="#ef4444"
+            stroke="#ffffff"
+            strokeWidth={2}
+            shadowColor="black"
+            shadowBlur={4}
+            shadowOpacity={0.3}
+            shadowOffsetX={0}
+            shadowOffsetY={2}
+          />
+          {/* X icon */}
+          <Text
+            x={-7}
+            y={-8}
+            text="×"
+            fontSize={20}
+            fontFamily="Arial"
+            fontStyle="bold"
+            fill="#ffffff"
+          />
+        </Group>
+      )}
+
       {/* Resize Handles - only show when selected */}
       {isSelected && (
         <>
@@ -298,6 +348,14 @@ export function ComponentNodeV2({
             stroke="#ffffff"
             strokeWidth={2}
             draggable
+            onMouseEnter={(e) => {
+              const container = e.target.getStage()?.container()
+              if (container) container.style.cursor = "ew-resize"
+            }}
+            onMouseLeave={(e) => {
+              const container = e.target.getStage()?.container()
+              if (container) container.style.cursor = "default"
+            }}
             onDragStart={(e) => {
               e.cancelBubble = true
               // Store original values when resize starts
@@ -330,6 +388,14 @@ export function ComponentNodeV2({
             stroke="#ffffff"
             strokeWidth={2}
             draggable
+            onMouseEnter={(e) => {
+              const container = e.target.getStage()?.container()
+              if (container) container.style.cursor = "ns-resize"
+            }}
+            onMouseLeave={(e) => {
+              const container = e.target.getStage()?.container()
+              if (container) container.style.cursor = "default"
+            }}
             onDragStart={(e) => {
               e.cancelBubble = true
               // Store original values when resize starts
@@ -362,6 +428,14 @@ export function ComponentNodeV2({
             stroke="#ffffff"
             strokeWidth={2}
             draggable
+            onMouseEnter={(e) => {
+              const container = e.target.getStage()?.container()
+              if (container) container.style.cursor = "nwse-resize"
+            }}
+            onMouseLeave={(e) => {
+              const container = e.target.getStage()?.container()
+              if (container) container.style.cursor = "default"
+            }}
             onDragStart={(e) => {
               e.cancelBubble = true
               // Store original values when resize starts
