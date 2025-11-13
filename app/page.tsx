@@ -39,7 +39,6 @@ export default function Home() {
   )
   const initializeSchema = useLayoutStore((state) => state.initializeSchema)
   const resetSchema = useLayoutStore((state) => state.resetSchema)
-  const loadSampleSchema = useLayoutStore((state) => state.loadSampleSchema)
 
   // 브레이크포인트가 없으면 모달 표시
   const showInitialModal = breakpoints.length === 0
@@ -71,13 +70,6 @@ export default function Home() {
               {componentCount} components
             </span>
             <ThemeSelector />
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => loadSampleSchema("github")}
-            >
-              Load Sample
-            </Button>
             <Button variant="outline" size="sm" onClick={resetSchema}>
               Reset
             </Button>

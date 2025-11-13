@@ -1,12 +1,15 @@
 "use client"
 
-import { useRef, useState, useEffect } from "react"
-import { Stage, Layer, Rect } from "react-konva"
+import { useRef, useState, useEffect, useMemo } from "react"
+import { Stage, Layer, Rect, Line } from "react-konva"
 import Konva from "konva"
 import { useLayoutStore, useComponentsInCurrentLayout } from "@/store/layout-store"
 import { ComponentNode } from "./ComponentNode"
 import { createComponentFromTemplate } from "@/lib/component-library"
 import { calculateSmartPosition } from "@/lib/smart-layout"
+import { calculateMinimumGridSize } from "@/lib/grid-constraints"
+import { calculateSnapGuides, type SnapConfig, type SnapGuide } from "@/lib/snap-to-grid"
+import { useToast } from "@/store/toast-store"
 import type { Component } from "@/types/schema"
 import type { ComponentTemplate } from "@/lib/component-library"
 
@@ -29,6 +32,10 @@ export function KonvaCanvas({
   const [stageScale, setStageScale] = useState(1)
   const [stagePosition, setStagePosition] = useState({ x: 0, y: 0 })
   const [isSpacePressed, setIsSpacePressed] = useState(false)
+  const [isShiftPressed, setIsShiftPressed] = useState(false)
+
+  // Snap-to-Grid configuration (always enabled)
+  const [activeSnapGuides, setActiveSnapGuides] = useState<SnapGuide[]>([])
 
   // Get store data
   const schema = useLayoutStore((state) => state.schema)
@@ -44,10 +51,30 @@ export function KonvaCanvas({
   const removeGridRow = useLayoutStore((state) => state.removeGridRow)
   const removeGridColumn = useLayoutStore((state) => state.removeGridColumn)
 
+  // Toast for user feedback
+  const { warning } = useToast()
+
   // Get current breakpoint's grid size
   const currentBreakpointConfig = schema.breakpoints.find((bp) => bp.name === currentBreakpoint)
   const gridCols = currentBreakpointConfig?.gridCols ?? 12
   const gridRows = currentBreakpointConfig?.gridRows ?? 20
+
+  // Get components in current layout (동기화: LayersTree와 동일한 selector 사용)
+  const componentsInCurrentLayout = useComponentsInCurrentLayout()
+
+  // Calculate minimum grid size based on component positions (Performance: useMemo)
+  const minGridSize = useMemo(
+    () => calculateMinimumGridSize(componentsInCurrentLayout, currentBreakpoint),
+    [componentsInCurrentLayout, currentBreakpoint]
+  )
+
+  // Snap-to-Grid configuration (Performance: useMemo)
+  const snapConfig: SnapConfig = useMemo(() => ({
+    enabled: true,
+    threshold: 10,
+    gridCellWidth: CELL_SIZE,
+    gridCellHeight: CELL_SIZE,
+  }), [])
 
   // Measure container size
   useEffect(() => {
@@ -72,12 +99,16 @@ export function KonvaCanvas({
     }
   }, [])
 
-  // Handle Space key for canvas panning and Delete key for component deletion
+  // Handle Space key for canvas panning, Shift for free positioning, and Delete key for component deletion
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === "Space" && !e.repeat) {
         e.preventDefault()
         setIsSpacePressed(true)
+      }
+      // Shift key for free positioning (disable snap)
+      if (e.key === "Shift" && !e.repeat) {
+        setIsShiftPressed(true)
       }
       // Delete or Backspace key to delete selected component
       if ((e.key === "Delete" || e.key === "Backspace") && selectedComponentId) {
@@ -90,6 +121,9 @@ export function KonvaCanvas({
       if (e.code === "Space") {
         e.preventDefault()
         setIsSpacePressed(false)
+      }
+      if (e.key === "Shift") {
+        setIsShiftPressed(false)
       }
     }
 
@@ -105,9 +139,6 @@ export function KonvaCanvas({
   // Use provided dimensions or container size
   const canvasWidth = width ?? containerSize.width
   const canvasHeight = height ?? containerSize.height
-
-  // Get components in current layout (동기화: LayersTree와 동일한 selector 사용)
-  const componentsInCurrentLayout = useComponentsInCurrentLayout()
 
   // Get current breakpoint's canvas layout for each component
   const componentsWithCanvas = componentsInCurrentLayout
@@ -125,6 +156,13 @@ export function KonvaCanvas({
       }
     })
     .filter((c): c is NonNullable<typeof c> => c !== null)
+
+  // Handle component drag move - update snap guides
+  const handleComponentDragMove = (pixelX: number, pixelY: number) => {
+    // Calculate snap guides during drag
+    const guides = calculateSnapGuides(pixelX, pixelY, snapConfig)
+    setActiveSnapGuides(guides)
+  }
 
   // Handle component drag end - update canvasLayout
   const handleComponentDragEnd = (
@@ -145,6 +183,9 @@ export function KonvaCanvas({
     if (!currentLayout) return false
 
     const { width: w, height: h } = currentLayout
+
+    // Clear snap guides after drag end
+    setActiveSnapGuides([])
 
     // Validate bounds
     if (
@@ -415,6 +456,29 @@ export function KonvaCanvas({
     e.dataTransfer.dropEffect = "copy"
   }
 
+  // Grid resize handlers with validation
+  const handleRemoveRow = () => {
+    const absoluteMin = Math.max(2, minGridSize.minRows)
+
+    if (gridRows - 1 < absoluteMin) {
+      warning(`Cannot reduce rows: Components occupy up to row ${minGridSize.minRows}`)
+      return
+    }
+
+    removeGridRow(currentBreakpoint)
+  }
+
+  const handleRemoveColumn = () => {
+    const absoluteMin = Math.max(2, minGridSize.minCols)
+
+    if (gridCols - 1 < absoluteMin) {
+      warning(`Cannot reduce columns: Components occupy up to column ${minGridSize.minCols}`)
+      return
+    }
+
+    removeGridColumn(currentBreakpoint)
+  }
+
   // Handle wheel for Pan & Zoom
   const handleWheel = (e: Konva.KonvaEventObject<WheelEvent>) => {
     e.evt.preventDefault()
@@ -476,10 +540,10 @@ export function KonvaCanvas({
               <span className="text-xs font-medium text-muted-foreground">Grid:</span>
               <div className="flex items-center gap-1">
                 <button
-                  onClick={() => removeGridRow(currentBreakpoint)}
-                  disabled={gridRows <= 2}
+                  onClick={handleRemoveRow}
+                  disabled={gridRows <= Math.max(2, minGridSize.minRows)}
                   className="px-1.5 py-0.5 text-xs bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-300 rounded transition-colors"
-                  title="Remove Row"
+                  title={`Remove Row (min: ${Math.max(2, minGridSize.minRows)} based on layout)`}
                 >
                   −
                 </button>
@@ -496,10 +560,10 @@ export function KonvaCanvas({
               <span className="text-xs text-muted-foreground">×</span>
               <div className="flex items-center gap-1">
                 <button
-                  onClick={() => removeGridColumn(currentBreakpoint)}
-                  disabled={gridCols <= 2}
+                  onClick={handleRemoveColumn}
+                  disabled={gridCols <= Math.max(2, minGridSize.minCols)}
                   className="px-1.5 py-0.5 text-xs bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-300 rounded transition-colors"
-                  title="Remove Column"
+                  title={`Remove Column (min: ${Math.max(2, minGridSize.minCols)} based on layout)`}
                 >
                   −
                 </button>
@@ -632,6 +696,7 @@ export function KonvaCanvas({
                     isSelected={false}
                     onClick={() => setSelectedComponentId(componentWithLayout.id)}
                     onDelete={() => deleteComponent(componentWithLayout.id)}
+                    onDragMove={handleComponentDragMove}
                     onDragEnd={(newX, newY) =>
                       handleComponentDragEnd(componentWithLayout.id, newX, newY)
                     }
@@ -659,6 +724,7 @@ export function KonvaCanvas({
                       isSelected={true}
                       onClick={() => setSelectedComponentId(componentWithLayout.id)}
                       onDelete={() => deleteComponent(componentWithLayout.id)}
+                      onDragMove={handleComponentDragMove}
                       onDragEnd={(newX, newY) =>
                         handleComponentDragEnd(componentWithLayout.id, newX, newY)
                       }
@@ -668,6 +734,44 @@ export function KonvaCanvas({
                     />
                   )
                 })}
+          </Layer>
+
+          {/* Snap Guide Layer (2025 modern layout builder pattern) */}
+          <Layer listening={false}>
+            {activeSnapGuides.map((guide, index) => {
+              const canvasWidth = gridCols * CELL_SIZE
+              const canvasHeight = gridRows * CELL_SIZE
+
+              // Vertical guide (수직선)
+              if (guide.type === "vertical") {
+                return (
+                  <Line
+                    key={`snap-guide-v-${index}`}
+                    points={[guide.position, 0, guide.position, canvasHeight]}
+                    stroke="#3b82f6"
+                    strokeWidth={2}
+                    dash={[8, 4]}
+                    opacity={0.7}
+                  />
+                )
+              }
+
+              // Horizontal guide (수평선)
+              if (guide.type === "horizontal") {
+                return (
+                  <Line
+                    key={`snap-guide-h-${index}`}
+                    points={[0, guide.position, canvasWidth, guide.position]}
+                    stroke="#3b82f6"
+                    strokeWidth={2}
+                    dash={[8, 4]}
+                    opacity={0.7}
+                  />
+                )
+              }
+
+              return null
+            })}
           </Layer>
         </Stage>
       </div>

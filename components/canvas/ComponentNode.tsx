@@ -15,6 +15,8 @@ interface ComponentNodeProps {
   onClick: () => void
   /** Delete handler */
   onDelete?: () => void
+  /** Drag move handler - for snap guide updates */
+  onDragMove?: (pixelX: number, pixelY: number) => void
   /** Drag end handler - returns true if successful, false if blocked */
   onDragEnd?: (newX: number, newY: number) => boolean
   /** Resize end handler - returns true if successful, false if blocked */
@@ -42,6 +44,7 @@ export function ComponentNode({
   isSelected,
   onClick,
   onDelete,
+  onDragMove,
   onDragEnd,
   onResizeEnd,
   gridRows,
@@ -108,7 +111,7 @@ export function ComponentNode({
     ? Math.round(resizeSize.height / CELL_SIZE)
     : gridHeight
 
-  // Handle drag move - constrain to grid bounds
+  // Handle drag move - constrain to grid bounds and update snap guides
   const handleDragMove = (e: any) => {
     e.cancelBubble = true
 
@@ -122,6 +125,11 @@ export function ComponentNode({
 
     node.x(clampedX)
     node.y(clampedY)
+
+    // Notify parent for snap guide calculation (2025 modern UX pattern)
+    if (onDragMove) {
+      onDragMove(clampedX, clampedY)
+    }
   }
 
   // Handle drag end - snap to grid and update position
