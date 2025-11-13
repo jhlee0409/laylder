@@ -33,7 +33,6 @@ import {
   GRID_CONSTRAINTS,
   DEFAULT_GRID_CONFIG,
 } from "@/lib/schema-utils"
-import { sampleSchemas } from "@/lib/sample-data"
 
 /**
  * Layout store state
@@ -83,7 +82,6 @@ interface LayoutState extends HistoryActions {
   importSchema: (schema: LaydlerSchema) => void
   initializeSchema: (breakpointType: "mobile" | "tablet" | "desktop") => void
   resetSchema: () => void
-  loadSampleSchema: (sampleName: "github" | "dashboard" | "marketing" | "cardGallery") => void
 }
 
 
@@ -609,23 +607,6 @@ export const useLayoutStore = create<LayoutState>()(
         )
       },
 
-      loadSampleSchema: (sampleName) => {
-        const sample = sampleSchemas[sampleName]
-        if (!sample) {
-          console.error(`Sample schema not found: ${sampleName}`)
-          return
-        }
-
-        set(
-          {
-            schema: cloneSchema(sample),
-            currentBreakpoint: "mobile",
-            selectedComponentId: null,
-          },
-          false,
-          "loadSampleSchema"
-        )
-      },
 
       // History actions (간단 구현)
       undo: () => {
