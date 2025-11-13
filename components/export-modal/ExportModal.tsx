@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useMemo } from "react"
 import { useLayoutStore } from "@/store/layout-store"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
@@ -12,10 +12,11 @@ import { FileCode, Sparkles, Check, Copy, Zap, DollarSign, Award } from "lucide-
 import { useToast } from "@/store/toast-store"
 
 // New AI Model System
-import type { AIModelId } from "@/types/ai-models"
+import type { AIModelId, OptimizationLevel } from "@/types/ai-models"
 import { createPromptStrategy } from "@/lib/prompt-strategies/strategy-factory"
 import {
   getActiveModels,
+  getModelMetadata,
   recommendModels,
   calculateSchemaComplexity,
   calculateResponsiveComplexity,
@@ -40,7 +41,7 @@ export function ExportModal() {
 
   // AI Model Config (NEW)
   const [selectedModelId, setSelectedModelId] = useState<AIModelId>("claude-sonnet-4.5")
-  const [optimizationLevel, setOptimizationLevel] = useState<"quality" | "balanced" | "speed">("balanced")
+  const [optimizationLevel, setOptimizationLevel] = useState<OptimizationLevel>("balanced")
   const [verbosity, setVerbosity] = useState<"minimal" | "normal" | "detailed">("normal")
 
   // Results
@@ -53,27 +54,48 @@ export function ExportModal() {
   const schema = useLayoutStore((state) => state.schema)
   const { error: showError } = useToast()
 
-  // Get available models and recommendations
-  const availableModels = getActiveModels()
-  const schemaComplexity = calculateSchemaComplexity(schema.components.length)
-  const responsiveComplexity = calculateResponsiveComplexity(schema.breakpoints.length)
+  // Get available models and recommendations (memoized for performance)
+  const availableModels = useMemo(() => getActiveModels(), [])
 
-  const recommendations = recommendModels({
-    schemaComplexity,
-    responsiveComplexity,
-    costSensitivity: "medium",
-  })
+  const { schemaComplexity, responsiveComponentCount, responsiveComplexity } = useMemo(() => {
+    const complexity = calculateSchemaComplexity(schema.components.length)
+    const respComponentCount = schema.components.filter((c) => c.responsive).length
+    const respComplexity = calculateResponsiveComplexity(schema.breakpoints.length, respComponentCount)
 
-  // Group models by provider
-  const modelsByProvider = availableModels.reduce(
-    (acc, model) => {
-      if (!acc[model.provider]) {
-        acc[model.provider] = []
-      }
-      acc[model.provider].push(model)
-      return acc
-    },
-    {} as Record<string, typeof availableModels>
+    return {
+      schemaComplexity: complexity,
+      responsiveComponentCount: respComponentCount,
+      responsiveComplexity: respComplexity,
+    }
+  }, [schema.components, schema.breakpoints.length])
+
+  const recommendations = useMemo(
+    () =>
+      recommendModels({
+        schemaComplexity,
+        responsiveComplexity,
+        needsFrameworkSpecialization: framework === "react", // React 프레임워크 특화 필요
+        costSensitivity: "medium",
+        qualityRequirement: "production", // 기본값: 프로덕션 품질
+        speedPriority: "medium", // 기본값: 중간 속도
+      }),
+    [schemaComplexity, responsiveComplexity, framework]
+  )
+
+  // Group models by provider (memoized)
+  const modelsByProvider = useMemo(
+    () =>
+      availableModels.reduce(
+        (acc, model) => {
+          if (!acc[model.provider]) {
+            acc[model.provider] = []
+          }
+          acc[model.provider].push(model)
+          return acc
+        },
+        {} as Record<string, typeof availableModels>
+      ),
+    [availableModels]
   )
 
   const handleGenerate = () => {
@@ -83,6 +105,7 @@ export function ExportModal() {
 
       // Generate prompt with model-specific optimization
       const result = strategy.generatePrompt(schema, framework, cssSolution, {
+        targetModel: selectedModelId,
         optimizationLevel,
         verbosity,
       })
@@ -173,27 +196,30 @@ export function ExportModal() {
                   </span>
                 </div>
                 <div className="grid grid-cols-1 gap-2">
-                  {recommendations.slice(0, 3).map((rec) => (
-                    <button
-                      key={rec.modelId}
-                      onClick={() => setSelectedModelId(rec.modelId)}
-                      className={`text-left p-3 rounded-lg border-2 transition-all ${
-                        selectedModelId === rec.modelId
-                          ? "border-purple-500 bg-white shadow-sm"
-                          : "border-purple-200 hover:border-purple-300 bg-white/50"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-medium text-sm">{rec.modelName}</span>
-                        <div className="flex items-center gap-1">
-                          <Badge variant="secondary" className="text-xs">
-                            Score: {rec.score}%
-                          </Badge>
+                  {recommendations.slice(0, 3).map((rec) => {
+                    const modelMetadata = getModelMetadata(rec.modelId)
+                    return (
+                      <button
+                        key={rec.modelId}
+                        onClick={() => setSelectedModelId(rec.modelId)}
+                        className={`text-left p-3 rounded-lg border-2 transition-all ${
+                          selectedModelId === rec.modelId
+                            ? "border-purple-500 bg-white shadow-sm"
+                            : "border-purple-200 hover:border-purple-300 bg-white/50"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-medium text-sm">{modelMetadata?.name || rec.modelId}</span>
+                          <div className="flex items-center gap-1">
+                            <Badge variant="secondary" className="text-xs">
+                              Score: {rec.score}%
+                            </Badge>
+                          </div>
                         </div>
-                      </div>
-                      <p className="text-xs text-gray-600">{rec.reason}</p>
-                    </button>
-                  ))}
+                        <p className="text-xs text-gray-600">{rec.reason}</p>
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
             )}
@@ -215,9 +241,9 @@ export function ExportModal() {
                         <SelectItem key={model.id} value={model.id}>
                           <div className="flex items-center justify-between w-full gap-2">
                             <span>{model.name}</span>
-                            {model.cost.tier === "free" && (
+                            {model.cost.level === "very-low" && (
                               <Badge variant="outline" className="text-xs">
-                                Free
+                                Low Cost
                               </Badge>
                             )}
                           </div>
@@ -257,10 +283,10 @@ export function ExportModal() {
                       <span>Balanced - Good quality with efficiency</span>
                     </div>
                   </SelectItem>
-                  <SelectItem value="speed">
+                  <SelectItem value="quick">
                     <div className="flex items-center gap-2">
                       <DollarSign className="w-4 h-4" />
-                      <span>Speed - Faster, more concise prompts</span>
+                      <span>Quick - Faster, more concise prompts</span>
                     </div>
                   </SelectItem>
                 </SelectContent>
