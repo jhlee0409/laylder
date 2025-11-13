@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Laylder는 AI 기반 코드 생성을 위한 비주얼 레이아웃 빌더입니다. 사용자가 드래그 앤 드롭으로 컴포넌트를 배치하면 Schema V2를 생성하고, 이를 AI 프롬프트로 변환하여 실제 프로덕션 코드를 생성합니다.
 
-**핵심 기술**: Next.js 15 (App Router), React 19, TypeScript, Zustand, Konva (Canvas), Playwright (E2E)
+**핵심 기술**: Next.js 15 (App Router), React 19, TypeScript, Zustand, Konva (Canvas), Unit Tests (TypeScript)
 
 ## 개발 명령어
 
@@ -23,17 +23,11 @@ pnpm start
 # 린트 검사
 pnpm lint
 
-# E2E 테스트 실행 (전체)
-pnpm test:e2e
+# AI Model Strategies 테스트 실행
+npx tsx scripts/test-ai-model-strategies.ts
 
-# E2E 테스트 UI 모드
-pnpm test:e2e:ui
-
-# E2E 테스트 Headed 모드
-pnpm test:e2e:headed
-
-# 특정 테스트 파일 실행
-pnpm test:e2e -- e2e/v2-02-panels.spec.ts
+# Grok Strategy 테스트 실행
+npx tsx scripts/test-grok-strategy.ts
 
 # Schema V2 검증 스크립트
 npx tsx scripts/validate-schema-v2.ts
@@ -211,10 +205,15 @@ Canvas는 **Grid 기반 좌표계** (기본 12×20)를 사용하여 자유로운
   theme-store-v2.ts
 /types            # TypeScript 타입 정의
   schema-v2.ts    # 핵심 타입 정의
-/e2e              # Playwright E2E 테스트
+  ai-models.ts    # AI 모델 타입 정의
+/scripts          # Unit test scripts
+  test-ai-model-strategies.ts
+  test-grok-strategy.ts
+  validate-schema-v2.ts
 /docs             # Schema V2 예시 및 문서
   schema-v2-examples.md
   prompts-v2/
+  AI_MODELS_GUIDE.md
 ```
 
 **V2 Suffix**: V1에서 V2로 마이그레이션 중이며, V2 suffix가 있는 파일이 현재 사용 중인 최신 버전입니다.
@@ -243,313 +242,334 @@ Canvas는 **Grid 기반 좌표계** (기본 12×20)를 사용하여 자유로운
 
 ### 테스트 철학
 
-Laylder는 **E2E 테스트 우선 (E2E-First Testing)** 전략을 사용합니다.
+Laylder는 **Unit 테스트 기반 (Unit-First Testing)** 전략을 사용합니다.
 
 **핵심 원칙**:
-1. **실제 사용자 플로우 검증**: Unit 테스트보다 E2E 테스트 우선
-2. **브라우저 환경 필수**: Canvas(Konva), Zustand, React 19 통합 동작 검증
-3. **시각적 피드백**: 실제 UI 동작 확인 필수
-4. **회귀 방지**: 모든 주요 기능은 E2E 테스트로 보호
+1. **비즈니스 로직 검증**: 핵심 로직을 독립적으로 테스트
+2. **빠른 피드백**: TypeScript로 작성된 테스트를 즉시 실행
+3. **높은 신뢰도**: 각 모듈의 정확성을 보장
+4. **회귀 방지**: 모든 주요 기능은 Unit 테스트로 보호
 
-### Playwright E2E 테스트
+### TypeScript Unit 테스트
 
-**설정 파일**: `playwright.config.ts`
+**테스트 파일 위치**: `scripts/` 디렉토리
 
-```typescript
-{
-  testDir: './e2e',
-  baseURL: 'http://localhost:3000',
-  webServer: {
-    command: 'pnpm dev',
-    url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI,  // 로컬 개발 시 기존 서버 재사용
-    timeout: 120000,
-  },
-  projects: [{ name: 'chromium' }],  // Chrome에서만 실행
-}
+**테스트 실행 환경**: Node.js + TypeScript (tsx)
+
+```bash
+# AI Model Strategies 전체 테스트
+npx tsx scripts/test-ai-model-strategies.ts
+
+# Grok Strategy 전용 테스트
+npx tsx scripts/test-grok-strategy.ts
+
+# Schema V2 검증 테스트
+npx tsx scripts/validate-schema-v2.ts
 ```
-
-**자동 Dev 서버 시작**: Playwright가 테스트 전에 자동으로 `pnpm dev` 실행
 
 ### 테스트 파일 구조
 
 ```
-e2e/
-├── v2-01-basic-flow.spec.ts         # 기본 플로우 (페이지 로드, 샘플 로드, Reset)
-├── v2-02-panels.spec.ts             # 패널 시스템 (Library, Canvas, Properties)
-├── v2-03-breakpoints.spec.ts        # 브레이크포인트 전환 (Mobile/Tablet/Desktop)
-├── v2-04-export.spec.ts             # Export 모달 (AI Prompt 생성)
-└── resizable-panels.spec.ts         # 리사이즈 기능
+scripts/
+├── test-ai-model-strategies.ts      # AI 모델 전략 종합 테스트
+│   ├── Test 1: Factory 기본 동작
+│   ├── Test 2: 모델 추천 시스템
+│   ├── Test 3: 프롬프트 생성
+│   └── Test 4: 프롬프트 차이점 비교
+├── test-grok-strategy.ts             # Grok 전략 전용 테스트
+└── validate-schema-v2.ts             # Schema 검증 테스트
 ```
 
 **명명 규칙**:
-- `v2-XX-[기능명].spec.ts`: V2 기능별 테스트
-- `[컴포넌트명].spec.ts`: 특정 컴포넌트 테스트
+- `test-[기능명].ts`: 기능별 Unit 테스트
+- `validate-[기능명].ts`: 검증 로직 테스트
 
 ### 테스트 실행 명령어
 
 ```bash
-# 전체 E2E 테스트 실행 (헤드리스)
-pnpm test:e2e
+# 모든 AI 모델 전략 테스트 (권장)
+npx tsx scripts/test-ai-model-strategies.ts
 
-# UI 모드 (디버깅, 스텝 바이 스텝 실행)
-pnpm test:e2e:ui
+# Grok 전략만 빠르게 테스트
+npx tsx scripts/test-grok-strategy.ts
 
-# Headed 모드 (브라우저 보면서 실행)
-pnpm test:e2e:headed
+# Schema 검증 (Schema 수정 시 필수)
+npx tsx scripts/validate-schema-v2.ts
 
-# 특정 파일만 실행
-pnpm test:e2e -- e2e/v2-01-basic-flow.spec.ts
+# TypeScript 타입 체크 (컴파일 에러 확인)
+npx tsc --noEmit
 
-# 특정 테스트 케이스만 실행
-pnpm test:e2e -- e2e/v2-01-basic-flow.spec.ts -g "샘플 레이아웃"
-
-# 디버그 모드 (Inspector 활성화)
-pnpm test:e2e -- --debug
-
-# 특정 브라우저 지정
-pnpm test:e2e -- --project=chromium
+# 린트 검사
+pnpm lint
 ```
 
 ### 테스트 작성 필수 규칙
 
-#### 1. test.describe로 그룹화
+#### 1. 명확한 함수 구조
 
 ```typescript
-test.describe('V2 기본 플로우', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/v2')  // 각 테스트 전 페이지 로드
-  })
+/**
+ * Test 1: Factory 기본 동작 테스트
+ */
+function testFactoryBasics() {
+  section("Test 1: Factory 기본 동작 테스트")
 
-  test('V2 페이지가 올바르게 로드되어야 함', async ({ page }) => {
+  try {
     // 테스트 로직
+    const availableModels = getAvailableModelIds()
+    log(`✓ 사용 가능한 모델 개수: ${availableModels.length}`, "green")
+
+    return true  // 성공
+  } catch (error) {
+    log(`❌ 테스트 실패: ${error}`, "red")
+    return false  // 실패
+  }
+}
+```
+
+#### 2. AAA 패턴 (Arrange-Act-Assert)
+
+**✅ 권장 (명확한 구조)**:
+```typescript
+function testPromptGeneration() {
+  // Arrange: 초기 데이터 준비
+  const schema = sampleSchemas.github
+  const strategy = createPromptStrategy('claude-sonnet-4.5')
+
+  // Act: 동작 수행
+  const result = strategy.generatePrompt(schema, 'react', 'tailwind', {
+    optimizationLevel: 'quality',
+    verbosity: 'detailed'
   })
-})
+
+  // Assert: 결과 검증
+  if (result.success && result.prompt) {
+    log(`✓ 프롬프트 생성 성공`, "green")
+    return true
+  } else {
+    log(`❌ 프롬프트 생성 실패`, "red")
+    return false
+  }
+}
 ```
 
-#### 2. 명확한 Selector 사용
+#### 3. 명확한 에러 메시지
 
-**✅ 권장 (접근성 기반)**:
+**❌ 나쁜 예**:
 ```typescript
-// Role + Name
-await page.getByRole('button', { name: 'Load Sample' })
-
-// Label
-await page.getByLabel('Component Name')
-
-// Placeholder
-await page.getByPlaceholder('Search components')
+if (!result.success) {
+  throw new Error("Failed")  // 무엇이 실패했는지 불명확
+}
 ```
 
-**⚠️ 주의 (취약함)**:
+**✅ 좋은 예**:
 ```typescript
-// CSS 클래스 (스타일 변경 시 깨짐)
-await page.locator('.btn-primary')  // ❌
-
-// 텍스트 직접 매칭 (i18n 시 깨짐)
-await page.locator('text=로드')  // ❌
+if (!result.success) {
+  log(`❌ 프롬프트 생성 실패`, "red")
+  if (result.errors) {
+    result.errors.forEach((error) => log(`  - ${error}`, "red"))
+  }
+  return false
+}
 ```
 
-**✅ 올바른 예시**:
-```typescript
-// Header 내부에서만 검색 (범위 좁히기)
-await page.locator('header').getByText(/\d+ components/)
-
-// Canvas 요소 (Konva)
-const canvas = page.locator('canvas').first()
-await expect(canvas).toBeVisible()
-
-// 모달 (role 사용)
-const modal = page.locator('[role="dialog"]')
-await expect(modal).toBeVisible()
-```
-
-#### 3. 적절한 대기 (Wait) 전략
-
-**❌ 절대 금지**:
-```typescript
-await page.waitForTimeout(1000)  // 임의의 대기 시간
-```
-
-**✅ 권장**:
-```typescript
-// 요소가 보일 때까지 대기 (자동 retry)
-await expect(page.getByRole('button', { name: 'Save' })).toBeVisible()
-
-// 특정 상태까지 대기
-await expect(page.locator('header').getByText(/[1-9]\d* components/))
-  .toBeVisible({ timeout: 3000 })
-
-// 네트워크 응답 대기
-await page.waitForResponse(response =>
-  response.url().includes('/api/save') && response.status() === 200
-)
-
-// 네비게이션 대기
-await page.waitForURL('/v2')
-```
-
-**예외적으로 허용** (애니메이션 완료 대기):
-```typescript
-// 탭 전환 애니메이션
-await propertiesTab.click()
-await page.waitForTimeout(300)  // 300ms는 Tailwind 기본 transition
-```
-
-#### 4. 에러 메시지 명확화
+#### 4. 검증 포인트 명시
 
 ```typescript
-// ❌ 나쁜 예
-await expect(page.locator('button')).toBeVisible()
+// ✅ 좋은 예: 여러 검증 포인트 명시
+function testGrokStrategy() {
+  const result = strategy.generatePrompt(schema, 'react', 'tailwind', {
+    chainOfThought: true
+  })
 
-// ✅ 좋은 예
-await expect(
-  page.getByRole('button', { name: 'Load Sample' }),
-  'Load Sample 버튼이 표시되어야 합니다'
-).toBeVisible()
+  // 검증 1: 프롬프트 생성 성공
+  const hasReasoningPrompt = result.prompt.includes("Reasoning")
+
+  // 검증 2: 실시간 컨텍스트 포함
+  const hasCurrentDate = result.prompt.includes("2025")
+
+  // 검증 3: 우선순위 그룹화
+  const hasPriorityComponents = result.prompt.includes("Priority Components")
+
+  log(`\n✓ Grok 특화 기능 검증:`, "green")
+  log(`  - 추론 기반 접근: ${hasReasoningPrompt ? "✓" : "✗"}`, hasReasoningPrompt ? "green" : "red")
+  log(`  - 실시간 컨텍스트: ${hasCurrentDate ? "✓" : "✗"}`, hasCurrentDate ? "green" : "red")
+  log(`  - 우선순위 그룹화: ${hasPriorityComponents ? "✓" : "✗"}`, hasPriorityComponents ? "green" : "red")
+
+  return hasReasoningPrompt && hasCurrentDate && hasPriorityComponents
+}
 ```
 
 #### 5. 테스트 독립성 보장
 
 ```typescript
-test.describe('Component CRUD', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/v2')
-    // 매 테스트마다 초기 상태로 리셋
-    await page.getByRole('button', { name: 'Reset' }).click()
-  })
+// ✅ 좋은 예: 각 테스트가 독립적으로 데이터 준비
+function testModelRecommendation() {
+  try {
+    // 각 테스트마다 독립적으로 데이터 생성
+    const recommendations = getModelRecommendations({
+      schemaComplexity: "complex",
+      responsiveComplexity: "medium",
+      costSensitivity: "low"
+    })
 
-  test('컴포넌트 추가', async ({ page }) => {
-    // 이 테스트는 다른 테스트에 영향받지 않음
-  })
-
-  test('컴포넌트 삭제', async ({ page }) => {
-    // 독립적으로 실행 가능
-  })
-})
+    // 검증 로직
+    return recommendations.length > 0
+  } catch (error) {
+    return false
+  }
+}
 ```
 
 ### 테스트 커버리지 기준
 
-**필수 커버리지 (P0)**:
-- [x] 페이지 로드 및 초기화
-- [x] 샘플 데이터 로드
-- [x] 컴포넌트 추가/삭제
-- [x] 브레이크포인트 전환
-- [x] Export 모달 열기/닫기
-- [ ] Canvas 드래그 앤 드롭 (TODO)
-- [ ] Properties 패널 수정 (TODO)
+**필수 커버리지 (P0)** - AI Model Strategies:
+- [x] Factory 기본 동작 (19개 모델 지원)
+- [x] 모델 추천 시스템 (3가지 시나리오)
+- [x] 프롬프트 생성 (4개 주요 모델)
+- [x] 프롬프트 차이점 비교
+- [x] Grok 전략 특화 기능
+- [x] Token 추정 알고리즘
 
 **권장 커버리지 (P1)**:
-- [ ] 컴포넌트 복제
-- [ ] Undo/Redo (구현 후)
-- [ ] 레이아웃 구조 변경
-- [ ] 반응형 설정 변경
+- [ ] DeepSeek 비용 최적화 검증
+- [ ] Gemini 프레임워크 특화 검증
+- [ ] GPT Few-shot Learning 검증
+- [ ] Claude Chain-of-Thought 검증
+- [ ] 모든 19개 모델 개별 테스트
 
 ### 테스트 실패 디버깅
 
-#### Playwright UI Mode 활용
+#### 콘솔 로그 활용
 
 ```bash
-pnpm test:e2e:ui
+# 테스트 실행 시 상세 로그 출력
+npx tsx scripts/test-ai-model-strategies.ts
+
+# 출력 예시:
+# ✓ Factory 기본 동작 테스트 통과
+# ✓ 모델 추천 시스템 테스트 통과
+# ❌ 프롬프트 생성 테스트 실패
+#   - 에러: Model metadata not found for: invalid-model
 ```
 
-**기능**:
-- 테스트 단계별 실행 (Step Over)
-- DOM 스냅샷 확인
-- 네트워크 요청 모니터링
-- 콘솔 로그 확인
+**로그 색상 코드 활용**:
+- 🟢 `green`: 성공 메시지
+- 🔴 `red`: 실패/에러 메시지
+- 🟡 `yellow`: 경고 메시지
+- 🔵 `blue`: 정보 메시지
+- 🔷 `cyan`: 섹션 제목
 
-#### Trace Viewer 활용
-
-```bash
-# 실패한 테스트의 trace 확인
-pnpm test:e2e -- --trace on
-
-# Trace 파일 열기
-npx playwright show-trace trace.zip
-```
-
-**trace에서 확인 가능**:
-- 각 액션별 스크린샷
-- DOM 상태 변화
-- 네트워크 타임라인
-- 콘솔 로그
-
-#### Screenshot 활용
+#### 에러 스택 추적
 
 ```typescript
-test('실패 시 스크린샷', async ({ page }) => {
-  await page.goto('/v2')
-
-  // 실패 가능성 있는 작업
-  await expect(page.getByRole('button', { name: 'Save' })).toBeVisible()
-
-  // 수동 스크린샷 (디버깅용)
-  await page.screenshot({ path: 'debug-screenshot.png', fullPage: true })
-})
+try {
+  const strategy = createPromptStrategy(modelId)
+  // ... 테스트 로직
+} catch (error) {
+  log(`❌ 테스트 실패: ${error}`, "red")
+  console.error(error)  // 전체 스택 출력
+  return false
+}
 ```
 
-**자동 스크린샷**: `playwright.config.ts`에서 `screenshot: 'only-on-failure'` 설정됨
+#### 디버깅 팁
+
+**1. 중간 값 출력**:
+```typescript
+const result = strategy.generatePrompt(schema, 'react', 'tailwind')
+log(`Prompt length: ${result.prompt?.length}`, "blue")
+log(`Estimated tokens: ${result.estimatedTokens}`, "blue")
+log(`Sections: ${result.sections?.length}`, "blue")
+```
+
+**2. 조건부 검증**:
+```typescript
+if (result.warnings && result.warnings.length > 0) {
+  log(`⚠ 경고 ${result.warnings.length}개:`, "yellow")
+  result.warnings.forEach((warning) => log(`  - ${warning}`, "yellow"))
+}
+```
+
+**3. 샘플 데이터 확인**:
+```typescript
+// 프롬프트 일부 출력 (디버깅용)
+log(`프롬프트 샘플 (첫 500자):`, "magenta")
+log(`"${result.prompt.substring(0, 500)}..."`, "blue")
+```
 
 ### 테스트 작성 워크플로우
 
 #### 1. 테스트 계획 (Plan)
 
 ```markdown
-## 테스트 계획: 컴포넌트 드래그 앤 드롭
+## 테스트 계획: 새로운 AI 모델 추가
 
 ### 테스트 시나리오
-1. **Given**: Library Panel에서 Header 컴포넌트 선택
-2. **When**: Canvas로 드래그 앤 드롭
-3. **Then**: Canvas에 Header 컴포넌트 렌더링됨
+1. **Given**: 새로운 모델 메타데이터 추가 (예: Llama-3)
+2. **When**: Factory로 전략 생성 및 프롬프트 생성
+3. **Then**: 올바른 프롬프트가 생성됨
 
 ### 검증 포인트
-- [ ] Library Panel에 컴포넌트 목록 표시
-- [ ] 드래그 시작 시 커서 변경
-- [ ] 드롭 영역 하이라이트
-- [ ] 드롭 후 컴포넌트 카운트 증가
-- [ ] Canvas에 컴포넌트 시각적 표시
+- [ ] Factory가 새 모델 ID 인식
+- [ ] 적절한 전략 클래스 매핑
+- [ ] 프롬프트 생성 성공
+- [ ] 토큰 추정 정확성
+- [ ] 모델 추천 시스템에서 반영
 ```
 
 #### 2. 테스트 작성 (Write)
 
 ```typescript
-test.describe('컴포넌트 드래그 앤 드롭', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/v2')
-  })
+/**
+ * Test: 새로운 모델 전략 추가 검증
+ */
+function testNewModelStrategy() {
+  section("Test: 새로운 모델 전략 추가")
 
-  test('Library에서 Canvas로 컴포넌트를 드래그할 수 있어야 함', async ({ page }) => {
-    // Given: Library Panel에서 Header 컴포넌트 찾기
-    const headerComponent = page.locator('aside').getByText('Sticky Header')
-    await expect(headerComponent).toBeVisible()
+  try {
+    // Arrange: 새로운 모델로 전략 생성
+    const strategy = createPromptStrategy('llama-3')
+    const schema = sampleSchemas.github
 
-    // When: Canvas로 드래그
-    const canvas = page.locator('canvas').first()
-    await headerComponent.dragTo(canvas)
+    // Act: 프롬프트 생성
+    const result = strategy.generatePrompt(schema, 'react', 'tailwind', {
+      optimizationLevel: 'balanced',
+      verbosity: 'normal'
+    })
 
-    // Then: 컴포넌트 카운트 증가 확인
-    await expect(page.locator('header').getByText(/1 components/)).toBeVisible()
-  })
-})
+    // Assert: 결과 검증
+    if (result.success && result.prompt) {
+      log(`✓ Llama-3 전략 테스트 통과`, "green")
+      log(`  - 토큰: ${result.estimatedTokens}`, "blue")
+      log(`  - 길이: ${result.prompt.length}`, "blue")
+      return true
+    } else {
+      log(`❌ Llama-3 전략 테스트 실패`, "red")
+      return false
+    }
+  } catch (error) {
+    log(`❌ 오류 발생: ${error}`, "red")
+    return false
+  }
+}
 ```
 
 #### 3. 실행 및 디버깅 (Run & Debug)
 
 ```bash
-# UI 모드로 디버깅
-pnpm test:e2e:ui
+# 전체 테스트 실행
+npx tsx scripts/test-ai-model-strategies.ts
 
-# 특정 테스트만 실행
-pnpm test:e2e -- -g "드래그"
+# 특정 모델만 테스트 (코드 수정으로 분리)
+npx tsx scripts/test-llama-strategy.ts
 ```
 
 #### 4. 검증 완료 (Verify)
 
-- [x] 테스트 통과
-- [x] 실제 브라우저에서 수동 검증
-- [x] Edge case 추가 (빈 Canvas, 중복 드롭 등)
+- [x] 테스트 통과 (100% success rate)
+- [x] 모든 모델에서 프롬프트 생성 확인
+- [x] Edge case 추가 (invalid model ID, null schema 등)
 
 ### 새로운 기능 개발 시 테스트 작성 필수
 
@@ -558,7 +578,7 @@ pnpm test:e2e -- -g "드래그"
 ```markdown
 ## Phase 3: 구현 (40분)
 - [ ] Task 3.1: 기능 구현
-- [ ] Task 3.2: **E2E 테스트 작성** ← 필수
+- [ ] Task 3.2: **Unit 테스트 작성** ← 필수
 - [ ] Task 3.3: 테스트 통과 확인
 ```
 
@@ -570,33 +590,40 @@ pnpm test:e2e -- -g "드래그"
 
 ```typescript
 // 1. Red: 실패하는 테스트
-test('컴포넌트 복제 버튼이 동작해야 함', async ({ page }) => {
-  await page.goto('/v2')
-  await page.getByRole('button', { name: 'Load Sample' }).click()
+function testO1ModelStrategy() {
+  try {
+    // o1 모델 전략 생성 (아직 구현 안 됨 → 실패 예상)
+    const strategy = createPromptStrategy('o1')
+    const result = strategy.generatePrompt(schema, 'react', 'tailwind', {
+      optimizationLevel: 'quality'
+    })
 
-  // 컴포넌트 선택
-  const component = page.locator('canvas').first()
-  await component.click()
-
-  // 복제 버튼 클릭 (아직 구현 안 됨 → 실패)
-  await page.getByRole('button', { name: 'Duplicate' }).click()
-
-  // 컴포넌트 수 증가 확인
-  await expect(page.locator('header').getByText(/\d+ components/)).toContainText('2')
-})
+    // 검증
+    if (!result.success) {
+      log(`❌ o1 모델 전략 실패 (예상됨)`, "red")
+      return false
+    }
+    return true
+  } catch (error) {
+    log(`❌ o1 모델 미구현: ${error}`, "red")
+    return false  // Red 단계: 실패
+  }
+}
 
 // 2. Green: 구현
-// store/layout-store-v2.ts에 duplicateComponent action 구현
+// lib/ai-model-registry.ts에 o1 메타데이터 추가
+// lib/prompt-strategies/gpt-strategy.ts에서 o1 최적화 로직 추가
 
 // 3. Refactor: 코드 정리 (테스트는 계속 통과)
+// 중복 코드 제거, 함수 분리 등
 ```
 
 ### CI/CD 통합
 
-**GitHub Actions 예시** (`.github/workflows/e2e.yml`):
+**GitHub Actions 예시** (`.github/workflows/unit-tests.yml`):
 
 ```yaml
-name: E2E Tests
+name: Unit Tests
 
 on: [push, pull_request]
 
@@ -612,103 +639,145 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Install Playwright browsers
-        run: pnpm playwright install --with-deps chromium
+      - name: Run TypeScript type check
+        run: npx tsc --noEmit
 
-      - name: Run E2E tests
-        run: pnpm test:e2e
+      - name: Run lint
+        run: pnpm lint
+
+      - name: Run AI Model Strategy tests
+        run: npx tsx scripts/test-ai-model-strategies.ts
+
+      - name: Run Grok Strategy tests
+        run: npx tsx scripts/test-grok-strategy.ts
+
+      - name: Run Schema validation
+        run: npx tsx scripts/validate-schema-v2.ts
 
       - name: Upload test results
         if: failure()
         uses: actions/upload-artifact@v3
         with:
-          name: playwright-report
-          path: playwright-report/
+          name: test-results
+          path: |
+            test-results/
+            *.log
 ```
 
 ### 테스트 베스트 프랙티스
 
 #### ✅ DO (해야 할 것)
 
-1. **실제 사용자 플로우 테스트**
+1. **비즈니스 로직 직접 테스트**
    ```typescript
-   test('사용자가 레이아웃을 생성하고 Export할 수 있어야 함', async ({ page }) => {
-     await page.goto('/v2')
-     await page.getByRole('button', { name: 'Load Sample' }).click()
-     await page.getByRole('button', { name: 'Generate Prompt' }).click()
-     await expect(page.locator('[role="dialog"]')).toBeVisible()
-   })
+   function testPromptGeneration() {
+     // AI 모델 전략의 핵심 로직 직접 검증
+     const strategy = createPromptStrategy('claude-sonnet-4.5')
+     const result = strategy.generatePrompt(schema, 'react', 'tailwind', {
+       optimizationLevel: 'quality',
+       verbosity: 'detailed'
+     })
+
+     // 결과 직접 검증
+     return result.success && result.prompt.length > 0
+   }
    ```
 
-2. **명확한 테스트 이름**
+2. **명확한 테스트 함수 이름**
    ```typescript
    // ✅ 좋은 예
-   test('사용자가 Mobile에서 Desktop으로 브레이크포인트를 전환할 수 있어야 함', ...)
+   function testModelRecommendationForComplexSchema() { ... }
 
    // ❌ 나쁜 예
-   test('브레이크포인트 테스트', ...)
+   function test1() { ... }
    ```
 
-3. **AAA 패턴 (Arrange-Act-Assert)**
+3. **AAA 패턴 (Arrange-Act-Assert) 필수**
    ```typescript
-   test('컴포넌트 삭제', async ({ page }) => {
-     // Arrange: 초기 상태 설정
-     await page.goto('/v2')
-     await page.getByRole('button', { name: 'Load Sample' }).click()
+   function testTokenEstimation() {
+     // Arrange: 테스트 데이터 준비
+     const schema = sampleSchemas.github
+     const strategy = createPromptStrategy('gpt-4.1')
 
      // Act: 동작 수행
-     const deleteButton = page.getByRole('button', { name: 'Delete' })
-     await deleteButton.click()
+     const result = strategy.generatePrompt(schema, 'react', 'tailwind')
 
      // Assert: 결과 검증
-     await expect(page.locator('header').getByText(/0 components/)).toBeVisible()
-   })
+     const hasValidTokens = result.estimatedTokens && result.estimatedTokens > 0
+     log(`Token count: ${result.estimatedTokens}`, hasValidTokens ? "green" : "red")
+     return hasValidTokens
+   }
    ```
 
-4. **Accessibility 검증 포함**
+4. **상세한 로그 출력**
    ```typescript
-   test('모든 버튼이 접근 가능해야 함', async ({ page }) => {
-     await page.goto('/v2')
+   function testGrokStrategy() {
+     log(`Testing Grok Strategy...`, "cyan")
 
-     // role과 name으로 찾을 수 있어야 함
-     await expect(page.getByRole('button', { name: 'Load Sample' })).toBeVisible()
-     await expect(page.getByRole('button', { name: 'Reset' })).toBeVisible()
-   })
+     const result = strategy.generatePrompt(schema, 'react', 'tailwind')
+
+     // 상세한 검증 포인트 출력
+     log(`✓ Prompt generated`, "green")
+     log(`  - Length: ${result.prompt.length}`, "blue")
+     log(`  - Tokens: ${result.estimatedTokens}`, "blue")
+     log(`  - Sections: ${result.sections?.length}`, "blue")
+
+     return true
+   }
    ```
 
 #### ❌ DON'T (하지 말아야 할 것)
 
-1. **절대 경로 하드코딩**
+1. **하드코딩된 값 사용 금지**
    ```typescript
    // ❌ 나쁜 예
-   await page.goto('http://localhost:3000/v2')
+   if (result.estimatedTokens === 2513) { ... }  // 정확한 숫자에 의존
 
    // ✅ 좋은 예
-   await page.goto('/v2')  // baseURL 사용
+   if (result.estimatedTokens > 2000 && result.estimatedTokens < 3000) { ... }
    ```
 
-2. **임의의 대기 시간**
+2. **Silent failures (조용한 실패)**
    ```typescript
    // ❌ 나쁜 예
-   await page.waitForTimeout(5000)
+   try {
+     const result = strategy.generatePrompt(...)
+     return true
+   } catch {
+     return false  // 에러 내용 숨김
+   }
 
    // ✅ 좋은 예
-   await expect(element).toBeVisible({ timeout: 5000 })
+   try {
+     const result = strategy.generatePrompt(...)
+     return true
+   } catch (error) {
+     log(`❌ 오류: ${error}`, "red")
+     console.error(error)  // 스택 트레이스 출력
+     return false
+   }
    ```
 
 3. **테스트 간 의존성**
    ```typescript
    // ❌ 나쁜 예
-   test('컴포넌트 추가', async ({ page }) => {
-     // 전역 변수에 저장
-     globalComponentId = '...'
-   })
+   let globalStrategy: IPromptStrategy
+   function test1() {
+     globalStrategy = createPromptStrategy('claude-sonnet-4.5')
+   }
+   function test2() {
+     const result = globalStrategy.generatePrompt(...)  // test1에 의존
+   }
 
-   test('컴포넌트 삭제', async ({ page }) => {
-     // 이전 테스트의 globalComponentId 사용
-   })
-
-   // ✅ 좋은 예: 각 테스트가 독립적으로 실행 가능
+   // ✅ 좋은 예: 각 테스트가 독립적
+   function test1() {
+     const strategy = createPromptStrategy('claude-sonnet-4.5')
+     // 독립적으로 테스트
+   }
+   function test2() {
+     const strategy = createPromptStrategy('gpt-4.1')
+     // 독립적으로 테스트
+   }
    ```
 
 ### 테스트 리뷰 체크리스트
@@ -717,15 +786,15 @@ jobs:
 
 ```markdown
 ## 테스트 리뷰 체크리스트
-- [ ] 테스트 이름이 명확한가? (무엇을, 어떻게, 결과는)
+- [ ] 테스트 함수 이름이 명확한가? (testXxxYyy 형식)
 - [ ] AAA 패턴을 따르는가? (Arrange-Act-Assert)
-- [ ] 적절한 Selector를 사용하는가? (Role 우선)
-- [ ] 하드코딩된 대기 시간이 없는가?
+- [ ] 모든 검증 포인트에 명확한 로그를 출력하는가?
+- [ ] 하드코딩된 값이 없는가? (범위 검증 사용)
 - [ ] 테스트가 독립적으로 실행 가능한가?
-- [ ] Edge case를 고려했는가?
-- [ ] 실패 시 디버깅이 쉬운가? (명확한 에러 메시지)
-- [ ] beforeEach로 초기화하는가?
-- [ ] 실제 브라우저에서 수동 검증했는가?
+- [ ] Edge case를 고려했는가? (null, undefined, empty 등)
+- [ ] 실패 시 디버깅이 쉬운가? (명확한 에러 메시지 + 스택 트레이스)
+- [ ] try-catch로 에러를 적절히 처리하는가?
+- [ ] 성공/실패 결과를 명확히 반환하는가? (boolean)
 ```
 
 ### 테스트 유지보수
@@ -734,21 +803,22 @@ jobs:
 
 ```markdown
 ## 테스트 유지보수 체크리스트
-- [ ] Skip된 테스트 재활성화 시도 (test.describe.skip → test.describe)
+- [ ] 주석 처리된 테스트 재활성화 시도
 - [ ] 깨진 테스트 수정
 - [ ] 중복 테스트 제거
-- [ ] 느린 테스트 최적화 (timeout 확인)
+- [ ] 느린 테스트 최적화 (불필요한 처리 제거)
 - [ ] Deprecated API 업데이트
-- [ ] 새로운 기능에 대한 테스트 추가
+- [ ] 새로운 AI 모델 추가 시 테스트 작성
+- [ ] Token 추정 정확도 검증 (실제 API와 비교)
 ```
 
 #### 테스트 실패 시 대응
 
-1. **로컬에서 재현**: `pnpm test:e2e:headed`
-2. **Trace 확인**: 스크린샷, DOM, 네트워크
-3. **로그 확인**: 콘솔 에러, 네트워크 에러
-4. **수동 재현**: 실제 브라우저에서 동일 플로우
-5. **수정 후 재검증**: 테스트 통과 확인
+1. **로컬에서 재현**: `npx tsx scripts/test-ai-model-strategies.ts`
+2. **로그 확인**: 콘솔 출력, 에러 메시지, 스택 트레이스
+3. **디버거 활용**: VS Code debugger 또는 console.log 추가
+4. **데이터 검증**: 입력 스키마, 옵션 값 확인
+5. **수정 후 재검증**: 테스트 100% 통과 확인
 
 ## 샘플 데이터
 
@@ -848,7 +918,7 @@ const gridY = Math.floor(pixelY / cellHeight)
 - [ ] Phase 1: 요구사항 분석 및 관련 파일 파악
 - [ ] Phase 2: 구현 설계 및 아키텍처 검토
 - [ ] Phase 3: 코드 작성 및 단위 검증
-- [ ] Phase 4: 통합 테스트 및 E2E 검증
+- [ ] Phase 4: Unit 테스트 작성 및 검증
 - [ ] Phase 5: 문서화 및 컨텍스트 저장
 ```
 
@@ -910,13 +980,16 @@ npx tsx scripts/validate-schema-v2.ts
 # Phase 완료 시 통합 검증
 pnpm build  # 빌드 성공 확인
 
-# 관련 E2E 테스트 실행
-pnpm test:e2e -- e2e/v2-02-panels.spec.ts
+# AI Model Strategies 테스트 실행
+npx tsx scripts/test-ai-model-strategies.ts
 
-# 전체 E2E 테스트 (기능 추가 시 필수)
-pnpm test:e2e
+# Grok Strategy 테스트 실행
+npx tsx scripts/test-grok-strategy.ts
 
-# Dev 서버 동작 확인
+# Schema 검증 (Schema 관련 작업 시)
+npx tsx scripts/validate-schema-v2.ts
+
+# Dev 서버 동작 확인 (UI 작업 시)
 pnpm dev
 # → http://localhost:3000 접속하여 UI 동작 검증
 ```
@@ -924,26 +997,26 @@ pnpm dev
 **Phase 완료 기준**:
 - 모든 Task 완료 체크
 - 빌드 성공 (pnpm build)
-- 관련 테스트 통과 (기존 테스트 깨지지 않음)
-- 새로운 기능의 E2E 테스트 작성 및 통과 (기능 추가 시)
-- 수동 UI 검증 완료 (해당 시)
+- 관련 Unit 테스트 통과 (기존 테스트 깨지지 않음)
+- 새로운 기능의 Unit 테스트 작성 및 통과 (기능 추가 시)
+- 수동 UI 검증 완료 (UI 작업 시)
 
 #### ✅ 테스트 작성 필수 시점
 
-**다음 작업 시 E2E 테스트 반드시 작성**:
+**다음 작업 시 Unit 테스트 반드시 작성**:
 
-1. **새로운 UI 기능 추가**
+1. **새로운 AI 모델 추가**
    ```markdown
-   - [ ] Task 3.1: 기능 구현 (예: 컴포넌트 복제 버튼)
-   - [ ] Task 3.2: E2E 테스트 작성 (e2e/v2-05-component-duplication.spec.ts)
-   - [ ] Task 3.3: 테스트 통과 확인
+   - [ ] Task 3.1: 모델 메타데이터 추가 (lib/ai-model-registry.ts)
+   - [ ] Task 3.2: Unit 테스트 작성 (scripts/test-[model-name]-strategy.ts)
+   - [ ] Task 3.3: 테스트 통과 확인 (100% success rate)
    ```
 
-2. **사용자 플로우 변경**
+2. **전략 로직 변경**
    ```markdown
-   - [ ] Task 2.1: 플로우 수정 (예: Export 모달 개선)
-   - [ ] Task 2.2: 기존 테스트 업데이트 (e2e/v2-04-export.spec.ts)
-   - [ ] Task 2.3: 새로운 시나리오 추가
+   - [ ] Task 2.1: 전략 수정 (예: Token 추정 알고리즘 개선)
+   - [ ] Task 2.2: 기존 테스트 업데이트 (scripts/test-ai-model-strategies.ts)
+   - [ ] Task 2.3: 새로운 검증 포인트 추가
    ```
 
 3. **버그 수정**
@@ -958,6 +1031,7 @@ pnpm dev
 - 타입 정의 추가
 - 문서화 작업
 - 스타일 변경 (CSS만)
+- UI 컴포넌트 수정 (비즈니스 로직 없음)
 
 ### 4. Documentation & Context Preservation (문서화 및 컨텍스트 보존)
 
@@ -1022,7 +1096,8 @@ pnpm dev
 ### 다음 작업자를 위한 힌트
 - Schema 수정 시 반드시 normalizeSchemaV2() 호출
 - Validation 추가 시 ValidationError/Warning 타입 사용
-- E2E 테스트는 실제 UI 동작 기반으로 작성
+- Unit 테스트는 AAA 패턴 기반으로 작성
+- 새 AI 모델 추가 시 Factory 매핑 필수
 ```
 
 ### 5. Gate Keeping (게이트 키핑)
@@ -1035,9 +1110,9 @@ pnpm dev
 - [ ] 린트 통과 (pnpm lint)
 - [ ] 빌드 성공 (pnpm build)
 - [ ] TypeScript 타입 체크 통과 (npx tsc --noEmit)
-- [ ] 관련 테스트 통과 (pnpm test:e2e)
+- [ ] 관련 Unit 테스트 통과 (npx tsx scripts/test-*.ts)
 - [ ] Schema 검증 통과 (해당 시)
-- [ ] Dev 서버 정상 동작 확인 (해당 시)
+- [ ] Dev 서버 정상 동작 확인 (UI 작업 시)
 - [ ] Phase Summary 문서 작성 완료
 - [ ] Context 파일 업데이트 완료
 - [ ] Git commit 완료 (의미 있는 단위)
@@ -1060,7 +1135,8 @@ pnpm dev
 - **기억해야 할 것**:
   - normalizeSchemaV2()는 모든 Schema 수정 후 호출
   - PascalCase 검증은 regex: /^[A-Z][a-zA-Z0-9]*$/
-  - 테스트 파일: e2e/v2-03-breakpoints.spec.ts
+  - 테스트 파일: scripts/test-ai-model-strategies.ts
+  - Factory는 provider 기반 매핑 사용
 ```
 
 #### Context Loss 복구 프로토콜
@@ -1082,16 +1158,17 @@ pnpm dev
 pnpm lint
 npx tsc --noEmit
 
-# Gate 2: 기능 검증
+# Gate 2: 기능 검증 (Unit Tests)
 pnpm build
-pnpm test:e2e
+npx tsx scripts/test-ai-model-strategies.ts
+npx tsx scripts/test-grok-strategy.ts
 
 # Gate 3: Schema 일관성 (Schema 관련 작업 시)
 npx tsx scripts/validate-schema-v2.ts
 
-# Gate 4: 수동 검증
+# Gate 4: 수동 검증 (UI 작업 시)
 pnpm dev
-# → 브라우저에서 실제 사용자 플로우 테스트
+# → 브라우저에서 실제 UI 동작 확인
 ```
 
 **모든 Gate 통과 시에만 작업 완료로 간주**
@@ -1127,8 +1204,8 @@ pnpm dev
 - **검증**: Dev 서버 정상 동작, UI 반영 확인
 
 ### Phase 5: 테스트 및 문서화 (50분)
-- [ ] Task 5.1: E2E 테스트 케이스 추가
-- [ ] Task 5.2: sample-data-v2.ts에 예시 추가
+- [ ] Task 5.1: Unit 테스트 케이스 추가 (해당 시)
+- [ ] Task 5.2: sample-data-v2.ts에 예시 추가 (Schema 작업 시)
 - [ ] Task 5.3: Dev Log 작성
 - [ ] Task 5.4: CLAUDE.md 업데이트
 - **검증**: 전체 테스트 통과, 문서화 완료
@@ -1136,9 +1213,9 @@ pnpm dev
 ### 최종 검증
 - [ ] pnpm lint ✅
 - [ ] pnpm build ✅
-- [ ] pnpm test:e2e ✅
-- [ ] npx tsx scripts/validate-schema-v2.ts ✅
-- [ ] Dev 서버 수동 테스트 ✅
+- [ ] npx tsx scripts/test-ai-model-strategies.ts ✅
+- [ ] npx tsx scripts/validate-schema-v2.ts ✅ (Schema 작업 시)
+- [ ] Dev 서버 수동 테스트 ✅ (UI 작업 시)
 - [ ] 문서화 완료 ✅
 ```
 
