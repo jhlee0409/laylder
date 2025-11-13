@@ -70,9 +70,9 @@ YYYY-MM-DD-[작업명].md
 ## 최종 검증
 - [ ] pnpm lint
 - [ ] pnpm build
-- [ ] pnpm test:e2e
+- [ ] npx tsx scripts/test-ai-model-strategies.ts
 - [ ] npx tsc --noEmit
-- [ ] Dev 서버 수동 검증
+- [ ] Dev 서버 수동 검증 (UI 작업 시)
 
 ## 최종 요약
 - **완료 사항**: [완료한 작업 요약]
