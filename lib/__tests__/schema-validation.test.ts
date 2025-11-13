@@ -5,6 +5,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   validateSchema,
+  formatValidationResult,
   type ValidationResult,
 } from '../schema-validation'
 import type { LaydlerSchema, Component } from '@/types/schema'
@@ -228,6 +229,229 @@ describe('Schema Validation', () => {
           field: 'layouts.desktop',
         })
       )
+    })
+  })
+
+  describe('Layout structure validation', () => {
+    it('should warn when horizontal structure does not use row direction', () => {
+      const schema: LaydlerSchema = {
+        schemaVersion: '2.0',
+        components: [
+          {
+            id: 'c1',
+            name: 'Main',
+            semanticTag: 'main',
+            positioning: { type: 'static' },
+            layout: { type: 'flex', direction: 'column' },
+            canvasLayout: { x: 0, y: 0, width: 12, height: 8 },
+          },
+        ],
+        breakpoints: [
+          { name: 'mobile', minWidth: 0, gridCols: 4, gridRows: 8 },
+        ],
+        layouts: {
+          mobile: {
+            structure: 'horizontal',
+            components: ['c1'],
+            containerLayout: {
+              type: 'flex',
+              flex: { direction: 'column' }, // Should be 'row' for horizontal
+            },
+          },
+        },
+      }
+
+      const result = validateSchema(schema)
+
+      expect(result.valid).toBe(true) // Valid but with warnings
+      expect(result.warnings.length).toBeGreaterThan(0)
+      expect(result.warnings).toContainEqual(
+        expect.objectContaining({
+          code: 'HORIZONTAL_STRUCTURE_NOT_ROW',
+        })
+      )
+    })
+
+    it('should warn when sidebar-main structure lacks roles', () => {
+      const schema: LaydlerSchema = {
+        schemaVersion: '2.0',
+        components: [
+          {
+            id: 'c1',
+            name: 'Sidebar',
+            semanticTag: 'aside',
+            positioning: { type: 'sticky', top: 64 },
+            layout: { type: 'flex', direction: 'column' },
+            canvasLayout: { x: 0, y: 0, width: 3, height: 8 },
+          },
+          {
+            id: 'c2',
+            name: 'Main',
+            semanticTag: 'main',
+            positioning: { type: 'static' },
+            layout: { type: 'flex', direction: 'column' },
+            canvasLayout: { x: 3, y: 0, width: 9, height: 8 },
+          },
+        ],
+        breakpoints: [
+          { name: 'mobile', minWidth: 0, gridCols: 4, gridRows: 8 },
+        ],
+        layouts: {
+          mobile: {
+            structure: 'sidebar-main',
+            components: ['c1', 'c2'],
+            // Missing roles
+          },
+        },
+      }
+
+      const result = validateSchema(schema)
+
+      expect(result.valid).toBe(true) // Valid but with warnings
+      expect(result.warnings.length).toBeGreaterThan(0)
+      expect(result.warnings).toContainEqual(
+        expect.objectContaining({
+          code: 'SIDEBAR_MAIN_WITHOUT_ROLES',
+        })
+      )
+    })
+
+    it('should pass when sidebar-main structure has proper roles', () => {
+      const schema: LaydlerSchema = {
+        schemaVersion: '2.0',
+        components: [
+          {
+            id: 'c1',
+            name: 'Sidebar',
+            semanticTag: 'aside',
+            positioning: { type: 'sticky', top: 64 },
+            layout: { type: 'flex', direction: 'column' },
+            canvasLayout: { x: 0, y: 0, width: 3, height: 8 },
+          },
+          {
+            id: 'c2',
+            name: 'Main',
+            semanticTag: 'main',
+            positioning: { type: 'static' },
+            layout: { type: 'flex', direction: 'column' },
+            canvasLayout: { x: 3, y: 0, width: 9, height: 8 },
+          },
+        ],
+        breakpoints: [
+          { name: 'mobile', minWidth: 0, gridCols: 4, gridRows: 8 },
+        ],
+        layouts: {
+          mobile: {
+            structure: 'sidebar-main',
+            components: ['c1', 'c2'],
+            roles: {
+              sidebar: 'c1',
+              main: 'c2',
+            },
+          },
+        },
+      }
+
+      const result = validateSchema(schema)
+
+      expect(result.valid).toBe(true)
+      // Should not have SIDEBAR_MAIN_WITHOUT_ROLES warning
+      expect(
+        result.warnings.find((w) => w.code === 'SIDEBAR_MAIN_WITHOUT_ROLES')
+      ).toBeUndefined()
+    })
+  })
+
+  describe('formatValidationResult', () => {
+    it('should format successful validation', () => {
+      const result: ValidationResult = {
+        valid: true,
+        errors: [],
+        warnings: [],
+      }
+
+      const formatted = formatValidationResult(result)
+
+      expect(formatted).toContain('✅ Schema validation passed!')
+    })
+
+    it('should format validation errors', () => {
+      const result: ValidationResult = {
+        valid: false,
+        errors: [
+          {
+            code: 'INVALID_VERSION',
+            message: 'Schema version must be "2.0"',
+            field: 'schemaVersion',
+          },
+          {
+            code: 'INVALID_COMPONENT_NAME',
+            message: 'Component name must be PascalCase',
+            componentId: 'c1',
+            field: 'name',
+          },
+        ],
+        warnings: [],
+      }
+
+      const formatted = formatValidationResult(result)
+
+      expect(formatted).toContain('❌ Schema validation failed')
+      expect(formatted).toContain('🚨 Errors:')
+      expect(formatted).toContain('[INVALID_VERSION]')
+      expect(formatted).toContain('[INVALID_COMPONENT_NAME]')
+      expect(formatted).toContain('Component: c1')
+      expect(formatted).toContain('Field: schemaVersion')
+    })
+
+    it('should format validation warnings', () => {
+      const result: ValidationResult = {
+        valid: true,
+        errors: [],
+        warnings: [
+          {
+            code: 'STICKY_WITHOUT_POSITION',
+            message: 'Sticky positioning should define position values',
+            componentId: 'c1',
+            field: 'positioning',
+          },
+        ],
+      }
+
+      const formatted = formatValidationResult(result)
+
+      expect(formatted).toContain('✅ Schema validation passed!')
+      expect(formatted).toContain('⚠️  Warnings:')
+      expect(formatted).toContain('[STICKY_WITHOUT_POSITION]')
+      expect(formatted).toContain('Component: c1')
+    })
+
+    it('should format both errors and warnings', () => {
+      const result: ValidationResult = {
+        valid: false,
+        errors: [
+          {
+            code: 'NO_COMPONENTS',
+            message: 'Schema must have at least one component',
+            field: 'components',
+          },
+        ],
+        warnings: [
+          {
+            code: 'STICKY_WITHOUT_POSITION',
+            message: 'Sticky positioning should define position values',
+            componentId: 'c2',
+          },
+        ],
+      }
+
+      const formatted = formatValidationResult(result)
+
+      expect(formatted).toContain('❌ Schema validation failed')
+      expect(formatted).toContain('🚨 Errors:')
+      expect(formatted).toContain('⚠️  Warnings:')
+      expect(formatted).toContain('[NO_COMPONENTS]')
+      expect(formatted).toContain('[STICKY_WITHOUT_POSITION]')
     })
   })
 })

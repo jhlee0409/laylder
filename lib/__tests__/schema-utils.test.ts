@@ -9,8 +9,9 @@ import {
   generateComponentId,
   DEFAULT_GRID_CONFIG,
   GRID_CONSTRAINTS,
+  normalizeSchema,
 } from '../schema-utils'
-import type { Component } from '@/types/schema'
+import type { Component, LaydlerSchema } from '@/types/schema'
 
 describe('Schema Utils', () => {
   describe('createEmptySchema', () => {
@@ -202,6 +203,205 @@ describe('Schema Utils', () => {
     it('should have min values less than max values', () => {
       expect(GRID_CONSTRAINTS.minCols).toBeLessThan(GRID_CONSTRAINTS.maxCols)
       expect(GRID_CONSTRAINTS.minRows).toBeLessThan(GRID_CONSTRAINTS.maxRows)
+    })
+  })
+
+  describe('normalizeSchema - responsiveCanvasLayout inheritance', () => {
+    it('should inherit mobile layout to tablet when tablet is missing', () => {
+      const schema: LaydlerSchema = {
+        schemaVersion: '2.0',
+        components: [
+          {
+            id: 'c1',
+            name: 'Header',
+            semanticTag: 'header',
+            positioning: { type: 'sticky', top: 0 },
+            layout: { type: 'flex', direction: 'row' },
+            canvasLayout: { x: 0, y: 0, width: 12, height: 1 },
+            responsiveCanvasLayout: {
+              mobile: { x: 0, y: 0, width: 4, height: 2 },
+            },
+          },
+        ],
+        breakpoints: [
+          { name: 'mobile', minWidth: 0, gridCols: 4, gridRows: 8 },
+          { name: 'tablet', minWidth: 768, gridCols: 8, gridRows: 8 },
+        ],
+        layouts: {
+          mobile: { structure: 'vertical', components: ['c1'] },
+          tablet: { structure: 'vertical', components: ['c1'] },
+        },
+      }
+
+      const normalized = normalizeSchema(schema)
+      const component = normalized.components[0]
+
+      expect(component.responsiveCanvasLayout?.tablet).toEqual({
+        x: 0,
+        y: 0,
+        width: 4,
+        height: 2,
+      })
+    })
+
+    it('should inherit tablet layout to desktop when desktop is missing', () => {
+      const schema: LaydlerSchema = {
+        schemaVersion: '2.0',
+        components: [
+          {
+            id: 'c1',
+            name: 'Header',
+            semanticTag: 'header',
+            positioning: { type: 'sticky', top: 0 },
+            layout: { type: 'flex', direction: 'row' },
+            canvasLayout: { x: 0, y: 0, width: 12, height: 1 },
+            responsiveCanvasLayout: {
+              mobile: { x: 0, y: 0, width: 4, height: 2 },
+              tablet: { x: 0, y: 0, width: 8, height: 1 },
+            },
+          },
+        ],
+        breakpoints: [
+          { name: 'mobile', minWidth: 0, gridCols: 4, gridRows: 8 },
+          { name: 'tablet', minWidth: 768, gridCols: 8, gridRows: 8 },
+          { name: 'desktop', minWidth: 1024, gridCols: 12, gridRows: 8 },
+        ],
+        layouts: {
+          mobile: { structure: 'vertical', components: ['c1'] },
+          tablet: { structure: 'vertical', components: ['c1'] },
+          desktop: { structure: 'vertical', components: ['c1'] },
+        },
+      }
+
+      const normalized = normalizeSchema(schema)
+      const component = normalized.components[0]
+
+      expect(component.responsiveCanvasLayout?.desktop).toEqual({
+        x: 0,
+        y: 0,
+        width: 8,
+        height: 1,
+      })
+    })
+
+    it('should inherit mobile to desktop when tablet is missing', () => {
+      const schema: LaydlerSchema = {
+        schemaVersion: '2.0',
+        components: [
+          {
+            id: 'c1',
+            name: 'Header',
+            semanticTag: 'header',
+            positioning: { type: 'sticky', top: 0 },
+            layout: { type: 'flex', direction: 'row' },
+            canvasLayout: { x: 0, y: 0, width: 12, height: 1 },
+            responsiveCanvasLayout: {
+              mobile: { x: 0, y: 0, width: 4, height: 2 },
+            },
+          },
+        ],
+        breakpoints: [
+          { name: 'mobile', minWidth: 0, gridCols: 4, gridRows: 8 },
+          { name: 'desktop', minWidth: 1024, gridCols: 12, gridRows: 8 },
+        ],
+        layouts: {
+          mobile: { structure: 'vertical', components: ['c1'] },
+          desktop: { structure: 'vertical', components: ['c1'] },
+        },
+      }
+
+      const normalized = normalizeSchema(schema)
+      const component = normalized.components[0]
+
+      // Desktop should inherit from mobile (since tablet is missing)
+      expect(component.responsiveCanvasLayout?.desktop).toEqual({
+        x: 0,
+        y: 0,
+        width: 4,
+        height: 2,
+      })
+    })
+
+    it('should not override existing responsive layouts', () => {
+      const schema: LaydlerSchema = {
+        schemaVersion: '2.0',
+        components: [
+          {
+            id: 'c1',
+            name: 'Header',
+            semanticTag: 'header',
+            positioning: { type: 'sticky', top: 0 },
+            layout: { type: 'flex', direction: 'row' },
+            canvasLayout: { x: 0, y: 0, width: 12, height: 1 },
+            responsiveCanvasLayout: {
+              mobile: { x: 0, y: 0, width: 4, height: 2 },
+              tablet: { x: 0, y: 0, width: 8, height: 1 },
+              desktop: { x: 0, y: 0, width: 12, height: 1 },
+            },
+          },
+        ],
+        breakpoints: [
+          { name: 'mobile', minWidth: 0, gridCols: 4, gridRows: 8 },
+          { name: 'tablet', minWidth: 768, gridCols: 8, gridRows: 8 },
+          { name: 'desktop', minWidth: 1024, gridCols: 12, gridRows: 8 },
+        ],
+        layouts: {
+          mobile: { structure: 'vertical', components: ['c1'] },
+          tablet: { structure: 'vertical', components: ['c1'] },
+          desktop: { structure: 'vertical', components: ['c1'] },
+        },
+      }
+
+      const normalized = normalizeSchema(schema)
+      const component = normalized.components[0]
+
+      // All layouts should remain as original
+      expect(component.responsiveCanvasLayout?.mobile).toEqual({
+        x: 0,
+        y: 0,
+        width: 4,
+        height: 2,
+      })
+      expect(component.responsiveCanvasLayout?.tablet).toEqual({
+        x: 0,
+        y: 0,
+        width: 8,
+        height: 1,
+      })
+      expect(component.responsiveCanvasLayout?.desktop).toEqual({
+        x: 0,
+        y: 0,
+        width: 12,
+        height: 1,
+      })
+    })
+
+    it('should handle components without responsiveCanvasLayout', () => {
+      const schema: LaydlerSchema = {
+        schemaVersion: '2.0',
+        components: [
+          {
+            id: 'c1',
+            name: 'Header',
+            semanticTag: 'header',
+            positioning: { type: 'sticky', top: 0 },
+            layout: { type: 'flex', direction: 'row' },
+            canvasLayout: { x: 0, y: 0, width: 12, height: 1 },
+          },
+        ],
+        breakpoints: [
+          { name: 'mobile', minWidth: 0, gridCols: 4, gridRows: 8 },
+        ],
+        layouts: {
+          mobile: { structure: 'vertical', components: ['c1'] },
+        },
+      }
+
+      const normalized = normalizeSchema(schema)
+      const component = normalized.components[0]
+
+      // Should not add responsiveCanvasLayout if it doesn't exist
+      expect(component.responsiveCanvasLayout).toBeUndefined()
     })
   })
 })
