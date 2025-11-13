@@ -29,23 +29,23 @@ export function InitialBreakpointModal({ open, onSelect }: InitialBreakpointModa
     {
       type: "mobile" as const,
       name: "Mobile",
-      description: "모바일 기기용 (4 columns)",
+      description: "For mobile devices (4 columns)",
       icon: Smartphone,
-      gridInfo: "4×8 그리드",
+      gridInfo: "4×8 grid",
     },
     {
       type: "tablet" as const,
       name: "Tablet",
-      description: "태블릿 기기용 (8 columns)",
+      description: "For tablet devices (8 columns)",
       icon: Tablet,
-      gridInfo: "8×8 그리드",
+      gridInfo: "8×8 grid",
     },
     {
       type: "desktop" as const,
       name: "Desktop",
-      description: "데스크톱 기기용 (12 columns)",
+      description: "For desktop devices (12 columns)",
       icon: Monitor,
-      gridInfo: "12×8 그리드",
+      gridInfo: "12×8 grid",
     },
   ]
 
@@ -59,9 +59,9 @@ export function InitialBreakpointModal({ open, onSelect }: InitialBreakpointModa
     <Dialog open={open} onOpenChange={() => {}}>
       <DialogContent className="sm:max-w-[500px] [&>button]:hidden">
         <DialogHeader>
-          <DialogTitle>프로젝트 시작하기</DialogTitle>
+          <DialogTitle>Start Your Project</DialogTitle>
           <DialogDescription>
-            먼저 작업할 화면 크기를 선택하세요. 나중에 추가 브레이크포인트를 자유롭게 추가할 수 있습니다.
+            Choose a screen size to start with. You can add more breakpoints later.
           </DialogDescription>
         </DialogHeader>
 
@@ -109,7 +109,7 @@ export function InitialBreakpointModal({ open, onSelect }: InitialBreakpointModa
             disabled={!selectedBreakpoint}
             className="min-w-[100px]"
           >
-            시작하기
+            Start
           </Button>
         </div>
       </DialogContent>

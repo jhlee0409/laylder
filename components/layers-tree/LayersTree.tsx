@@ -58,10 +58,10 @@ export function LayersTree() {
   // 컴포넌트 삭제
   const handleDelete = async (componentId: string) => {
     const confirmed = await confirm({
-      title: "컴포넌트 삭제",
-      description: `"${componentId}" 컴포넌트를 삭제하시겠습니까?`,
-      confirmText: "삭제",
-      cancelText: "취소",
+      title: "Delete Component",
+      description: `Are you sure you want to delete component "${componentId}"?`,
+      confirmText: "Delete",
+      cancelText: "Cancel",
       variant: "destructive",
     })
 

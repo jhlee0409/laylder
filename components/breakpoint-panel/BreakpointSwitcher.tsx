@@ -52,19 +52,19 @@ export function BreakpointSwitcher() {
   // 브레이크포인트 추가
   const handleAddBreakpoint = () => {
     if (!newBreakpointName.trim() || !newBreakpointMinWidth) {
-      warning("브레이크포인트 이름과 최소 너비를 입력하세요.")
+      warning("Please enter breakpoint name and minimum width")
       return
     }
 
     const minWidth = parseInt(newBreakpointMinWidth, 10)
     if (isNaN(minWidth) || minWidth < 0) {
-      error("올바른 최소 너비를 입력하세요.")
+      error("Please enter a valid minimum width")
       return
     }
 
     // 중복 이름 체크
     if (breakpoints.some(bp => bp.name === newBreakpointName)) {
-      error("이미 존재하는 브레이크포인트 이름입니다.")
+      error("Breakpoint name already exists")
       return
     }
 
@@ -84,15 +84,15 @@ export function BreakpointSwitcher() {
   // 브레이크포인트 삭제
   const handleDeleteBreakpoint = async (name: string) => {
     if (breakpoints.length <= 1) {
-      warning("최소 1개의 브레이크포인트가 필요합니다.")
+      warning("At least one breakpoint is required")
       return
     }
 
     const confirmed = await confirm({
-      title: "브레이크포인트 삭제",
-      description: `"${name}" 브레이크포인트를 삭제하시겠습니까?`,
-      confirmText: "삭제",
-      cancelText: "취소",
+      title: "Delete Breakpoint",
+      description: `Are you sure you want to delete breakpoint "${name}"?`,
+      confirmText: "Delete",
+      cancelText: "Cancel",
       variant: "destructive",
     })
 
@@ -142,7 +142,7 @@ export function BreakpointSwitcher() {
                       handleDeleteBreakpoint(breakpoint.name)
                     }}
                     className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-red-600"
-                    title={`${breakpoint.name} 삭제`}
+                    title={`Delete ${breakpoint.name}`}
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -158,7 +158,7 @@ export function BreakpointSwitcher() {
               size="sm"
               onClick={() => setIsAddingBreakpoint(true)}
               className="gap-1"
-              title="브레이크포인트 추가"
+              title="Add breakpoint"
             >
               <Plus className="w-4 h-4" />
               <span>Add</span>
@@ -167,7 +167,7 @@ export function BreakpointSwitcher() {
             <div className="flex gap-2 items-center border rounded-md p-2 bg-white">
               <input
                 type="text"
-                placeholder="이름"
+                placeholder="Name"
                 value={newBreakpointName}
                 onChange={(e) => setNewBreakpointName(e.target.value)}
                 className="w-20 px-2 py-1 text-sm border rounded"
@@ -179,7 +179,7 @@ export function BreakpointSwitcher() {
               />
               <input
                 type="number"
-                placeholder="너비"
+                placeholder="Width"
                 value={newBreakpointMinWidth}
                 onChange={(e) => setNewBreakpointMinWidth(e.target.value)}
                 className="w-16 px-2 py-1 text-sm border rounded"
@@ -193,7 +193,7 @@ export function BreakpointSwitcher() {
                 onClick={handleAddBreakpoint}
                 className="h-7"
               >
-                확인
+                OK
               </Button>
               <Button
                 size="sm"
@@ -205,7 +205,7 @@ export function BreakpointSwitcher() {
                 }}
                 className="h-7"
               >
-                취소
+                Cancel
               </Button>
             </div>
           )}

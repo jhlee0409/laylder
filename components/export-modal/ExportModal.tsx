@@ -46,7 +46,7 @@ export function ExportModal() {
     const result = generatePrompt(schema, framework, cssSolution)
 
     if (!result.success) {
-      error(result.errors?.join("\n") || "알 수 없는 오류가 발생했습니다.", "생성 실패")
+      error(result.errors?.join("\n") || "Unknown error occurred", "Generation Failed")
       return
     }
 

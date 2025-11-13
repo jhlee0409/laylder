@@ -66,13 +66,13 @@ export function useToast() {
       }),
     error: (message: string, title?: string) =>
       addToast({
-        title: title || "오류",
+        title: title || "Error",
         description: message,
         variant: "destructive",
       }),
     warning: (message: string, title?: string) =>
       addToast({
-        title: title || "경고",
+        title: title || "Warning",
         description: message,
         variant: "warning",
       }),

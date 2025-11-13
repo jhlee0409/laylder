@@ -79,7 +79,7 @@ export function KonvaCanvas({
         e.preventDefault()
         setIsSpacePressed(true)
       }
-      // Delete 또는 Backspace 키로 선택된 컴포넌트 삭제
+      // Delete or Backspace key to delete selected component
       if ((e.key === "Delete" || e.key === "Backspace") && selectedComponentId) {
         e.preventDefault()
         deleteComponent(selectedComponentId)
@@ -532,38 +532,38 @@ export function KonvaCanvas({
                 <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
                 <path d="M12 17h.01" />
               </svg>
-              <span>단축키</span>
+              <span>Shortcuts</span>
             </button>
             {/* Tooltip */}
             <div className="absolute right-0 top-full mt-2 w-96 p-5 bg-white text-gray-900 rounded-xl shadow-2xl border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-              <div className="text-base font-bold mb-4 text-gray-900">키보드 단축키</div>
+              <div className="text-base font-bold mb-4 text-gray-900">Keyboard Shortcuts</div>
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
-                  <span className="text-sm text-gray-600 w-28 flex-shrink-0">캔버스 이동</span>
+                  <span className="text-sm text-gray-600 w-28 flex-shrink-0">Pan Canvas</span>
                   <div className="flex items-center gap-2">
                     <kbd className="px-3 py-1.5 bg-gray-100 border border-gray-300 rounded-md text-gray-900 font-mono text-sm shadow-sm min-w-[80px] text-center">Space</kbd>
                     <span className="text-gray-500 text-sm">+ Drag</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-sm text-gray-600 w-28 flex-shrink-0">확대/축소</span>
+                  <span className="text-sm text-gray-600 w-28 flex-shrink-0">Zoom In/Out</span>
                   <div className="flex items-center gap-2">
                     <kbd className="px-3 py-1.5 bg-gray-100 border border-gray-300 rounded-md text-gray-900 font-mono text-sm shadow-sm min-w-[80px] text-center">Ctrl</kbd>
                     <span className="text-gray-500 text-sm">+ Wheel</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-sm text-gray-600 w-28 flex-shrink-0">수평 이동</span>
+                  <span className="text-sm text-gray-600 w-28 flex-shrink-0">Horizontal Scroll</span>
                   <div className="flex items-center gap-2">
                     <kbd className="px-3 py-1.5 bg-gray-100 border border-gray-300 rounded-md text-gray-900 font-mono text-sm shadow-sm min-w-[80px] text-center">Shift</kbd>
                     <span className="text-gray-500 text-sm">+ Wheel</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-sm text-gray-600 w-28 flex-shrink-0">컴포넌트 삭제</span>
+                  <span className="text-sm text-gray-600 w-28 flex-shrink-0">Delete Component</span>
                   <div className="flex items-center gap-2">
                     <kbd className="px-3 py-1.5 bg-gray-100 border border-gray-300 rounded-md text-gray-900 font-mono text-sm shadow-sm min-w-[80px] text-center">Delete</kbd>
-                    <span className="text-gray-500 text-sm">또는</span>
+                    <span className="text-gray-500 text-sm">or</span>
                     <kbd className="px-3 py-1.5 bg-gray-100 border border-gray-300 rounded-md text-gray-900 font-mono text-sm shadow-sm">⌫</kbd>
                   </div>
                 </div>
