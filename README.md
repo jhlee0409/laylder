@@ -1,5 +1,7 @@
 # Laylder MVP
 
+[![codecov](https://codecov.io/gh/jhlee0409/laylder/branch/main/graph/badge.svg)](https://codecov.io/gh/jhlee0409/laylder)
+
 Visual layout builder for AI-powered code generation.
 
 ## Tech Stack

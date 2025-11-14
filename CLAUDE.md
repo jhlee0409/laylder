@@ -23,14 +23,16 @@ pnpm start
 # 린트 검사
 pnpm lint
 
-# AI Model Strategies 테스트 실행
-npx tsx scripts/test-ai-model-strategies.ts
+# 유닛 테스트 실행 (Vitest)
+pnpm test              # Watch mode
+pnpm test:run          # Run once
+pnpm test:ui           # UI mode
+pnpm test:coverage     # With coverage
 
-# Grok Strategy 테스트 실행
-npx tsx scripts/test-grok-strategy.ts
-
-# Schema V2 검증 스크립트
-npx tsx scripts/validate-schema-v2.ts
+# E2E 테스트 실행 (Playwright)
+pnpm test:e2e
+pnpm test:e2e:ui
+pnpm test:e2e:headed
 ```
 
 ## 아키텍처 핵심 개념
@@ -242,201 +244,206 @@ Canvas는 **Grid 기반 좌표계** (기본 12×20)를 사용하여 자유로운
 
 ### 테스트 철학
 
-Laylder는 **Unit 테스트 기반 (Unit-First Testing)** 전략을 사용합니다.
+Laylder는 **Vitest 기반 Unit 테스트** 전략을 사용합니다.
 
 **핵심 원칙**:
 1. **비즈니스 로직 검증**: 핵심 로직을 독립적으로 테스트
-2. **빠른 피드백**: TypeScript로 작성된 테스트를 즉시 실행
+2. **빠른 피드백**: Vitest로 작성된 테스트를 즉시 실행
 3. **높은 신뢰도**: 각 모듈의 정확성을 보장
 4. **회귀 방지**: 모든 주요 기능은 Unit 테스트로 보호
+5. **커버리지 추적**: 코드 커버리지를 통한 품질 관리
 
-### TypeScript Unit 테스트
+### Vitest Unit 테스트
 
-**테스트 파일 위치**: `scripts/` 디렉토리
+**테스트 프레임워크**: Vitest 4.0
+**테스트 파일 위치**: `lib/__tests__/` 디렉토리
 
-**테스트 실행 환경**: Node.js + TypeScript (tsx)
+**테스트 실행 환경**: Vitest + Happy DOM
 
 ```bash
-# AI Model Strategies 전체 테스트
-npx tsx scripts/test-ai-model-strategies.ts
+# 유닛 테스트 실행 (watch mode)
+pnpm test
 
-# Grok Strategy 전용 테스트
-npx tsx scripts/test-grok-strategy.ts
+# 유닛 테스트 실행 (run once)
+pnpm test:run
 
-# Schema V2 검증 테스트
-npx tsx scripts/validate-schema-v2.ts
+# UI 모드로 테스트 실행
+pnpm test:ui
+
+# 커버리지 리포트 생성
+pnpm test:coverage
 ```
 
 ### 테스트 파일 구조
 
 ```
-scripts/
-├── test-ai-model-strategies.ts      # AI 모델 전략 종합 테스트
-│   ├── Test 1: Factory 기본 동작
-│   ├── Test 2: 모델 추천 시스템
-│   ├── Test 3: 프롬프트 생성
-│   └── Test 4: 프롬프트 차이점 비교
-├── test-grok-strategy.ts             # Grok 전략 전용 테스트
-└── validate-schema-v2.ts             # Schema 검증 테스트
+lib/__tests__/
+├── schema-validation.test.ts    # 스키마 검증 로직 (78개 테스트 중 6개)
+├── schema-utils.test.ts          # 스키마 유틸리티 함수 (15개)
+├── smart-layout.test.ts          # 스마트 레이아웃 로직 (7개)
+├── grid-constraints.test.ts      # 그리드 제약 조건 (10개)
+├── snap-to-grid.test.ts          # 그리드 스냅 로직 (21개)
+└── prompt-generator.test.ts      # 프롬프트 생성 (19개)
 ```
 
 **명명 규칙**:
-- `test-[기능명].ts`: 기능별 Unit 테스트
-- `validate-[기능명].ts`: 검증 로직 테스트
+- `[모듈명].test.ts`: Vitest 유닛 테스트 파일
+- AAA 패턴 (Arrange-Act-Assert) 사용
+- `describe` / `it` 블록으로 구조화
 
 ### 테스트 실행 명령어
 
 ```bash
-# 모든 AI 모델 전략 테스트 (권장)
-npx tsx scripts/test-ai-model-strategies.ts
+# 유닛 테스트 실행 (권장)
+pnpm test:run          # 모든 테스트 실행
+pnpm test:coverage     # 커버리지 포함
 
-# Grok 전략만 빠르게 테스트
-npx tsx scripts/test-grok-strategy.ts
+# 특정 파일만 테스트
+pnpm test schema-validation.test.ts
+pnpm test snap-to-grid.test.ts
 
-# Schema 검증 (Schema 수정 시 필수)
-npx tsx scripts/validate-schema-v2.ts
+# Watch 모드 (개발 중)
+pnpm test
 
-# TypeScript 타입 체크 (컴파일 에러 확인)
+# UI 모드 (시각적 인터페이스)
+pnpm test:ui
+
+# TypeScript 타입 체크
 npx tsc --noEmit
 
 # 린트 검사
 pnpm lint
 ```
 
+### 테스트 커버리지
+
+**현재 커버리지 (핵심 비즈니스 로직)**:
+- **전체**: 66.29% lines, 71.25% functions
+- **snap-to-grid.ts**: 100% ✅
+- **prompt-generator.ts**: 100% ✅
+- **grid-constraints.ts**: 75.67% ✅
+- **schema-validation.ts**: 65.97% ✅
+- **schema-utils.ts**: 61.11% ✅
+- **smart-layout.ts**: 29.57% (부분적)
+
+**커버리지 리포트 위치**: `coverage/` 디렉토리 (HTML 형식으로 확인 가능)
+
 ### 테스트 작성 필수 규칙
 
-#### 1. 명확한 함수 구조
+#### 1. Vitest describe/it 구조
 
 ```typescript
-/**
- * Test 1: Factory 기본 동작 테스트
- */
-function testFactoryBasics() {
-  section("Test 1: Factory 기본 동작 테스트")
+import { describe, it, expect } from 'vitest'
+import { functionToTest } from '../module'
 
-  try {
-    // 테스트 로직
-    const availableModels = getAvailableModelIds()
-    log(`✓ 사용 가능한 모델 개수: ${availableModels.length}`, "green")
+describe('Module Name', () => {
+  describe('functionToTest', () => {
+    it('should perform expected behavior', () => {
+      // Arrange: 테스트 데이터 준비
+      const input = { /* ... */ }
 
-    return true  // 성공
-  } catch (error) {
-    log(`❌ 테스트 실패: ${error}`, "red")
-    return false  // 실패
-  }
-}
+      // Act: 동작 수행
+      const result = functionToTest(input)
+
+      // Assert: 결과 검증
+      expect(result).toBe(expectedValue)
+      expect(result).toHaveProperty('key', 'value')
+    })
+  })
+})
 ```
 
 #### 2. AAA 패턴 (Arrange-Act-Assert)
 
 **✅ 권장 (명확한 구조)**:
 ```typescript
-function testPromptGeneration() {
-  // Arrange: 초기 데이터 준비
-  const schema = sampleSchemas.github
-  const strategy = createPromptStrategy('claude-sonnet-4.5')
+describe('Prompt Generator', () => {
+  it('should generate valid prompt for valid schema', () => {
+    // Arrange: 초기 데이터 준비
+    const validSchema: LaydlerSchema = {
+      schemaVersion: '2.0',
+      components: [/* ... */],
+      breakpoints: [/* ... */],
+      layouts: { /* ... */ }
+    }
 
-  // Act: 동작 수행
-  const result = strategy.generatePrompt(schema, 'react', 'tailwind', {
-    optimizationLevel: 'quality',
-    verbosity: 'detailed'
+    // Act: 동작 수행
+    const result = generatePrompt(validSchema, 'react', 'tailwind')
+
+    // Assert: 결과 검증
+    expect(result.success).toBe(true)
+    expect(result.prompt).toBeDefined()
+    expect(result.errors).toBeUndefined()
   })
-
-  // Assert: 결과 검증
-  if (result.success && result.prompt) {
-    log(`✓ 프롬프트 생성 성공`, "green")
-    return true
-  } else {
-    log(`❌ 프롬프트 생성 실패`, "red")
-    return false
-  }
-}
+})
 ```
 
-#### 3. 명확한 에러 메시지
-
-**❌ 나쁜 예**:
-```typescript
-if (!result.success) {
-  throw new Error("Failed")  // 무엇이 실패했는지 불명확
-}
-```
+#### 3. 명확한 테스트 설명 (it 블록)
 
 **✅ 좋은 예**:
 ```typescript
-if (!result.success) {
-  log(`❌ 프롬프트 생성 실패`, "red")
-  if (result.errors) {
-    result.errors.forEach((error) => log(`  - ${error}`, "red"))
-  }
-  return false
-}
+it('should reject invalid schema version', () => { /* ... */ })
+it('should detect duplicate component IDs', () => { /* ... */ })
+it('should snap to nearest grid when within threshold', () => { /* ... */ })
 ```
 
-#### 4. 검증 포인트 명시
+**❌ 나쁜 예**:
+```typescript
+it('test1', () => { /* ... */ })
+it('works', () => { /* ... */ })
+```
+
+#### 4. 여러 검증 포인트
 
 ```typescript
-// ✅ 좋은 예: 여러 검증 포인트 명시
-function testGrokStrategy() {
-  const result = strategy.generatePrompt(schema, 'react', 'tailwind', {
-    chainOfThought: true
-  })
+it('should include all required sections in prompt', () => {
+  const result = generatePrompt(validSchema, 'react', 'tailwind')
 
-  // 검증 1: 프롬프트 생성 성공
-  const hasReasoningPrompt = result.prompt.includes("Reasoning")
-
-  // 검증 2: 실시간 컨텍스트 포함
-  const hasCurrentDate = result.prompt.includes("2025")
-
-  // 검증 3: 우선순위 그룹화
-  const hasPriorityComponents = result.prompt.includes("Priority Components")
-
-  log(`\n✓ Grok 특화 기능 검증:`, "green")
-  log(`  - 추론 기반 접근: ${hasReasoningPrompt ? "✓" : "✗"}`, hasReasoningPrompt ? "green" : "red")
-  log(`  - 실시간 컨텍스트: ${hasCurrentDate ? "✓" : "✗"}`, hasCurrentDate ? "green" : "red")
-  log(`  - 우선순위 그룹화: ${hasPriorityComponents ? "✓" : "✗"}`, hasPriorityComponents ? "green" : "red")
-
-  return hasReasoningPrompt && hasCurrentDate && hasPriorityComponents
-}
+  // 여러 검증 포인트
+  expect(result.prompt).toContain('Full Schema (JSON)')
+  expect(result.prompt).toContain('schemaVersion')
+  expect(result.prompt).toContain('Header')
+  expect(result.prompt).toContain('mobile')
+  expect(result.prompt).toContain('desktop')
+})
 ```
 
 #### 5. 테스트 독립성 보장
 
 ```typescript
-// ✅ 좋은 예: 각 테스트가 독립적으로 데이터 준비
-function testModelRecommendation() {
-  try {
-    // 각 테스트마다 독립적으로 데이터 생성
-    const recommendations = getModelRecommendations({
-      schemaComplexity: "complex",
-      responsiveComplexity: "medium",
-      costSensitivity: "low"
-    })
+// ✅ 좋은 예: 각 테스트가 독립적
+describe('Schema Utils', () => {
+  it('should create empty schema', () => {
+    const schema = createEmptySchema()
+    expect(schema.components).toHaveLength(0)
+  })
 
-    // 검증 로직
-    return recommendations.length > 0
-  } catch (error) {
-    return false
-  }
-}
+  it('should generate component ID', () => {
+    const components = [
+      { id: 'c1', name: 'Header', /* ... */ }
+    ]
+    const nextId = generateComponentId(components)
+    expect(nextId).toBe('c2')
+  })
+})
 ```
 
 ### 테스트 커버리지 기준
 
-**필수 커버리지 (P0)** - AI Model Strategies:
-- [x] Factory 기본 동작 (19개 모델 지원)
-- [x] 모델 추천 시스템 (3가지 시나리오)
-- [x] 프롬프트 생성 (4개 주요 모델)
-- [x] 프롬프트 차이점 비교
-- [x] Grok 전략 특화 기능
-- [x] Token 추정 알고리즘
+**현재 달성된 커버리지**:
+- [x] Schema Validation - 65.97% (6개 테스트)
+- [x] Schema Utils - 61.11% (15개 테스트)
+- [x] Grid Constraints - 75.67% (10개 테스트)
+- [x] Snap to Grid - 100% (21개 테스트)
+- [x] Prompt Generator - 100% (19개 테스트)
+- [x] Smart Layout - 29.57% (7개 테스트)
 
-**권장 커버리지 (P1)**:
-- [ ] DeepSeek 비용 최적화 검증
-- [ ] Gemini 프레임워크 특화 검증
-- [ ] GPT Few-shot Learning 검증
-- [ ] Claude Chain-of-Thought 검증
-- [ ] 모든 19개 모델 개별 테스트
+**추가 테스트 권장 (선택사항)**:
+- [ ] Smart Layout 완전한 커버리지
+- [ ] Code Generator 테스트
+- [ ] File Exporter 테스트
+- [ ] Component Library 테스트
+- [ ] Zustand Store 통합 테스트
 
 ### 테스트 실패 디버깅
 
