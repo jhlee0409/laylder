@@ -47,7 +47,7 @@ function generateCase1_StickyHeader() {
         positioning: { type: "sticky", position: { top: 0, zIndex: 50 } },
         layout: {
           type: "container",
-          container: { maxWidth: "1200px", padding: "1rem", centered: true }
+          container: { maxWidth: "xl", padding: "1rem", centered: true }
         },
         styling: { background: "white", border: "b", shadow: "sm" },
         props: { children: "Header Content" },
@@ -101,7 +101,7 @@ function generateCase2_FlexLayout() {
           flex: {
             direction: "row",
             gap: "2rem",
-            justify: "space-between",
+            justify: "between",
             items: "center"
           }
         },
@@ -154,7 +154,7 @@ function generateCase3_GridLayout() {
             cols: 3,
             rows: 2,
             gap: "1.5rem",
-            autoFlow: "dense"
+            autoFlow: "row dense"
           }
         },
         styling: { className: "p-8" },

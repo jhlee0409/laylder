@@ -72,6 +72,13 @@ export function createSchemaWithBreakpoint(
     desktop: 1024,
   }
 
+  const layouts: Record<string, LayoutConfig> = {
+    [breakpointType]: {
+      structure: "vertical",
+      components: [],
+    },
+  }
+
   return {
     schemaVersion: "2.0",
     components: [],
@@ -82,12 +89,7 @@ export function createSchemaWithBreakpoint(
         ...DEFAULT_GRID_CONFIG[breakpointType],
       },
     ],
-    layouts: {
-      [breakpointType]: {
-        structure: "vertical",
-        components: [],
-      },
-    } as any, // Type assertion for dynamic key
+    layouts,
   }
 }
 
@@ -109,9 +111,14 @@ export function generateComponentId(existingComponents: Component[]): string {
 
 /**
  * Deep clone Schema
+ *
+ * Uses structuredClone() for efficient deep cloning (available in Node 17+)
+ * - More performant than JSON.parse(JSON.stringify())
+ * - Preserves more types (Date, Map, Set, etc.)
+ * - Handles circular references
  */
 export function cloneSchema(schema: LaydlerSchema): LaydlerSchema {
-  return JSON.parse(JSON.stringify(schema))
+  return structuredClone(schema)
 }
 
 /**
@@ -333,11 +340,12 @@ export function normalizeSchema(schema: LaydlerSchema): LaydlerSchema {
     const currentBP = sortedBreakpoints[i].name
     const previousBP = sortedBreakpoints[i - 1].name
 
-    // If current breakpoint's layout is empty or missing, inherit from previous breakpoint
-    if ((!normalized.layouts[currentBP] ||
-         normalized.layouts[currentBP].components.length === 0) &&
-        normalized.layouts[previousBP]) {
-      normalized.layouts[currentBP] = JSON.parse(JSON.stringify(normalized.layouts[previousBP]))
+    // Only inherit if layout is completely missing (not just empty)
+    // Edge case fix: Don't inherit if layout exists but is intentionally empty (components.length === 0)
+    // - Missing layout (!normalized.layouts[currentBP]) → INHERIT from previous
+    // - Empty layout (components.length === 0) → PRESERVE as intentionally empty
+    if (!normalized.layouts[currentBP] && normalized.layouts[previousBP]) {
+      normalized.layouts[currentBP] = structuredClone(normalized.layouts[previousBP])
     }
   }
 

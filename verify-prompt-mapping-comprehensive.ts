@@ -139,10 +139,10 @@ function testLayoutTypeCombinations() {
 
     if (result.success && result.prompt) {
       const hasLayoutType = result.prompt.includes("Type: `flex`")
-      const hasDirection = flexConfig.direction ? result.prompt.includes(`Direction: \`${flexConfig.direction}\``) : true
-      const hasGap = flexConfig.gap ? result.prompt.includes(`Gap: \`${flexConfig.gap}\``) : true
-      const hasJustify = flexConfig.justify ? result.prompt.includes(`Justify: \`${flexConfig.justify}\``) : true
-      const hasItems = flexConfig.items ? result.prompt.includes(`Items: \`${flexConfig.items}\``) : true
+      const hasDirection = 'direction' in flexConfig ? result.prompt.includes(`Direction: \`${flexConfig.direction}\``) : true
+      const hasGap = 'gap' in flexConfig ? result.prompt.includes(`Gap: \`${flexConfig.gap}\``) : true
+      const hasJustify = 'justify' in flexConfig ? result.prompt.includes(`Justify: \`${flexConfig.justify}\``) : true
+      const hasItems = 'items' in flexConfig ? result.prompt.includes(`Items: \`${flexConfig.items}\``) : true
 
       if (hasLayoutType && hasDirection && hasGap && hasJustify && hasItems) {
         passed++
@@ -190,9 +190,9 @@ function testLayoutTypeCombinations() {
 
     if (result.success && result.prompt) {
       const hasLayoutType = result.prompt.includes("Type: `grid`")
-      const hasCols = gridConfig.cols ? result.prompt.includes(`Columns: \`${gridConfig.cols}\``) : true
-      const hasRows = gridConfig.rows ? result.prompt.includes(`Rows: \`${gridConfig.rows}\``) : true
-      const hasGap = gridConfig.gap ? result.prompt.includes(`Gap: \`${gridConfig.gap}\``) : true
+      const hasCols = 'cols' in gridConfig ? result.prompt.includes(`Columns: \`${gridConfig.cols}\``) : true
+      const hasRows = 'rows' in gridConfig ? result.prompt.includes(`Rows: \`${gridConfig.rows}\``) : true
+      const hasGap = 'gap' in gridConfig ? result.prompt.includes(`Gap: \`${gridConfig.gap}\``) : true
 
       if (hasLayoutType && hasCols && hasRows && hasGap) {
         passed++
@@ -213,9 +213,9 @@ function testLayoutTypeCombinations() {
 
   // Container layouts
   const containerConfigs = [
-    { maxWidth: "1200px", padding: "1rem", centered: true },
-    { maxWidth: "full", padding: "2rem 1rem", centered: false },
-    { maxWidth: "md", centered: true },
+    { maxWidth: "xl" as const, padding: "1rem", centered: true },
+    { maxWidth: "full" as const, padding: "2rem 1rem", centered: false },
+    { maxWidth: "md" as const, centered: true },
   ] as const
 
   containerConfigs.forEach((containerConfig, idx) => {
@@ -239,9 +239,9 @@ function testLayoutTypeCombinations() {
 
     if (result.success && result.prompt) {
       const hasLayoutType = result.prompt.includes("Type: `container`")
-      const hasMaxWidth = containerConfig.maxWidth ? result.prompt.includes(`Max width: \`${containerConfig.maxWidth}\``) : true
-      const hasPadding = containerConfig.padding ? result.prompt.includes(`Padding: \`${containerConfig.padding}\``) : true
-      const hasCentered = containerConfig.centered !== undefined ? result.prompt.includes(`Centered: ${containerConfig.centered}`) : true
+      const hasMaxWidth = 'maxWidth' in containerConfig ? result.prompt.includes(`Max width: \`${containerConfig.maxWidth}\``) : true
+      const hasPadding = 'padding' in containerConfig ? result.prompt.includes(`Padding: \`${containerConfig.padding}\``) : true
+      const hasCentered = 'centered' in containerConfig ? result.prompt.includes(`Centered: ${containerConfig.centered}`) : true
 
       if (hasLayoutType && hasMaxWidth && hasPadding && hasCentered) {
         passed++
