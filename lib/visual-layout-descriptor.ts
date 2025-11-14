@@ -11,6 +11,11 @@
 
 import type { Component } from "@/types/schema"
 import { canvasToGridPositions, analyzeGridComplexity, type VisualLayout } from "./canvas-to-grid"
+import {
+  groupComponentsByRow,
+  getCanvasLayoutForBreakpoint,
+  filterComponentsWithCanvasLayout,
+} from "./canvas-utils"
 
 /**
  * Layout Description (AI 프롬프트용)
@@ -46,21 +51,24 @@ export function describeVisualLayout(
   gridCols: number,
   gridRows: number
 ): LayoutDescription {
-  const visualLayout = canvasToGridPositions(components, breakpoint, gridCols, gridRows)
-  const complexity = analyzeGridComplexity(components, breakpoint)
+  // Filter out components without Canvas layout for this breakpoint
+  const componentsWithLayout = filterComponentsWithCanvasLayout(components, breakpoint)
+
+  const visualLayout = canvasToGridPositions(componentsWithLayout, breakpoint, gridCols, gridRows)
+  const complexity = analyzeGridComplexity(componentsWithLayout, breakpoint)
 
   // 1. Summary
   const summary = `This breakpoint uses a **${gridCols}-column × ${gridRows}-row grid system** with ${complexity.totalComponents} components.`
 
   // 2. Row-by-row description
-  const rowByRow = generateRowByRowDescription(components, breakpoint, gridCols)
+  const rowByRow = generateRowByRowDescription(componentsWithLayout, breakpoint, gridCols)
 
   // 3. Spatial relationships
-  const spatialRelationships = detectSpatialRelationships(components, breakpoint, gridCols, gridRows)
+  const spatialRelationships = detectSpatialRelationships(componentsWithLayout, breakpoint, gridCols, gridRows)
 
   // 4. Implementation hints
   const implementationHints = generateImplementationHints(
-    components,
+    componentsWithLayout,
     breakpoint,
     gridCols,
     gridRows,
@@ -95,9 +103,7 @@ function generateRowByRowDescription(
     const { rowRange, components: comps } = group
 
     const componentDescs = comps.map((comp) => {
-      const layout =
-        comp.responsiveCanvasLayout?.[breakpoint as keyof typeof comp.responsiveCanvasLayout] ||
-        comp.canvasLayout!
+      const layout = getCanvasLayoutForBreakpoint(comp, breakpoint)!
 
       const colRange =
         layout.width === gridCols
@@ -116,67 +122,6 @@ function generateRowByRowDescription(
   })
 
   return rows
-}
-
-/**
- * Row별로 컴포넌트 그룹화 (연속된 row는 합침)
- */
-interface RowGroup {
-  rowRange: number[]
-  components: Component[]
-}
-
-function groupComponentsByRow(components: Component[], breakpoint: string): RowGroup[] {
-  const rowMap = new Map<number, Component[]>()
-
-  // 각 컴포넌트의 시작 row에 추가
-  components.forEach((comp) => {
-    const layout =
-      comp.responsiveCanvasLayout?.[breakpoint as keyof typeof comp.responsiveCanvasLayout] ||
-      comp.canvasLayout
-    if (!layout) return
-
-    const startRow = layout.y
-    if (!rowMap.has(startRow)) {
-      rowMap.set(startRow, [])
-    }
-    rowMap.get(startRow)!.push(comp)
-  })
-
-  // Row 순서대로 정렬하고 그룹화
-  const groups: RowGroup[] = []
-  const sortedRows = Array.from(rowMap.keys()).sort((a, b) => a - b)
-
-  sortedRows.forEach((row) => {
-    const comps = rowMap.get(row)!.sort((a, b) => {
-      const aX =
-        (a.responsiveCanvasLayout?.[breakpoint as keyof typeof a.responsiveCanvasLayout] ||
-          a.canvasLayout)!.x
-      const bX =
-        (b.responsiveCanvasLayout?.[breakpoint as keyof typeof b.responsiveCanvasLayout] ||
-          b.canvasLayout)!.x
-      return aX - bX
-    })
-
-    // 연속된 row span 계산
-    const maxHeight = Math.max(
-      ...comps.map((c) => {
-        const layout =
-          c.responsiveCanvasLayout?.[breakpoint as keyof typeof c.responsiveCanvasLayout] ||
-          c.canvasLayout!
-        return layout.height
-      })
-    )
-
-    const rowRange = Array.from({ length: maxHeight }, (_, i) => row + i)
-
-    groups.push({
-      rowRange,
-      components: comps,
-    })
-  })
-
-  return groups
 }
 
 /**
@@ -212,9 +157,7 @@ function detectSpatialRelationships(
 
   // 3. Full-width 컴포넌트 감지
   const fullWidthComponents = components.filter((comp) => {
-    const layout =
-      comp.responsiveCanvasLayout?.[breakpoint as keyof typeof comp.responsiveCanvasLayout] ||
-      comp.canvasLayout
+    const layout = getCanvasLayoutForBreakpoint(comp, breakpoint)
     return layout && layout.width === gridCols
   })
 
@@ -274,9 +217,7 @@ function detectSidebar(
 ): Component | null {
   // 좌측 끝 (x=0)에 배치되고, 좁은 너비 (≤25%), 긴 높이 (≥50%)
   const sidebar = components.find((comp) => {
-    const layout =
-      comp.responsiveCanvasLayout?.[breakpoint as keyof typeof comp.responsiveCanvasLayout] ||
-      comp.canvasLayout
+    const layout = getCanvasLayoutForBreakpoint(comp, breakpoint)
     if (!layout) return false
 
     return (
@@ -299,9 +240,7 @@ function detectSameRowStart(
   const rowStartMap = new Map<number, Component[]>()
 
   components.forEach((comp) => {
-    const layout =
-      comp.responsiveCanvasLayout?.[breakpoint as keyof typeof comp.responsiveCanvasLayout] ||
-      comp.canvasLayout
+    const layout = getCanvasLayoutForBreakpoint(comp, breakpoint)
     if (!layout) return
 
     const y = layout.y

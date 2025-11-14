@@ -134,6 +134,131 @@ Canvas는 **Grid 기반 좌표계** (기본 12×20)를 사용하여 자유로운
 
 **기본 그리드 크기**: 드롭 시 기본 1×1 크기 (스마트 배치 로직이 semanticTag에 따라 자동 조정)
 
+### Canvas → Code Generation Architecture (2025 Redesign)
+
+**2025년 11월 14일** - Canvas JSON export 정확성 향상을 위한 완전한 아키텍처 재설계가 완료되었습니다.
+
+#### 문제 배경
+
+기존 시스템의 문제점:
+- Canvas 2D Grid 정보 (x, y, width, height)가 AI 프롬프트로 변환 시 손실됨
+- 1D component 배열만 전달되어 AI가 side-by-side 레이아웃을 이해하지 못함
+- 결과: AI 생성 코드에서 컴포넌트 순서 오류 발생 (c6-c7 버그)
+
+#### 해결 방법 (2025 Industry Patterns 기반)
+
+**핵심 라이브러리**:
+
+1. **`lib/canvas-to-grid.ts`** - Canvas Grid → CSS Grid 변환
+   ```typescript
+   // Canvas 좌표 (0-based) → CSS Grid (1-based) 변환
+   canvasToGridPositions(components, breakpoint, gridCols, gridRows)
+   // → { componentId, gridArea: "1 / 1 / 2 / 13", gridColumn, gridRow }
+
+   // CSS Grid 코드 생성
+   generateGridCSS(visualLayout)
+   // → "display: grid; grid-template-columns: repeat(12, 1fr); ..."
+
+   // Tailwind CSS 클래스 생성
+   generateTailwindClasses(visualLayout)
+   // → { container: "grid grid-cols-12", components: {...} }
+
+   // Grid 복잡도 분석
+   analyzeGridComplexity(components, breakpoint)
+   // → { hasSideBySide, recommendedImplementation, maxComponentsPerRow }
+   ```
+
+2. **`lib/visual-layout-descriptor.ts`** - Canvas를 자연어로 설명
+   ```typescript
+   describeVisualLayout(components, breakpoint, gridCols, gridRows)
+   // Returns:
+   // - summary: "12-column × 8-row grid system with 3 components"
+   // - rowByRow: ["Row 0: Header (c1, cols 0-11, full width)", ...]
+   // - spatialRelationships: ["Sidebar (c2) is LEFT of Main (c3)", ...]
+   // - implementationHints: ["Use CSS Grid for complex 2D positioning", ...]
+   // - visualLayout: CSS Grid positioning data
+   ```
+
+3. **`lib/canvas-utils.ts`** - 공통 Canvas 유틸리티 (NEW)
+   ```typescript
+   // Type-safe Canvas Layout 추출
+   getCanvasLayoutForBreakpoint(component, 'desktop')
+   // → { x, y, width, height } | undefined
+
+   // Row별로 컴포넌트 그룹화
+   groupComponentsByRow(components, breakpoint)
+   // → [{ rowRange: [0], components: [...] }, ...]
+
+   // Canvas layout이 있는 컴포넌트만 필터링
+   filterComponentsWithCanvasLayout(components, breakpoint)
+
+   // Canvas layout 존재 여부 확인
+   hasCanvasLayout(component, 'desktop')
+   ```
+
+4. **`lib/schema-validation.ts`** - 강화된 검증
+
+   **9가지 검증 코드**:
+   - ✅ `CANVAS_LAYOUT_ORDER_MISMATCH` - Canvas 순서 ≠ DOM 순서
+   - ✅ `COMPLEX_GRID_LAYOUT_DETECTED` - Side-by-side 컴포넌트
+   - ✅ `CANVAS_COMPONENTS_OVERLAP` - 컴포넌트 겹침
+   - ✅ `CANVAS_OUT_OF_BOUNDS` - Grid 범위 초과
+   - ✅ `CANVAS_ZERO_SIZE` - width=0 또는 height=0
+   - ❌ `CANVAS_NEGATIVE_COORDINATE` - x<0 또는 y<0 (에러)
+   - ✅ `CANVAS_FRACTIONAL_COORDINATE` - 소수점 좌표
+   - ✅ `CANVAS_COMPONENT_NOT_IN_LAYOUT` - Layout에 없는 컴포넌트
+   - ✅ `MISSING_CANVAS_LAYOUT` - Canvas 정보 누락
+
+#### Prompt 개선 사항
+
+**Before (V1)**: 1D 배열만 전달
+```
+Component Order (DOM):
+1. c1
+2. c2
+3. c3
+```
+
+**After (V2)**: 2D Grid 정보 포함
+```
+Visual Layout (Canvas Grid):
+12-column × 8-row grid system with 3 components.
+
+Row 0: Header (c1, cols 0-11, full width)
+Row 1-7: Sidebar (c2, cols 0-2), MainContent (c3, cols 3-11)
+
+Spatial Relationships:
+- Sidebar (c2) is positioned to the LEFT of MainContent (c3)
+- Sidebar (c2) acts as a SIDEBAR (narrow column spanning multiple rows)
+- Header (c1) spans FULL WIDTH as a header bar
+
+CSS Grid Positioning:
+.container { display: grid; grid-template-columns: repeat(12, 1fr); }
+.c1 { grid-area: 1 / 1 / 2 / 13; }
+.c2 { grid-area: 2 / 1 / 9 / 4; }
+.c3 { grid-area: 2 / 4 / 9 / 13; }
+
+Implementation Strategy:
+- Use CSS Grid for main layout container (not simple flexbox)
+- Components in same row should be placed side-by-side using grid columns
+- Each component still uses its own positioning (sticky/fixed/static)
+```
+
+#### 테스트 커버리지
+
+**242개 테스트 (100% 통과)**:
+- Canvas JSON export (22 tests)
+- Canvas edge cases (13 tests)
+- Canvas comprehensive validation (33 tests)
+- Canvas to Prompt E2E (16 tests)
+- Snap to grid, Grid constraints, Schema utils, Prompt generator, etc.
+
+**검증 범위**:
+- 9가지 SemanticTag × 5가지 Positioning × 4가지 Layout = 180가지 조합
+- 모든 Breakpoint 조합 (1-3개)
+- 모든 에러 시나리오 (음수, 0, 소수점, out of bounds, overlap 등)
+- 극단 케이스 (0개, 1개, 100개 컴포넌트)
+
 ### AI Prompt Generation
 
 **lib/prompt-generator-v2.ts**가 Schema V2를 AI 프롬프트로 변환합니다.
@@ -202,6 +327,9 @@ Canvas는 **Grid 기반 좌표계** (기본 12×20)를 사용하여 자유로운
   prompt-generator-v2.ts
   code-generator-v2.ts
   file-exporter-v2.ts
+  canvas-to-grid.ts           # Canvas Grid → CSS Grid 변환
+  visual-layout-descriptor.ts # Canvas를 자연어로 설명
+  canvas-utils.ts             # 공통 Canvas 유틸리티 (NEW 2025-11-14)
 /store            # Zustand 상태 관리 (V2 suffix)
   layout-store-v2.ts
   theme-store-v2.ts
@@ -230,10 +358,15 @@ Canvas는 **Grid 기반 좌표계** (기본 12×20)를 사용하여 자유로운
 
 ### 비즈니스 로직
 - **lib/schema-utils-v2.ts**: Schema 생성, 복제, 정규화
-- **lib/schema-validation-v2.ts**: Schema 검증 + 에러/경고
+- **lib/schema-validation-v2.ts**: Schema 검증 + 에러/경고 (9가지 Canvas 검증 포함)
 - **lib/prompt-generator-v2.ts**: AI 프롬프트 생성
 - **lib/component-library-v2.ts**: 사전 정의 템플릿
 - **lib/smart-layout.ts**: 스마트 배치 로직 (positioning/semanticTag 기반 자동 배치)
+
+### Canvas 관련 (2025 Architecture)
+- **lib/canvas-to-grid.ts**: Canvas Grid → CSS Grid 변환, grid-area 생성
+- **lib/visual-layout-descriptor.ts**: Canvas를 자연어 설명으로 변환 (AI용)
+- **lib/canvas-utils.ts**: 공통 Canvas 유틸리티 (type-safe breakpoint access, grouping)
 
 ### UI 컴포넌트
 - **components/canvas-v2/KonvaCanvasV2.tsx**: Canvas 렌더링
