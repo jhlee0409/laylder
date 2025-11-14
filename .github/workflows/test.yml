@@ -1,0 +1,63 @@
+name: Unit Tests & Coverage
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  test:
+    name: Run Unit Tests
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [20.x]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run TypeScript type check
+        run: npx tsc --noEmit
+
+      - name: Run ESLint
+        run: pnpm lint
+
+      - name: Run unit tests
+        run: pnpm test:run
+
+      - name: Run tests with coverage
+        run: pnpm test:coverage
+
+      - name: Upload coverage to Codecov (optional)
+        uses: codecov/codecov-action@v4
+        if: success()
+        with:
+          files: ./coverage/lcov.info
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+      - name: Comment coverage on PR
+        uses: romeovs/lcov-reporter-action@v0.3.1
+        if: github.event_name == 'pull_request'
+        with:
+          lcov-file: ./coverage/lcov.info
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          delete-old-comments: true

@@ -32,34 +32,61 @@ export default defineConfig({
         'lib/**/*.ts',
       ],
       exclude: [
+        // TypeScript 정의 및 설정 파일
         '**/*.d.ts',
         '**/*.config.ts',
         '**/types/**',
         '**/__tests__/**',
         '**/node_modules/**',
-        // Zustand stores는 UI/통합 테스트 필요
+
+        /**
+         * Zustand Stores - UI/통합 테스트 필요
+         * 이유: React 컴포넌트와 상호작용하는 상태 관리 로직으로
+         * 실제 UI 컨텍스트에서의 통합 테스트가 필요함
+         */
         'store/**/*.ts',
-        // AI 관련 전략은 별도 테스트 필요
+
+        /**
+         * AI Prompt Strategies - 별도 E2E 테스트 필요
+         * 이유: 실제 AI 모델 API 호출과 응답 검증이 필요하며,
+         * 단위 테스트로 검증하기 어려운 외부 의존성 존재
+         */
         'lib/prompt-strategies/**/*.ts',
-        // 샘플 데이터 및 템플릿
+
+        /**
+         * 샘플 데이터 및 템플릿 - 정적 데이터
+         * 이유: 하드코딩된 샘플 스키마와 템플릿으로 로직이 없음
+         */
         'lib/sample-data.ts',
         'lib/prompt-templates.ts',
-        // AI 서비스 및 레지스트리
+
+        /**
+         * AI 서비스 레이어 - 외부 API 통합
+         * 이유: 외부 AI API (Claude, GPT 등) 호출 로직으로
+         * Mock이 아닌 실제 통합 테스트가 필요함
+         */
         'lib/ai-service.ts',
         'lib/ai-model-registry.ts',
-        // UI 관련 헬퍼
+
+        /**
+         * UI 유틸리티 및 생성기 - UI 의존성
+         * 이유: React 컴포넌트 생성 및 파일 시스템 작업을 포함하여
+         * 브라우저 환경 또는 통합 테스트가 필요함
+         */
         'lib/theme-system.ts',
         'lib/utils.ts',
         'lib/component-library.ts',
         'lib/file-exporter.ts',
         'lib/code-generator.ts',
       ],
-      // 커버리지 임계값 설정 (점진적으로 개선)
+      // 커버리지 임계값 설정
+      // 현재 달성: 89.22% lines, 93.75% functions, 76.45% branches, 89.26% statements
+      // 임계값을 높게 설정하여 향후 커버리지 회귀 방지
       thresholds: {
-        lines: 30,
-        functions: 30,
-        branches: 20,
-        statements: 30
+        lines: 85,      // 현재 89.22% 달성 → 85% 유지 필수
+        functions: 80,  // 현재 93.75% 달성 → 80% 유지 필수
+        branches: 70,   // 현재 76.45% 달성 → 70% 유지 필수
+        statements: 85  // 현재 89.26% 달성 → 85% 유지 필수
       }
     },
 
