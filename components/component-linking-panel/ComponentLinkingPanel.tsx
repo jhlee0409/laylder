@@ -94,8 +94,7 @@ export function ComponentLinkingPanel({ onClose }: { onClose: () => void }) {
         },
         draggable: false,
         selectable: false,
-        sourcePosition: undefined, // No handles
-        targetPosition: undefined, // No handles
+        connectable: false, // Completely disable handles
         style: {
           background: "transparent",
           border: "none",
@@ -123,6 +122,7 @@ export function ComponentLinkingPanel({ onClose }: { onClose: () => void }) {
           },
           draggable: false,
           selectable: false,
+          connectable: false, // Completely disable handles
           style: {
             background: "#f9fafb",
             border: "2px dashed #d1d5db",
