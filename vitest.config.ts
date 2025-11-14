@@ -81,18 +81,18 @@ export default defineConfig({
       ],
       // 커버리지 임계값 설정
       // 현재 달성: 89.22% lines, 93.75% functions, 76.45% branches, 89.26% statements
-      // 임계값을 높게 설정하여 향후 커버리지 회귀 방지
+      // 임계값을 실제 달성 수준에 근접하게 상향하여 회귀 방지 강화
       thresholds: {
-        lines: 85,      // 현재 89.22% 달성 → 85% 유지 필수
-        functions: 80,  // 현재 93.75% 달성 → 80% 유지 필수
-        branches: 70,   // 현재 76.45% 달성 → 70% 유지 필수
-        statements: 85  // 현재 89.26% 달성 → 85% 유지 필수
+        lines: 88,      // 현재 89.22% 달성 → 88% 유지 필수 (회귀 방지 강화)
+        functions: 90,  // 현재 93.75% 달성 → 90% 유지 필수 (회귀 방지 강화)
+        branches: 75,   // 현재 76.45% 달성 → 75% 유지 필수 (회귀 방지 강화)
+        statements: 88  // 현재 89.26% 달성 → 88% 유지 필수 (회귀 방지 강화)
       }
     },
 
-    // 테스트 실행 설정
-    testTimeout: 10000,
-    hookTimeout: 10000,
+    // 테스트 실행 설정 - 빠른 피드백을 위해 5초로 최적화
+    testTimeout: 5000,
+    hookTimeout: 5000,
   },
 
   // Path alias 설정 (Next.js와 동일하게)
