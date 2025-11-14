@@ -93,9 +93,6 @@ export default defineConfig({
     // 테스트 실행 설정
     testTimeout: 10000,
     hookTimeout: 10000,
-
-    // watch 모드 설정
-    watchExclude: ['**/node_modules/**', '**/dist/**', '**/.next/**']
   },
 
   // Path alias 설정 (Next.js와 동일하게)

@@ -27,8 +27,8 @@ describe('Grid Constraints', () => {
           id: 'c1',
           name: 'Header',
           semanticTag: 'header',
-          positioning: { type: 'sticky', top: 0 },
-          layout: { type: 'flex', direction: 'row' },
+          positioning: { type: 'sticky', position: { top: 0 } },
+          layout: { type: 'flex', flex: { direction: 'row' } },
           canvasLayout: { x: 0, y: 0, width: 12, height: 1 },
         },
         {
@@ -36,7 +36,7 @@ describe('Grid Constraints', () => {
           name: 'Main',
           semanticTag: 'main',
           positioning: { type: 'static' },
-          layout: { type: 'flex', direction: 'column' },
+          layout: { type: 'flex', flex: { direction: 'column' } },
           canvasLayout: { x: 0, y: 1, width: 12, height: 6 },
         },
       ]
@@ -54,8 +54,8 @@ describe('Grid Constraints', () => {
           id: 'c1',
           name: 'Sidebar',
           semanticTag: 'aside',
-          positioning: { type: 'sticky', top: 64 },
-          layout: { type: 'flex', direction: 'column' },
+          positioning: { type: 'sticky', position: { top: 64 } },
+          layout: { type: 'flex', flex: { direction: 'column' } },
           canvasLayout: { x: 0, y: 0, width: 3, height: 8 },
         },
         {
@@ -63,7 +63,7 @@ describe('Grid Constraints', () => {
           name: 'Main',
           semanticTag: 'main',
           positioning: { type: 'static' },
-          layout: { type: 'flex', direction: 'column' },
+          layout: { type: 'flex', flex: { direction: 'column' } },
           canvasLayout: { x: 3, y: 0, width: 9, height: 8 },
         },
       ]
@@ -80,8 +80,8 @@ describe('Grid Constraints', () => {
           id: 'c1',
           name: 'Header',
           semanticTag: 'header',
-          positioning: { type: 'sticky', top: 0 },
-          layout: { type: 'flex', direction: 'row' },
+          positioning: { type: 'sticky', position: { top: 0 } },
+          layout: { type: 'flex', flex: { direction: 'row' } },
           canvasLayout: { x: 0, y: 0, width: 12, height: 1 },
           responsiveCanvasLayout: {
             mobile: { x: 0, y: 0, width: 4, height: 2 },
@@ -108,8 +108,8 @@ describe('Grid Constraints', () => {
           id: 'c1',
           name: 'Header',
           semanticTag: 'header',
-          positioning: { type: 'sticky', top: 0 },
-          layout: { type: 'flex', direction: 'row' },
+          positioning: { type: 'sticky', position: { top: 0 } },
+          layout: { type: 'flex', flex: { direction: 'row' } },
           canvasLayout: { x: 0, y: 0, width: 10, height: 1 },
         },
       ]
@@ -127,7 +127,7 @@ describe('Grid Constraints', () => {
           name: 'Footer',
           semanticTag: 'footer',
           positioning: { type: 'static' },
-          layout: { type: 'flex', direction: 'row' },
+          layout: { type: 'flex', flex: { direction: 'row' } },
           canvasLayout: { x: 0, y: 9, width: 12, height: 1 },
         },
       ]
@@ -147,7 +147,7 @@ describe('Grid Constraints', () => {
           name: 'Main',
           semanticTag: 'main',
           positioning: { type: 'static' },
-          layout: { type: 'flex', direction: 'column' },
+          layout: { type: 'flex', flex: { direction: 'column' } },
           canvasLayout: { x: 0, y: 0, width: 12, height: 8 },
         },
       ]
@@ -166,7 +166,7 @@ describe('Grid Constraints', () => {
           name: 'Main',
           semanticTag: 'main',
           positioning: { type: 'static' },
-          layout: { type: 'flex', direction: 'column' },
+          layout: { type: 'flex', flex: { direction: 'column' } },
           canvasLayout: { x: 0, y: 0, width: 12, height: 8 },
         },
       ]
@@ -191,8 +191,8 @@ describe('Grid Constraints', () => {
           id: 'c1',
           name: 'Sidebar',
           semanticTag: 'aside',
-          positioning: { type: 'sticky', top: 0 },
-          layout: { type: 'flex', direction: 'column' },
+          positioning: { type: 'sticky', position: { top: 0 } },
+          layout: { type: 'flex', flex: { direction: 'column' } },
           canvasLayout: { x: 0, y: 4, width: 3, height: 4 }, // ends at row 8
         },
         {
@@ -200,7 +200,7 @@ describe('Grid Constraints', () => {
           name: 'Footer',
           semanticTag: 'footer',
           positioning: { type: 'static' },
-          layout: { type: 'flex', direction: 'row' },
+          layout: { type: 'flex', flex: { direction: 'row' } },
           canvasLayout: { x: 0, y: 9, width: 12, height: 1 }, // ends at row 10
         },
       ]
@@ -220,7 +220,7 @@ describe('Grid Constraints', () => {
           name: 'WideComponent',
           semanticTag: 'section',
           positioning: { type: 'static' },
-          layout: { type: 'flex', direction: 'row' },
+          layout: { type: 'flex', flex: { direction: 'row' } },
           canvasLayout: { x: 0, y: 0, width: 10, height: 2 },
         },
       ]
@@ -240,7 +240,7 @@ describe('Grid Constraints', () => {
           name: 'SmallComponent',
           semanticTag: 'section',
           positioning: { type: 'static' },
-          layout: { type: 'flex', direction: 'row' },
+          layout: { type: 'flex', flex: { direction: 'row' } },
           canvasLayout: { x: 0, y: 0, width: 4, height: 2 },
         },
       ]
@@ -257,8 +257,8 @@ describe('Grid Constraints', () => {
           id: 'c1',
           name: 'Header',
           semanticTag: 'header',
-          positioning: { type: 'sticky', top: 0 },
-          layout: { type: 'flex', direction: 'row' },
+          positioning: { type: 'sticky', position: { top: 0 } },
+          layout: { type: 'flex', flex: { direction: 'row' } },
           canvasLayout: { x: 0, y: 0, width: 12, height: 1 },
         },
         {
@@ -266,7 +266,7 @@ describe('Grid Constraints', () => {
           name: 'Footer',
           semanticTag: 'footer',
           positioning: { type: 'static' },
-          layout: { type: 'flex', direction: 'row' },
+          layout: { type: 'flex', flex: { direction: 'row' } },
           canvasLayout: { x: 0, y: 10, width: 12, height: 1 },
         },
       ]
@@ -275,7 +275,7 @@ describe('Grid Constraints', () => {
 
       expect(result.safe).toBe(false)
       expect(result.affectedComponents).toHaveLength(2)
-      expect(result.minimumRequired.cols).toBe(12)
+      expect(result.minimumRequired?.cols).toBe(12)
     })
   })
 
@@ -303,16 +303,16 @@ describe('Grid Constraints', () => {
           id: 'header',
           name: 'Header',
           semanticTag: 'header',
-          positioning: { type: 'sticky', top: 0 },
-          layout: { type: 'flex', direction: 'row' },
+          positioning: { type: 'sticky', position: { top: 0 } },
+          layout: { type: 'flex', flex: { direction: 'row' } },
           canvasLayout: { x: 0, y: 0, width: 12, height: 1 },
         },
         {
           id: 'sidebar',
           name: 'Sidebar',
           semanticTag: 'aside',
-          positioning: { type: 'sticky', top: 64 },
-          layout: { type: 'flex', direction: 'column' },
+          positioning: { type: 'sticky', position: { top: 64 } },
+          layout: { type: 'flex', flex: { direction: 'column' } },
           canvasLayout: { x: 0, y: 1, width: 3, height: 10 },
         },
         {
@@ -320,7 +320,7 @@ describe('Grid Constraints', () => {
           name: 'Main',
           semanticTag: 'main',
           positioning: { type: 'static' },
-          layout: { type: 'flex', direction: 'column' },
+          layout: { type: 'flex', flex: { direction: 'column' } },
           canvasLayout: { x: 3, y: 1, width: 9, height: 8 },
         },
       ]
@@ -370,7 +370,7 @@ describe('Grid Constraints', () => {
         name: 'ResponsiveBox',
         semanticTag: 'section',
         positioning: { type: 'static' },
-        layout: { type: 'flex', direction: 'column' },
+        layout: { type: 'flex', flex: { direction: 'column' } },
         canvasLayout: { x: 0, y: 0, width: 12, height: 2 },
         responsiveCanvasLayout: {
           mobile: { x: 0, y: 0, width: 4, height: 4 },
@@ -396,8 +396,8 @@ describe('Grid Constraints', () => {
           id: 'c1',
           name: 'FullWidth',
           semanticTag: 'header',
-          positioning: { type: 'sticky', top: 0 },
-          layout: { type: 'flex', direction: 'row' },
+          positioning: { type: 'sticky', position: { top: 0 } },
+          layout: { type: 'flex', flex: { direction: 'row' } },
           canvasLayout: { x: 0, y: 0, width: 12, height: 10 },
         },
       ]
@@ -432,16 +432,16 @@ describe('Grid Constraints', () => {
           id: 'c1',
           name: 'Header',
           semanticTag: 'header',
-          positioning: { type: 'sticky', top: 0 },
-          layout: { type: 'flex', direction: 'row' },
+          positioning: { type: 'sticky', position: { top: 0 } },
+          layout: { type: 'flex', flex: { direction: 'row' } },
           canvasLayout: { x: 0, y: 0, width: 12, height: 1 },
         },
         {
           id: 'c2',
           name: 'Sidebar',
           semanticTag: 'aside',
-          positioning: { type: 'sticky', top: 64 },
-          layout: { type: 'flex', direction: 'column' },
+          positioning: { type: 'sticky', position: { top: 64 } },
+          layout: { type: 'flex', flex: { direction: 'column' } },
           canvasLayout: { x: 0, y: 1, width: 3, height: 5 },
         },
         {
@@ -449,7 +449,7 @@ describe('Grid Constraints', () => {
           name: 'Main',
           semanticTag: 'main',
           positioning: { type: 'static' },
-          layout: { type: 'flex', direction: 'column' },
+          layout: { type: 'flex', flex: { direction: 'column' } },
           canvasLayout: { x: 3, y: 1, width: 9, height: 4 },
         },
       ]
@@ -476,7 +476,7 @@ describe('Grid Constraints', () => {
           name: 'Huge',
           semanticTag: 'main',
           positioning: { type: 'static' },
-          layout: { type: 'flex', direction: 'column' },
+          layout: { type: 'flex', flex: { direction: 'column' } },
           canvasLayout: { x: 0, y: 0, width: 15, height: 15 },
         },
       ]
@@ -499,7 +499,7 @@ describe('Grid Constraints', () => {
         name: 'InBounds',
         semanticTag: 'section',
         positioning: { type: 'static' },
-        layout: { type: 'flex', direction: 'column' },
+        layout: { type: 'flex', flex: { direction: 'column' } },
         canvasLayout: { x: 2, y: 2, width: 4, height: 3 },
       }
 
@@ -519,7 +519,7 @@ describe('Grid Constraints', () => {
         name: 'TooWide',
         semanticTag: 'section',
         positioning: { type: 'static' },
-        layout: { type: 'flex', direction: 'column' },
+        layout: { type: 'flex', flex: { direction: 'column' } },
         canvasLayout: { x: 10, y: 0, width: 5, height: 2 }, // x:10 + width:5 = 15 > 12
       }
 
@@ -539,7 +539,7 @@ describe('Grid Constraints', () => {
         name: 'TooTall',
         semanticTag: 'section',
         positioning: { type: 'static' },
-        layout: { type: 'flex', direction: 'column' },
+        layout: { type: 'flex', flex: { direction: 'column' } },
         canvasLayout: { x: 0, y: 6, width: 4, height: 5 }, // y:6 + height:5 = 11 > 8
       }
 
@@ -559,7 +559,7 @@ describe('Grid Constraints', () => {
         name: 'NegativePos',
         semanticTag: 'section',
         positioning: { type: 'static' },
-        layout: { type: 'flex', direction: 'column' },
+        layout: { type: 'flex', flex: { direction: 'column' } },
         canvasLayout: { x: -1, y: 0, width: 4, height: 2 },
       }
 
@@ -579,7 +579,7 @@ describe('Grid Constraints', () => {
         name: 'ExactFit',
         semanticTag: 'section',
         positioning: { type: 'static' },
-        layout: { type: 'flex', direction: 'column' },
+        layout: { type: 'flex', flex: { direction: 'column' } },
         canvasLayout: { x: 0, y: 0, width: 12, height: 8 }, // Exactly fills grid
       }
 
@@ -619,7 +619,7 @@ describe('Grid Constraints', () => {
         name: 'Responsive',
         semanticTag: 'section',
         positioning: { type: 'static' },
-        layout: { type: 'flex', direction: 'column' },
+        layout: { type: 'flex', flex: { direction: 'column' } },
         canvasLayout: { x: 0, y: 0, width: 12, height: 2 },
         responsiveCanvasLayout: {
           mobile: { x: 0, y: 0, width: 6, height: 4 }, // Out of bounds for 4-col mobile

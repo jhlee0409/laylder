@@ -15,8 +15,8 @@ export function createHeaderComponent(overrides?: Partial<Component>): Component
     id: 'header',
     name: 'Header',
     semanticTag: 'header',
-    positioning: { type: 'sticky', top: 0 },
-    layout: { type: 'flex', direction: 'row' },
+    positioning: { type: 'sticky', position: { top: 0 } },
+    layout: { type: 'flex', flex: { direction: 'row' } },
     canvasLayout: { x: 0, y: 0, width: 12, height: 1 },
     ...overrides,
   }
@@ -31,7 +31,7 @@ export function createFooterComponent(overrides?: Partial<Component>): Component
     name: 'Footer',
     semanticTag: 'footer',
     positioning: { type: 'static' },
-    layout: { type: 'flex', direction: 'row' },
+    layout: { type: 'flex', flex: { direction: 'row' } },
     canvasLayout: { x: 0, y: 10, width: 12, height: 1 },
     ...overrides,
   }
@@ -45,8 +45,8 @@ export function createSidebarComponent(overrides?: Partial<Component>): Componen
     id: 'sidebar',
     name: 'Sidebar',
     semanticTag: 'aside',
-    positioning: { type: 'sticky', top: 64 },
-    layout: { type: 'flex', direction: 'column' },
+    positioning: { type: 'sticky', position: { top: 64 } },
+    layout: { type: 'flex', flex: { direction: 'column' } },
     canvasLayout: { x: 0, y: 1, width: 3, height: 8 },
     ...overrides,
   }
@@ -61,7 +61,7 @@ export function createMainComponent(overrides?: Partial<Component>): Component {
     name: 'Main',
     semanticTag: 'main',
     positioning: { type: 'static' },
-    layout: { type: 'flex', direction: 'column' },
+    layout: { type: 'flex', flex: { direction: 'column' } },
     canvasLayout: { x: 3, y: 1, width: 9, height: 8 },
     ...overrides,
   }
@@ -76,7 +76,7 @@ export function createSectionComponent(overrides?: Partial<Component>): Componen
     name: 'Section',
     semanticTag: 'section',
     positioning: { type: 'static' },
-    layout: { type: 'flex', direction: 'column' },
+    layout: { type: 'flex', flex: { direction: 'column' } },
     canvasLayout: { x: 0, y: 0, width: 6, height: 4 },
     ...overrides,
   }
@@ -106,7 +106,7 @@ export function createResponsiveComponent(overrides?: Partial<Component>): Compo
     name: 'ResponsiveBox',
     semanticTag: 'section',
     positioning: { type: 'static' },
-    layout: { type: 'flex', direction: 'column' },
+    layout: { type: 'flex', flex: { direction: 'column' } },
     canvasLayout: { x: 0, y: 0, width: 12, height: 2 },
     responsiveCanvasLayout: {
       mobile: { x: 0, y: 0, width: 4, height: 4 },

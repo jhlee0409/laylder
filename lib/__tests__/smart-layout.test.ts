@@ -20,13 +20,14 @@ describe('Smart Layout', () => {
       const headerTemplate: ComponentTemplate = {
         id: 'sticky-header',
         name: 'Sticky Header',
+        description: 'Test header',
         category: 'layout',
+        icon: 'LayoutHeader',
         template: {
-          id: 'temp-id',
           name: 'Header',
           semanticTag: 'header',
-          positioning: { type: 'sticky', top: 0 },
-          layout: { type: 'flex', direction: 'row' },
+          positioning: { type: 'sticky', position: { top: 0 } },
+          layout: { type: 'flex', flex: { direction: 'row' } },
           canvasLayout: { x: 0, y: 0, width: 12, height: 1 },
         },
       }
@@ -49,13 +50,14 @@ describe('Smart Layout', () => {
       const footerTemplate: ComponentTemplate = {
         id: 'static-footer',
         name: 'Footer',
+        description: 'Test footer',
         category: 'layout',
+        icon: 'LayoutFooter',
         template: {
-          id: 'temp-id',
           name: 'Footer',
           semanticTag: 'footer',
           positioning: { type: 'static' },
-          layout: { type: 'flex', direction: 'row' },
+          layout: { type: 'flex', flex: { direction: 'row' } },
           canvasLayout: { x: 0, y: 7, width: 12, height: 1 },
         },
       }
@@ -78,13 +80,14 @@ describe('Smart Layout', () => {
       const navTemplate: ComponentTemplate = {
         id: 'horizontal-navbar',
         name: 'Horizontal Navbar',
+        description: 'Test navbar',
         category: 'navigation',
+        icon: 'Navigation',
         template: {
-          id: 'temp-id',
           name: 'Navbar',
           semanticTag: 'nav',
-          positioning: { type: 'sticky', top: 0 },
-          layout: { type: 'flex', direction: 'row' },
+          positioning: { type: 'sticky', position: { top: 0 } },
+          layout: { type: 'flex', flex: { direction: 'row' } },
           canvasLayout: { x: 0, y: 0, width: 12, height: 1 },
         },
       }
@@ -107,21 +110,22 @@ describe('Smart Layout', () => {
         id: 'c1',
         name: 'Header',
         semanticTag: 'header',
-        positioning: { type: 'sticky', top: 0 },
-        layout: { type: 'flex', direction: 'row' },
+        positioning: { type: 'sticky', position: { top: 0 } },
+        layout: { type: 'flex', flex: { direction: 'row' } },
         canvasLayout: { x: 0, y: 0, width: 12, height: 1 },
       }
 
       const navTemplate: ComponentTemplate = {
         id: 'horizontal-navbar',
         name: 'Horizontal Navbar',
+        description: 'Test navbar',
         category: 'navigation',
+        icon: 'Navigation',
         template: {
-          id: 'temp-id',
           name: 'Navbar',
           semanticTag: 'nav',
-          positioning: { type: 'sticky', top: 0 },
-          layout: { type: 'flex', direction: 'row' },
+          positioning: { type: 'sticky', position: { top: 0 } },
+          layout: { type: 'flex', flex: { direction: 'row' } },
           canvasLayout: { x: 0, y: 1, width: 12, height: 1 },
         },
       }
@@ -141,13 +145,14 @@ describe('Smart Layout', () => {
       const sidebarTemplate: ComponentTemplate = {
         id: 'left-sidebar',
         name: 'Left Sidebar',
+        description: 'Test sidebar',
         category: 'navigation',
+        icon: 'Sidebar',
         template: {
-          id: 'temp-id',
           name: 'Sidebar',
           semanticTag: 'aside',
-          positioning: { type: 'sticky', top: 64 },
-          layout: { type: 'flex', direction: 'column' },
+          positioning: { type: 'sticky', position: { top: 64 } },
+          layout: { type: 'flex', flex: { direction: 'column' } },
           canvasLayout: { x: 0, y: 0, width: 3, height: 8 },
         },
       }
@@ -170,21 +175,22 @@ describe('Smart Layout', () => {
         id: 'c1',
         name: 'LeftSidebar',
         semanticTag: 'aside',
-        positioning: { type: 'sticky', top: 64 },
-        layout: { type: 'flex', direction: 'column' },
+        positioning: { type: 'sticky', position: { top: 64 } },
+        layout: { type: 'flex', flex: { direction: 'column' } },
         canvasLayout: { x: 0, y: 0, width: 3, height: 8 },
       }
 
       const sidebarTemplate: ComponentTemplate = {
         id: 'right-sidebar',
         name: 'Right Sidebar',
+        description: 'Test sidebar',
         category: 'navigation',
+        icon: 'Sidebar',
         template: {
-          id: 'temp-id',
           name: 'RightSidebar',
           semanticTag: 'aside',
-          positioning: { type: 'sticky', top: 64 },
-          layout: { type: 'flex', direction: 'column' },
+          positioning: { type: 'sticky', position: { top: 64 } },
+          layout: { type: 'flex', flex: { direction: 'column' } },
           canvasLayout: { x: 9, y: 0, width: 3, height: 8 },
         },
       }
@@ -207,13 +213,14 @@ describe('Smart Layout', () => {
       const headerTemplate: ComponentTemplate = {
         id: 'sticky-header',
         name: 'Sticky Header',
+        description: 'Test header',
         category: 'layout',
+        icon: 'LayoutHeader',
         template: {
-          id: 'temp-id',
           name: 'Header',
           semanticTag: 'header',
-          positioning: { type: 'sticky', top: 0 },
-          layout: { type: 'flex', direction: 'row' },
+          positioning: { type: 'sticky', position: { top: 0 } },
+          layout: { type: 'flex', flex: { direction: 'row' } },
           canvasLayout: { x: 0, y: 0, width: 4, height: 1 },
         },
       }
@@ -233,13 +240,14 @@ describe('Smart Layout', () => {
       const mainTemplate: ComponentTemplate = {
         id: 'main-content',
         name: 'Main Content',
+        description: 'Test main',
         category: 'layout',
+        icon: 'LayoutMain',
         template: {
-          id: 'temp-id',
           name: 'Main',
           semanticTag: 'main',
           positioning: { type: 'static' },
-          layout: { type: 'flex', direction: 'column' },
+          layout: { type: 'flex', flex: { direction: 'column' } },
           canvasLayout: { x: 0, y: 0, width: 12, height: 8 },
         },
       }
@@ -261,21 +269,22 @@ describe('Smart Layout', () => {
         id: 'c1',
         name: 'LeftSidebar',
         semanticTag: 'aside',
-        positioning: { type: 'sticky', top: 64 },
-        layout: { type: 'flex', direction: 'column' },
+        positioning: { type: 'sticky', position: { top: 64 } },
+        layout: { type: 'flex', flex: { direction: 'column' } },
         canvasLayout: { x: 0, y: 0, width: 3, height: 8 },
       }
 
       const mainTemplate: ComponentTemplate = {
         id: 'main-content',
         name: 'Main Content',
+        description: 'Test main',
         category: 'layout',
+        icon: 'LayoutMain',
         template: {
-          id: 'temp-id',
           name: 'Main',
           semanticTag: 'main',
           positioning: { type: 'static' },
-          layout: { type: 'flex', direction: 'column' },
+          layout: { type: 'flex', flex: { direction: 'column' } },
           canvasLayout: { x: 3, y: 0, width: 9, height: 8 },
         },
       }
@@ -297,8 +306,8 @@ describe('Smart Layout', () => {
         id: 'c1',
         name: 'LeftSidebar',
         semanticTag: 'aside',
-        positioning: { type: 'sticky', top: 64 },
-        layout: { type: 'flex', direction: 'column' },
+        positioning: { type: 'sticky', position: { top: 64 } },
+        layout: { type: 'flex', flex: { direction: 'column' } },
         canvasLayout: { x: 0, y: 0, width: 3, height: 8 },
       }
 
@@ -306,21 +315,22 @@ describe('Smart Layout', () => {
         id: 'c2',
         name: 'RightSidebar',
         semanticTag: 'aside',
-        positioning: { type: 'sticky', top: 64 },
-        layout: { type: 'flex', direction: 'column' },
+        positioning: { type: 'sticky', position: { top: 64 } },
+        layout: { type: 'flex', flex: { direction: 'column' } },
         canvasLayout: { x: 9, y: 0, width: 3, height: 8 },
       }
 
       const mainTemplate: ComponentTemplate = {
         id: 'main-content',
         name: 'Main Content',
+        description: 'Test main',
         category: 'layout',
+        icon: 'LayoutMain',
         template: {
-          id: 'temp-id',
           name: 'Main',
           semanticTag: 'main',
           positioning: { type: 'static' },
-          layout: { type: 'flex', direction: 'column' },
+          layout: { type: 'flex', flex: { direction: 'column' } },
           canvasLayout: { x: 3, y: 0, width: 6, height: 8 },
         },
       }
@@ -342,8 +352,8 @@ describe('Smart Layout', () => {
         id: 'c1',
         name: 'Header',
         semanticTag: 'header',
-        positioning: { type: 'sticky', top: 0 },
-        layout: { type: 'flex', direction: 'row' },
+        positioning: { type: 'sticky', position: { top: 0 } },
+        layout: { type: 'flex', flex: { direction: 'row' } },
         canvasLayout: { x: 0, y: 0, width: 12, height: 1 },
       }
 
@@ -352,20 +362,21 @@ describe('Smart Layout', () => {
         name: 'Footer',
         semanticTag: 'footer',
         positioning: { type: 'static' },
-        layout: { type: 'flex', direction: 'row' },
+        layout: { type: 'flex', flex: { direction: 'row' } },
         canvasLayout: { x: 0, y: 7, width: 12, height: 1 },
       }
 
       const mainTemplate: ComponentTemplate = {
         id: 'main-content',
         name: 'Main Content',
+        description: 'Test main',
         category: 'layout',
+        icon: 'LayoutMain',
         template: {
-          id: 'temp-id',
           name: 'Main',
           semanticTag: 'main',
           positioning: { type: 'static' },
-          layout: { type: 'flex', direction: 'column' },
+          layout: { type: 'flex', flex: { direction: 'column' } },
           canvasLayout: { x: 0, y: 1, width: 12, height: 6 },
         },
       }
@@ -386,13 +397,14 @@ describe('Smart Layout', () => {
       const sectionTemplate: ComponentTemplate = {
         id: 'section-1',
         name: 'Section',
+        description: 'Test section',
         category: 'content',
+        icon: 'Section',
         template: {
-          id: 'temp-id',
           name: 'Section',
           semanticTag: 'section',
           positioning: { type: 'static' },
-          layout: { type: 'flex', direction: 'column' },
+          layout: { type: 'flex', flex: { direction: 'column' } },
           canvasLayout: { x: 0, y: 0, width: 1, height: 1 },
         },
       }
@@ -416,21 +428,22 @@ describe('Smart Layout', () => {
         id: 'c1',
         name: 'Header',
         semanticTag: 'header',
-        positioning: { type: 'sticky', top: 0 },
-        layout: { type: 'flex', direction: 'row' },
+        positioning: { type: 'sticky', position: { top: 0 } },
+        layout: { type: 'flex', flex: { direction: 'row' } },
         canvasLayout: { x: 0, y: 0, width: 12, height: 1 },
       }
 
       const sectionTemplate: ComponentTemplate = {
         id: 'section-1',
         name: 'Section',
+        description: 'Test section',
         category: 'content',
+        icon: 'Section',
         template: {
-          id: 'temp-id',
           name: 'Section',
           semanticTag: 'section',
           positioning: { type: 'static' },
-          layout: { type: 'flex', direction: 'column' },
+          layout: { type: 'flex', flex: { direction: 'column' } },
           canvasLayout: { x: 0, y: 1, width: 1, height: 1 },
         },
       }
@@ -450,13 +463,14 @@ describe('Smart Layout', () => {
       const articleTemplate: ComponentTemplate = {
         id: 'article-1',
         name: 'Article',
+        description: 'Test article',
         category: 'content',
+        icon: 'Article',
         template: {
-          id: 'temp-id',
           name: 'Article',
           semanticTag: 'article',
           positioning: { type: 'static' },
-          layout: { type: 'flex', direction: 'column' },
+          layout: { type: 'flex', flex: { direction: 'column' } },
           canvasLayout: { x: 0, y: 0, width: 1, height: 1 },
         },
       }
@@ -478,9 +492,10 @@ describe('Smart Layout', () => {
       const divTemplate: ComponentTemplate = {
         id: 'div-1',
         name: 'Div',
+        description: 'Test div',
         category: 'content',
+        icon: 'Div',
         template: {
-          id: 'temp-id',
           name: 'Div',
           semanticTag: 'div',
           positioning: { type: 'static' },
@@ -504,13 +519,14 @@ describe('Smart Layout', () => {
       const formTemplate: ComponentTemplate = {
         id: 'form-1',
         name: 'Form',
+        description: 'Test form',
         category: 'form',
+        icon: 'Form',
         template: {
-          id: 'temp-id',
           name: 'Form',
           semanticTag: 'form',
           positioning: { type: 'static' },
-          layout: { type: 'flex', direction: 'column' },
+          layout: { type: 'flex', flex: { direction: 'column' } },
           canvasLayout: { x: 0, y: 0, width: 1, height: 1 },
         },
       }
@@ -545,8 +561,8 @@ describe('Smart Layout', () => {
         id: 'c1',
         name: 'Header',
         semanticTag: 'header',
-        positioning: { type: 'sticky', top: 0 },
-        layout: { type: 'flex', direction: 'row' },
+        positioning: { type: 'sticky', position: { top: 0 } },
+        layout: { type: 'flex', flex: { direction: 'row' } },
         canvasLayout: { x: 0, y: 0, width: 12, height: 1 },
       }
 
@@ -562,8 +578,8 @@ describe('Smart Layout', () => {
           id: 'c1',
           name: 'Header',
           semanticTag: 'header',
-          positioning: { type: 'sticky', top: 0 },
-          layout: { type: 'flex', direction: 'row' },
+          positioning: { type: 'sticky', position: { top: 0 } },
+          layout: { type: 'flex', flex: { direction: 'row' } },
           canvasLayout: { x: 0, y: 0, width: 12, height: 3 },
         },
         {
@@ -571,7 +587,7 @@ describe('Smart Layout', () => {
           name: 'Main',
           semanticTag: 'main',
           positioning: { type: 'static' },
-          layout: { type: 'flex', direction: 'column' },
+          layout: { type: 'flex', flex: { direction: 'column' } },
           canvasLayout: { x: 0, y: 3, width: 12, height: 3 },
         },
       ]
@@ -588,8 +604,8 @@ describe('Smart Layout', () => {
         id: 'c1',
         name: 'Header',
         semanticTag: 'header',
-        positioning: { type: 'sticky', top: 0 },
-        layout: { type: 'flex', direction: 'row' },
+        positioning: { type: 'sticky', position: { top: 0 } },
+        layout: { type: 'flex', flex: { direction: 'row' } },
         canvasLayout: { x: 0, y: 0, width: 12, height: 1 },
         responsiveCanvasLayout: {
           mobile: { x: 0, y: 0, width: 4, height: 2 },
@@ -616,7 +632,7 @@ describe('Smart Layout', () => {
         name: 'Large',
         semanticTag: 'main',
         positioning: { type: 'static' },
-        layout: { type: 'flex', direction: 'column' },
+        layout: { type: 'flex', flex: { direction: 'column' } },
         canvasLayout: { x: 0, y: 0, width: 12, height: 7 },
       }
 
