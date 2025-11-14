@@ -8,6 +8,8 @@ import type {
   Component,
   Breakpoint,
   LayoutConfig,
+  CanvasLayout,
+  ResponsiveCanvasLayout,
 } from "@/types/schema"
 import { sortComponentsByCanvasCoordinates } from "./canvas-sort-utils"
 
@@ -72,6 +74,13 @@ export function createSchemaWithBreakpoint(
     desktop: 1024,
   }
 
+  const layouts: Record<string, LayoutConfig> = {
+    [breakpointType]: {
+      structure: "vertical",
+      components: [],
+    },
+  }
+
   return {
     schemaVersion: "2.0",
     components: [],
@@ -82,12 +91,7 @@ export function createSchemaWithBreakpoint(
         ...DEFAULT_GRID_CONFIG[breakpointType],
       },
     ],
-    layouts: {
-      [breakpointType]: {
-        structure: "vertical",
-        components: [],
-      },
-    } as any, // Type assertion for dynamic key
+    layouts,
   }
 }
 
@@ -108,10 +112,35 @@ export function generateComponentId(existingComponents: Component[]): string {
 }
 
 /**
+ * Safe deep clone helper (generic)
+ *
+ * Uses structuredClone() with fallback to JSON serialization
+ */
+function safeDeepClone<T>(data: T): T {
+  try {
+    return structuredClone(data)
+  } catch (error) {
+    // Fallback: JSON serialization (loses functions, Date becomes string, etc.)
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('structuredClone failed, falling back to JSON serialization:', error)
+    }
+    return JSON.parse(JSON.stringify(data))
+  }
+}
+
+/**
  * Deep clone Schema
+ *
+ * Uses structuredClone() for efficient deep cloning (available in Node 17+)
+ * - More performant than JSON.parse(JSON.stringify())
+ * - Preserves more types (Date, Map, Set, etc.)
+ * - Handles circular references
+ *
+ * Falls back to JSON serialization if structuredClone fails
+ * (e.g., for non-serializable data like functions, DOM nodes, symbols)
  */
 export function cloneSchema(schema: LaydlerSchema): LaydlerSchema {
-  return JSON.parse(JSON.stringify(schema))
+  return safeDeepClone(schema)
 }
 
 /**
@@ -324,43 +353,56 @@ export function isValidSchema(schema: unknown): schema is LaydlerSchema {
 export function normalizeSchema(schema: LaydlerSchema): LaydlerSchema {
   const normalized = cloneSchema(schema)
 
-  // 1. Layout Inheritance: Mobile → Tablet → Desktop
-  // Tablet이 명시되지 않으면 Mobile 복사 (Mobile이 있는 경우에만)
-  if ((!normalized.layouts.tablet ||
-      normalized.layouts.tablet.components.length === 0) &&
-      normalized.layouts.mobile) {
-    normalized.layouts.tablet = JSON.parse(JSON.stringify(normalized.layouts.mobile))
-  }
+  // 1. Layout Inheritance: Dynamic breakpoint cascade (Mobile → Tablet → Desktop, etc.)
+  // Support any breakpoint names (not just hardcoded mobile/tablet/desktop)
+  // FIX: Previously hardcoded .mobile, .tablet, .desktop failed for custom names like "Desktop" (capital D)
+  // EDGE CASE FIX: Deterministic sorting when multiple breakpoints have same minWidth
+  const sortedBreakpoints = [...normalized.breakpoints].sort((a, b) => {
+    // Primary sort: by minWidth
+    if (a.minWidth !== b.minWidth) {
+      return a.minWidth - b.minWidth
+    }
+    // Secondary sort: by name (alphabetically) for deterministic ordering
+    return a.name.localeCompare(b.name)
+  })
 
-  // Desktop이 명시되지 않으면 Tablet 복사 (Tablet이 있는 경우에만)
-  if ((!normalized.layouts.desktop ||
-      normalized.layouts.desktop.components.length === 0) &&
-      normalized.layouts.tablet) {
-    normalized.layouts.desktop = JSON.parse(JSON.stringify(normalized.layouts.tablet))
+  for (let i = 1; i < sortedBreakpoints.length; i++) {
+    const currentBP = sortedBreakpoints[i].name
+    const previousBP = sortedBreakpoints[i - 1].name
+
+    // Only inherit if layout is completely missing (not just empty)
+    // Edge case fix: Don't inherit if layout exists but is intentionally empty (components.length === 0)
+    // - Missing layout (!normalized.layouts[currentBP]) → INHERIT from previous
+    // - Empty layout (components.length === 0) → PRESERVE as intentionally empty
+    if (!normalized.layouts[currentBP] && normalized.layouts[previousBP]) {
+      normalized.layouts[currentBP] = safeDeepClone(normalized.layouts[previousBP])
+    }
   }
 
   // 2. Canvas Layout Inheritance per Component
+  // FIX: Support dynamic breakpoint names (not just mobile/tablet/desktop)
   normalized.components = normalized.components.map(comp => {
     if (comp.responsiveCanvasLayout) {
-      const rcl = { ...comp.responsiveCanvasLayout }
+      // Type-safe dynamic key access using Record type
+      const rcl: Record<string, CanvasLayout | undefined> = { ...comp.responsiveCanvasLayout }
 
-      // Mobile → Tablet
-      if (!rcl.tablet && rcl.mobile) {
-        rcl.tablet = { ...rcl.mobile }
-      }
+      // Cascade from previous breakpoint to next (based on minWidth sorting)
+      for (let i = 1; i < sortedBreakpoints.length; i++) {
+        const currentBP = sortedBreakpoints[i].name
+        const previousBP = sortedBreakpoints[i - 1].name
 
-      // Tablet → Desktop (Tablet이 있으면 Tablet에서, 없으면 Mobile에서)
-      if (!rcl.desktop) {
-        if (rcl.tablet) {
-          rcl.desktop = { ...rcl.tablet }
-        } else if (rcl.mobile) {
-          rcl.desktop = { ...rcl.mobile }
+        // If current breakpoint has no Canvas layout, inherit from previous
+        if (!rcl[currentBP]) {
+          const previousLayout = rcl[previousBP]
+          if (previousLayout) {
+            rcl[currentBP] = { ...previousLayout }
+          }
         }
       }
 
       return {
         ...comp,
-        responsiveCanvasLayout: rcl,
+        responsiveCanvasLayout: rcl as ResponsiveCanvasLayout,
       }
     }
 
@@ -379,9 +421,11 @@ export function normalizeSchema(schema: LaydlerSchema): LaydlerSchema {
 
     // Edge Case: Auto-create layout if it doesn't exist but components have Canvas data
     if (!normalized.layouts[breakpointName]) {
-      const hasCanvasData = normalized.components.some(
-        comp => comp.responsiveCanvasLayout?.[breakpointName as keyof typeof comp.responsiveCanvasLayout]
-      )
+      // Type-safe dynamic key access using helper function
+      const hasCanvasData = normalized.components.some(comp => {
+        const rcl = comp.responsiveCanvasLayout as Record<string, CanvasLayout | undefined> | undefined
+        return rcl?.[breakpointName] !== undefined
+      })
 
       if (hasCanvasData) {
         // Auto-create missing layout
@@ -395,8 +439,12 @@ export function normalizeSchema(schema: LaydlerSchema): LaydlerSchema {
       }
     }
 
+    // Type-safe filtering using Record type
     const componentsWithCanvas = normalized.components
-      .filter(comp => comp.responsiveCanvasLayout?.[breakpointName as keyof typeof comp.responsiveCanvasLayout])
+      .filter(comp => {
+        const rcl = comp.responsiveCanvasLayout as Record<string, CanvasLayout | undefined> | undefined
+        return rcl?.[breakpointName] !== undefined
+      })
       .map(comp => comp.id)
 
     // 기존 components와 Canvas components를 합침 (중복 제거)

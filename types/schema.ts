@@ -178,11 +178,15 @@ export interface CanvasLayout {
 /**
  * Breakpoint별 Canvas Layout
  * 각 breakpoint에서 다른 위치에 배치 가능
+ *
+ * Supports dynamic breakpoint names (not just mobile/tablet/desktop)
+ * Example: { mobile: {...}, Desktop: {...}, custom: {...} }
  */
 export interface ResponsiveCanvasLayout {
   mobile?: CanvasLayout
   tablet?: CanvasLayout
   desktop?: CanvasLayout
+  [breakpoint: string]: CanvasLayout | undefined // Support custom breakpoint names
 }
 
 export interface Component {
