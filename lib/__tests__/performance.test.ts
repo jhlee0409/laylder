@@ -10,7 +10,7 @@ import { validateSchema } from '../schema-validation'
 import { generatePrompt } from '../prompt-generator'
 import { normalizeSchema } from '../schema-utils'
 import { canvasToGridPositions, analyzeGridComplexity } from '../canvas-to-grid'
-import { calculateLinkGroups, validateComponentLinks } from '../graph-utils'
+import { calculateLinkGroups, validateComponentLinks, type ComponentLink } from '../graph-utils'
 import { createSchemaWithComponents } from './fixtures/test-schemas'
 import type { LaydlerSchema, Component } from '@/types/schema'
 
@@ -236,24 +236,22 @@ describe('Performance Regression Tests', () => {
   // ==========================================================================
   describe('Component Linking Graph Algorithms', () => {
     it('should calculate link groups for 10 components in < 3ms', () => {
-      const componentIds = Array.from({ length: 10 }, (_, i) => `c${i + 1}`)
       // Create a chain: c1→c2→c3→...→c10
-      const links = Array.from({ length: 9 }, (_, i) => ({
+      const links: ComponentLink[] = Array.from({ length: 9 }, (_, i) => ({
         source: `c${i + 1}`,
         target: `c${i + 2}`,
       }))
 
       const time = measureTime(() => {
-        calculateLinkGroups(componentIds, links)
+        calculateLinkGroups(links)
       })
 
       expect(time).toBeLessThan(3)
     })
 
     it('should calculate link groups for 50 components in < 10ms', () => {
-      const componentIds = Array.from({ length: 50 }, (_, i) => `c${i + 1}`)
       // Create 10 groups of 5 components each
-      const links = []
+      const links: ComponentLink[] = []
       for (let group = 0; group < 10; group++) {
         for (let i = 0; i < 4; i++) {
           const sourceIdx = group * 5 + i + 1
@@ -266,16 +264,15 @@ describe('Performance Regression Tests', () => {
       }
 
       const time = measureTime(() => {
-        calculateLinkGroups(componentIds, links)
+        calculateLinkGroups(links)
       })
 
       expect(time).toBeLessThan(10)
     })
 
     it('should calculate link groups for 100 components in < 20ms', () => {
-      const componentIds = Array.from({ length: 100 }, (_, i) => `c${i + 1}`)
       // Create 20 groups of 5 components each
-      const links = []
+      const links: ComponentLink[] = []
       for (let group = 0; group < 20; group++) {
         for (let i = 0; i < 4; i++) {
           const sourceIdx = group * 5 + i + 1
@@ -288,7 +285,7 @@ describe('Performance Regression Tests', () => {
       }
 
       const stats = benchmark(() => {
-        calculateLinkGroups(componentIds, links)
+        calculateLinkGroups(links)
       }, 5)
 
       console.log(`  Link Groups (100 components): avg=${stats.avg.toFixed(2)}ms, min=${stats.min.toFixed(2)}ms, max=${stats.max.toFixed(2)}ms`)
@@ -299,7 +296,7 @@ describe('Performance Regression Tests', () => {
     it('should validate component links for 100 components in < 10ms', () => {
       const componentIds = Array.from({ length: 100 }, (_, i) => `c${i + 1}`)
       // Create 20 groups of 5 components each
-      const links = []
+      const links: ComponentLink[] = []
       for (let group = 0; group < 20; group++) {
         for (let i = 0; i < 4; i++) {
           const sourceIdx = group * 5 + i + 1

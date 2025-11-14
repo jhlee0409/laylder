@@ -171,6 +171,7 @@ describe('Canvas to Prompt E2E', () => {
       const result = generatePrompt(githubStyleSchema, 'react', 'tailwind')
 
       expect(result.success).toBe(true)
+      expect(result.prompt).toBeDefined()
       const prompt = result.prompt!
 
       // Should describe each row
@@ -185,6 +186,7 @@ describe('Canvas to Prompt E2E', () => {
       const result = generatePrompt(githubStyleSchema, 'react', 'tailwind')
 
       expect(result.success).toBe(true)
+      expect(result.prompt).toBeDefined()
       const prompt = result.prompt!
 
       // Should include CSS Grid code
@@ -197,6 +199,7 @@ describe('Canvas to Prompt E2E', () => {
       const result = generatePrompt(githubStyleSchema, 'react', 'tailwind')
 
       expect(result.success).toBe(true)
+      expect(result.prompt).toBeDefined()
       const prompt = result.prompt!
 
       // Should include Tailwind classes
@@ -208,6 +211,7 @@ describe('Canvas to Prompt E2E', () => {
       const result = generatePrompt(githubStyleSchema, 'react', 'tailwind')
 
       expect(result.success).toBe(true)
+      expect(result.prompt).toBeDefined()
       const prompt = result.prompt!
 
       // Should describe spatial relationships
@@ -221,6 +225,7 @@ describe('Canvas to Prompt E2E', () => {
       const result = generatePrompt(githubStyleSchema, 'react', 'tailwind')
 
       expect(result.success).toBe(true)
+      expect(result.prompt).toBeDefined()
       const prompt = result.prompt!
 
       // Should provide implementation guidance
@@ -233,6 +238,7 @@ describe('Canvas to Prompt E2E', () => {
       const result = generatePrompt(githubStyleSchema, 'react', 'tailwind')
 
       expect(result.success).toBe(true)
+      expect(result.prompt).toBeDefined()
       const prompt = result.prompt!
 
       // Should explain the difference between visual and DOM order
@@ -302,6 +308,7 @@ describe('Canvas to Prompt E2E', () => {
       const result = generatePrompt(githubStyleSchema, 'react', 'tailwind')
 
       expect(result.success).toBe(true)
+      expect(result.prompt).toBeDefined()
       const prompt = result.prompt!
 
       // Prompt MUST include Canvas Grid information to prevent AI misunderstanding

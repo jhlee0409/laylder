@@ -61,7 +61,9 @@ describe('Prompt Quality Tests', () => {
     it('should include all essential sections', () => {
       const result = generatePrompt(sampleSchema, 'react', 'tailwind')
       expect(result.success).toBe(true)
+      expect(result.prompt).toBeDefined()
 
+      expect(result.prompt).toBeDefined()
       const prompt = result.prompt!
 
       // 필수 섹션 확인
@@ -79,6 +81,10 @@ describe('Prompt Quality Tests', () => {
 
     it('should have proper section ordering', () => {
       const result = generatePrompt(sampleSchema, 'react', 'tailwind')
+      expect(result.success).toBe(true)
+      expect(result.prompt).toBeDefined()
+
+      expect(result.prompt).toBeDefined()
       const prompt = result.prompt!
 
       // 섹션 순서 확인 (index로 검증)
@@ -130,7 +136,9 @@ describe('Prompt Quality Tests', () => {
 
       const result = generatePrompt(complexSchema, 'react', 'tailwind')
       expect(result.success).toBe(true)
+      expect(result.prompt).toBeDefined()
 
+      expect(result.prompt).toBeDefined()
       const prompt = result.prompt!
 
       // Visual Layout 섹션 확인
@@ -139,6 +147,7 @@ describe('Prompt Quality Tests', () => {
 
     it('should include section separators', () => {
       const result = generatePrompt(sampleSchema, 'react', 'tailwind')
+      expect(result.prompt).toBeDefined()
       const prompt = result.prompt!
 
       // 섹션 구분자 (---)가 최소 3개 이상 있어야 함
@@ -187,6 +196,7 @@ describe('Prompt Quality Tests', () => {
       }
 
       const result = generatePrompt(schema, 'react', 'tailwind')
+      expect(result.prompt).toBeDefined()
       const prompt = result.prompt!
 
       // Canvas Grid 정보 정확성 확인
@@ -234,6 +244,7 @@ describe('Prompt Quality Tests', () => {
       }
 
       const result = generatePrompt(schema, 'react', 'tailwind')
+      expect(result.prompt).toBeDefined()
       const prompt = result.prompt!
 
       // Spatial relationships 확인
@@ -261,6 +272,7 @@ describe('Prompt Quality Tests', () => {
       }
 
       const result = generatePrompt(schema, 'react', 'tailwind')
+      expect(result.prompt).toBeDefined()
       const prompt = result.prompt!
 
       // CSS Grid positioning 코드 확인
@@ -307,6 +319,7 @@ describe('Prompt Quality Tests', () => {
       }
 
       const result = generatePrompt(schema, 'react', 'tailwind')
+      expect(result.prompt).toBeDefined()
       const prompt = result.prompt!
 
       // Positioning types 확인
@@ -355,6 +368,7 @@ describe('Prompt Quality Tests', () => {
       }
 
       const result = generatePrompt(schema, 'react', 'tailwind')
+      expect(result.prompt).toBeDefined()
       const prompt = result.prompt!
 
       // Layout types 확인
@@ -438,6 +452,7 @@ describe('Prompt Quality Tests', () => {
       }
 
       const result = generatePrompt(multiComponentSchema, 'react', 'tailwind')
+      expect(result.prompt).toBeDefined()
       const prompt = result.prompt!
 
       // Component 순서 확인 (Header → Main → Footer 순서로 나타나야 함)
@@ -492,6 +507,7 @@ describe('Prompt Quality Tests', () => {
       }
 
       const result = generatePrompt(schema, 'react', 'tailwind')
+      expect(result.prompt).toBeDefined()
       const prompt = result.prompt!
 
       // Positioning 정보 포함 확인
@@ -538,6 +554,7 @@ describe('Prompt Quality Tests', () => {
       }
 
       const result = generatePrompt(schema, 'react', 'tailwind')
+      expect(result.prompt).toBeDefined()
       const prompt = result.prompt!
 
       // Breakpoint 이름 포함 확인
@@ -566,6 +583,7 @@ describe('Prompt Quality Tests', () => {
       }
 
       const result = generatePrompt(schema, 'react', 'tailwind')
+      expect(result.prompt).toBeDefined()
       const prompt = result.prompt!
 
       // Implementation instructions 확인
@@ -603,6 +621,7 @@ describe('Prompt Quality Tests', () => {
       }
 
       const result = generatePrompt(schema, 'react', 'tailwind')
+      expect(result.prompt).toBeDefined()
       const prompt = result.prompt!
 
       // Full Schema JSON 포함 확인
@@ -640,6 +659,7 @@ describe('Prompt Quality Tests', () => {
       expect(result.success).toBe(true)
       expect(result.prompt).toBeDefined()
 
+      expect(result.prompt).toBeDefined()
       const prompt = result.prompt!
       expect(prompt).toContain('OnlyComponent')
     })
@@ -667,6 +687,7 @@ describe('Prompt Quality Tests', () => {
       expect(result.success).toBe(true)
 
       // Should still generate prompt (without Canvas Grid section)
+      expect(result.prompt).toBeDefined()
       const prompt = result.prompt!
       expect(prompt).toContain('NoCanvasComponent')
     })
@@ -701,6 +722,7 @@ describe('Prompt Quality Tests', () => {
       const result = generatePrompt(schema, 'react', 'tailwind')
       expect(result.success).toBe(true)
 
+      expect(result.prompt).toBeDefined()
       const prompt = result.prompt!
 
       // All 20 components should be mentioned
@@ -753,6 +775,7 @@ describe('Prompt Quality Tests', () => {
       const result = generatePrompt(schema, 'react', 'tailwind')
       expect(result.success).toBe(true)
 
+      expect(result.prompt).toBeDefined()
       const prompt = result.prompt!
 
       // All breakpoints mentioned
@@ -797,6 +820,7 @@ describe('Prompt Quality Tests', () => {
       }
 
       const result = generatePrompt(schema, 'react', 'tailwind')
+      expect(result.prompt).toBeDefined()
       const prompt = result.prompt!
 
       // Reasonable prompt length (not too short, not too long)
@@ -824,6 +848,7 @@ describe('Prompt Quality Tests', () => {
       }
 
       const result = generatePrompt(schema, 'react', 'tailwind')
+      expect(result.prompt).toBeDefined()
       const prompt = result.prompt!
 
       // Token estimate: ~1 token per 4 characters (rough estimate)

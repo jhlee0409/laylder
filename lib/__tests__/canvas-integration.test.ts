@@ -73,6 +73,7 @@ describe('Canvas Integration Tests', () => {
       expect(result.success).toBe(true)
       expect(result.prompt).toBeDefined()
 
+      expect(result.prompt).toBeDefined()
       const prompt = result.prompt!
 
       // 3. Prompt가 Canvas Grid 정보를 포함하는지 확인
@@ -138,6 +139,7 @@ describe('Canvas Integration Tests', () => {
       expect(result.success).toBe(true)
 
       // 수직 레이아웃에서는 Flexbox 사용 권장
+      expect(result.prompt).toBeDefined()
       const prompt = result.prompt!
       expect(prompt).toContain('Visual Layout (Canvas Grid)')
 
@@ -266,6 +268,7 @@ describe('Canvas Integration Tests', () => {
       const result = generatePrompt(schema, 'react', 'tailwind', componentLinks)
       expect(result.success).toBe(true)
 
+      expect(result.prompt).toBeDefined()
       const prompt = result.prompt!
 
       // Component Links 섹션 포함 확인
@@ -332,6 +335,7 @@ describe('Canvas Integration Tests', () => {
       const result = generatePrompt(schema, 'react', 'tailwind', componentLinks)
       expect(result.success).toBe(true)
 
+      expect(result.prompt).toBeDefined()
       const prompt = result.prompt!
 
       // 하나의 그룹으로 묶여야 함 (DFS algorithm)
@@ -421,6 +425,7 @@ describe('Canvas Integration Tests', () => {
       const result = generatePrompt(schema, 'react', 'tailwind', componentLinks)
       expect(result.success).toBe(true)
 
+      expect(result.prompt).toBeDefined()
       const prompt = result.prompt!
 
       // Breakpoint별 Canvas layout 정보 포함 확인
@@ -503,6 +508,7 @@ describe('Canvas Integration Tests', () => {
       const result = generatePrompt(schema, 'react', 'tailwind')
       expect(result.success).toBe(true)
 
+      expect(result.prompt).toBeDefined()
       const prompt = result.prompt!
       expect(prompt).toContain('FixedNavbar')
       expect(prompt).toContain('fixed')
@@ -601,6 +607,7 @@ describe('Canvas Integration Tests', () => {
       const result = generatePrompt(schema, 'react', 'tailwind')
       expect(result.success).toBe(true)
 
+      expect(result.prompt).toBeDefined()
       const prompt = result.prompt!
       expect(prompt).toContain('grid')
     })
@@ -722,6 +729,7 @@ describe('Canvas Integration Tests', () => {
       const result = generatePrompt(schema, 'react', 'tailwind')
       expect(result.success).toBe(true)
 
+      expect(result.prompt).toBeDefined()
       const prompt = result.prompt!
       expect(prompt).toContain('absolute')
       expect(prompt).toContain('zIndex')
