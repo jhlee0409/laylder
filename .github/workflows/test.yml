@@ -2,9 +2,9 @@ name: Unit Tests & Coverage
 
 on:
   push:
-    branches: [main, develop]
+    branches: ['**']  # Run on all branches including claude/*
   pull_request:
-    branches: [main, develop]
+    branches: ['**']
 
 jobs:
   test:

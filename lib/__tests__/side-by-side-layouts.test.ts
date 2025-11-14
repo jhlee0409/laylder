@@ -517,6 +517,7 @@ describe("Side-by-Side Layout Combinations", () => {
 
       expect(result.success).toBe(true)
 
+      expect(result.prompt).toBeDefined()
       const prompt = result.prompt!
 
       // Mobile: No side-by-side (stacked)
