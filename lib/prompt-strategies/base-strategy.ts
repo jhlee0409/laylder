@@ -260,7 +260,10 @@ export abstract class BasePromptStrategy implements IPromptStrategy {
           section += "\n"
         } catch (error) {
           // Fallback: Canvas 좌표 정보가 없는 경우 (backward compatibility)
-          console.warn(`Visual layout description failed for ${layoutKey}:`, error)
+          // Only log in development environment (not production)
+          if (process.env.NODE_ENV !== 'production') {
+            console.warn(`Visual layout description failed for ${layoutKey}:`, error)
+          }
         }
 
         // Structure type (기존)

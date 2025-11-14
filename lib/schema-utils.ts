@@ -334,7 +334,15 @@ export function normalizeSchema(schema: LaydlerSchema): LaydlerSchema {
   // 1. Layout Inheritance: Dynamic breakpoint cascade (Mobile → Tablet → Desktop, etc.)
   // Support any breakpoint names (not just hardcoded mobile/tablet/desktop)
   // FIX: Previously hardcoded .mobile, .tablet, .desktop failed for custom names like "Desktop" (capital D)
-  const sortedBreakpoints = [...normalized.breakpoints].sort((a, b) => a.minWidth - b.minWidth)
+  // EDGE CASE FIX: Deterministic sorting when multiple breakpoints have same minWidth
+  const sortedBreakpoints = [...normalized.breakpoints].sort((a, b) => {
+    // Primary sort: by minWidth
+    if (a.minWidth !== b.minWidth) {
+      return a.minWidth - b.minWidth
+    }
+    // Secondary sort: by name (alphabetically) for deterministic ordering
+    return a.name.localeCompare(b.name)
+  })
 
   for (let i = 1; i < sortedBreakpoints.length; i++) {
     const currentBP = sortedBreakpoints[i].name

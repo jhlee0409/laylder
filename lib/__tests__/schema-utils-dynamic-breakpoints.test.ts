@@ -463,4 +463,109 @@ describe('normalizeSchema - Dynamic Breakpoint Support', () => {
       expect(normalized.layouts['2xl'].components).toEqual(['c1'])
     })
   })
+
+  describe('Edge case: Duplicate minWidth values', () => {
+    it('should use deterministic sorting (alphabetical by name) when minWidth values are equal', () => {
+      const schema: LaydlerSchema = {
+        schemaVersion: '2.0',
+        components: [
+          {
+            id: 'c1',
+            name: 'Header',
+            semanticTag: 'header',
+            positioning: { type: 'static' },
+            layout: { type: 'none' },
+          },
+        ],
+        breakpoints: [
+          { name: 'ZBreakpoint', minWidth: 768, gridCols: 8, gridRows: 8 }, // Same minWidth
+          { name: 'ABreakpoint', minWidth: 768, gridCols: 8, gridRows: 8 }, // Same minWidth
+          { name: 'mobile', minWidth: 0, gridCols: 4, gridRows: 8 },
+        ],
+        layouts: {
+          mobile: { structure: 'vertical', components: ['c1'] },
+          // ABreakpoint and ZBreakpoint missing - should inherit
+        },
+      }
+
+      const normalized = normalizeSchema(schema)
+
+      // Both breakpoints should inherit from mobile (deterministic)
+      expect(normalized.layouts.ABreakpoint).toBeDefined()
+      expect(normalized.layouts.ZBreakpoint).toBeDefined()
+      expect(normalized.layouts.ABreakpoint.components).toEqual(['c1'])
+      expect(normalized.layouts.ZBreakpoint.components).toEqual(['c1'])
+
+      // Verify inheritance order is deterministic (alphabetically: A before Z)
+      // If ABreakpoint had a layout, ZBreakpoint should inherit from ABreakpoint
+      const schema2: LaydlerSchema = {
+        schemaVersion: '2.0',
+        components: [
+          {
+            id: 'c1',
+            name: 'Header',
+            semanticTag: 'header',
+            positioning: { type: 'static' },
+            layout: { type: 'none' },
+          },
+          {
+            id: 'c2',
+            name: 'Main',
+            semanticTag: 'main',
+            positioning: { type: 'static' },
+            layout: { type: 'none' },
+          },
+        ],
+        breakpoints: [
+          { name: 'ZBreakpoint', minWidth: 768, gridCols: 8, gridRows: 8 },
+          { name: 'ABreakpoint', minWidth: 768, gridCols: 8, gridRows: 8 },
+          { name: 'mobile', minWidth: 0, gridCols: 4, gridRows: 8 },
+        ],
+        layouts: {
+          mobile: { structure: 'vertical', components: ['c1'] },
+          ABreakpoint: { structure: 'vertical', components: ['c1', 'c2'] }, // ABreakpoint defined
+          // ZBreakpoint missing - should inherit from ABreakpoint (alphabetically next)
+        },
+      }
+
+      const normalized2 = normalizeSchema(schema2)
+
+      // ZBreakpoint should inherit from ABreakpoint (not mobile)
+      expect(normalized2.layouts.ZBreakpoint.components).toEqual(['c1', 'c2'])
+      expect(normalized2.layouts.ZBreakpoint.components).not.toEqual(['c1'])
+    })
+
+    it('should handle three breakpoints with same minWidth deterministically', () => {
+      const schema: LaydlerSchema = {
+        schemaVersion: '2.0',
+        components: [
+          {
+            id: 'c1',
+            name: 'Component',
+            semanticTag: 'div',
+            positioning: { type: 'static' },
+            layout: { type: 'none' },
+          },
+        ],
+        breakpoints: [
+          { name: 'Mobile', minWidth: 0, gridCols: 4, gridRows: 8 },
+          { name: 'Tablet-Portrait', minWidth: 768, gridCols: 6, gridRows: 8 },
+          { name: 'Tablet-Landscape', minWidth: 768, gridCols: 8, gridRows: 8 },
+          { name: 'Desktop', minWidth: 768, gridCols: 10, gridRows: 8 }, // All three have 768
+        ],
+        layouts: {
+          Mobile: { structure: 'vertical', components: ['c1'] },
+          // All tablet/desktop variants missing
+        },
+      }
+
+      const normalized = normalizeSchema(schema)
+
+      // All three should inherit, with deterministic alphabetical order:
+      // Desktop → Tablet-Landscape → Tablet-Portrait
+      expect(normalized.layouts['Tablet-Portrait'].components).toEqual(['c1'])
+      expect(normalized.layouts['Tablet-Landscape'].components).toEqual(['c1'])
+      expect(normalized.layouts.Desktop.components).toEqual(['c1'])
+    })
+  })
 })

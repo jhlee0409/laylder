@@ -103,7 +103,11 @@ export function generatePrompt(
     if (!linkValidation.valid) {
       // Surface validation errors to user via warnings
       linkWarnings.push(...linkValidation.errors.map(err => `Component Link: ${err}`))
-      console.warn("Component link validation errors:", linkValidation.errors)
+
+      // Only log in development environment (not production)
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn("Component link validation errors:", linkValidation.errors)
+      }
 
       // Filter out invalid links
       const validLinks = componentLinks.filter((link) => {
