@@ -731,4 +731,590 @@ describe('Smart Layout', () => {
       expect(size.height).toBeGreaterThanOrEqual(1)
     })
   })
+
+  describe('Edge Cases', () => {
+    describe('Minimum Grid Size (1x1)', () => {
+      it('should place header in 1x1 grid', () => {
+        const headerTemplate: ComponentTemplate = {
+          id: 'header',
+          name: 'Header',
+          description: 'Test header',
+          category: 'layout',
+          icon: 'LayoutHeader',
+          template: {
+            name: 'Header',
+            semanticTag: 'header',
+            positioning: { type: 'sticky', position: { top: 0 } },
+            layout: { type: 'flex', flex: { direction: 'row' } },
+            canvasLayout: { x: 0, y: 0, width: 1, height: 1 },
+          },
+        }
+
+        const position = calculateSmartPosition(headerTemplate, 1, 1, [], 'desktop')
+
+        expect(position.x).toBe(0)
+        expect(position.y).toBe(0)
+        expect(position.width).toBe(1)
+        expect(position.height).toBe(1)
+      })
+
+      it('should place footer in 1x1 grid', () => {
+        const footerTemplate: ComponentTemplate = {
+          id: 'footer',
+          name: 'Footer',
+          description: 'Test footer',
+          category: 'layout',
+          icon: 'LayoutFooter',
+          template: {
+            name: 'Footer',
+            semanticTag: 'footer',
+            positioning: { type: 'static' },
+            layout: { type: 'flex', flex: { direction: 'row' } },
+            canvasLayout: { x: 0, y: 0, width: 1, height: 1 },
+          },
+        }
+
+        const position = calculateSmartPosition(footerTemplate, 1, 1, [], 'desktop')
+
+        expect(position.x).toBe(0)
+        expect(position.y).toBe(0) // max(0, 1 - 1)
+        expect(position.width).toBe(1)
+        expect(position.height).toBe(1)
+      })
+
+      it('should find slot in 1x1 grid with no components', () => {
+        const slot = findEmptySlot([], 1, 1, 'desktop', 1, 1)
+
+        expect(slot.x).toBe(0)
+        expect(slot.y).toBe(0)
+        expect(slot.width).toBe(1)
+        expect(slot.height).toBe(1)
+      })
+
+      it('should place below when 1x1 grid is full', () => {
+        const existingComponent: Component = {
+          id: 'c1',
+          name: 'Existing',
+          semanticTag: 'div',
+          positioning: { type: 'static' },
+          layout: { type: 'none' },
+          canvasLayout: { x: 0, y: 0, width: 1, height: 1 },
+        }
+
+        const slot = findEmptySlot([existingComponent], 1, 1, 'desktop', 1, 1)
+
+        // Should place below (clamped to y=0 since gridRows=1, height=1)
+        expect(slot.x).toBe(0)
+        expect(slot.y).toBe(0) // max(0, min(1, 1 - 1))
+      })
+    })
+
+    describe('Large Components', () => {
+      it('should handle component wider than grid', () => {
+        const largeTemplate: ComponentTemplate = {
+          id: 'large',
+          name: 'Large',
+          description: 'Test large',
+          category: 'content',
+          icon: 'Section',
+          template: {
+            name: 'Large',
+            semanticTag: 'section',
+            positioning: { type: 'static' },
+            layout: { type: 'flex', flex: { direction: 'column' } },
+            canvasLayout: { x: 0, y: 0, width: 20, height: 2 },
+          },
+        }
+
+        // Should still find a slot at (0,0)
+        const position = calculateSmartPosition(largeTemplate, 12, 8, [], 'desktop')
+
+        expect(position.x).toBe(0)
+        expect(position.y).toBe(0)
+        expect(position.width).toBe(1) // Default size for section
+        expect(position.height).toBe(1)
+      })
+
+      it('should handle findEmptySlot with large width request', () => {
+        const slot = findEmptySlot([], 12, 8, 'desktop', 15, 2)
+
+        // Cannot fit 15-wide component in 12-col grid, but should return fallback
+        expect(slot.x).toBe(0)
+        expect(slot.y).toBe(0)
+        expect(slot.width).toBe(15) // Returns requested size even if doesn't fit
+        expect(slot.height).toBe(2)
+      })
+
+      it('should handle findEmptySlot with large height request', () => {
+        const slot = findEmptySlot([], 12, 8, 'desktop', 4, 10)
+
+        expect(slot.x).toBe(0)
+        expect(slot.y).toBe(0)
+        expect(slot.width).toBe(4)
+        expect(slot.height).toBe(10) // Returns requested size
+      })
+    })
+
+    describe('Zero-Sized Grid', () => {
+      it('should handle zero columns gracefully', () => {
+        const headerTemplate: ComponentTemplate = {
+          id: 'header',
+          name: 'Header',
+          description: 'Test header',
+          category: 'layout',
+          icon: 'LayoutHeader',
+          template: {
+            name: 'Header',
+            semanticTag: 'header',
+            positioning: { type: 'sticky', position: { top: 0 } },
+            layout: { type: 'flex', flex: { direction: 'row' } },
+            canvasLayout: { x: 0, y: 0, width: 0, height: 1 },
+          },
+        }
+
+        const position = calculateSmartPosition(headerTemplate, 0, 8, [], 'desktop')
+
+        expect(position.width).toBe(0) // Returns gridCols (0)
+      })
+
+      it('should handle zero rows gracefully for footer', () => {
+        const footerTemplate: ComponentTemplate = {
+          id: 'footer',
+          name: 'Footer',
+          description: 'Test footer',
+          category: 'layout',
+          icon: 'LayoutFooter',
+          template: {
+            name: 'Footer',
+            semanticTag: 'footer',
+            positioning: { type: 'static' },
+            layout: { type: 'flex', flex: { direction: 'row' } },
+            canvasLayout: { x: 0, y: 0, width: 12, height: 0 },
+          },
+        }
+
+        const position = calculateSmartPosition(footerTemplate, 12, 0, [], 'desktop')
+
+        expect(position.y).toBe(0) // max(0, 0 - 1) = -1 → clamped? Actually max(0, -1) = 0
+      })
+    })
+
+    describe('Complex Collision Scenarios', () => {
+      it('should find slot in fragmented grid', () => {
+        const components: Component[] = [
+          // Top-left corner occupied
+          {
+            id: 'c1',
+            name: 'TopLeft',
+            semanticTag: 'div',
+            positioning: { type: 'static' },
+            layout: { type: 'none' },
+            canvasLayout: { x: 0, y: 0, width: 3, height: 3 },
+          },
+          // Top-right corner occupied
+          {
+            id: 'c2',
+            name: 'TopRight',
+            semanticTag: 'div',
+            positioning: { type: 'static' },
+            layout: { type: 'none' },
+            canvasLayout: { x: 9, y: 0, width: 3, height: 3 },
+          },
+        ]
+
+        // Should find slot in the middle (x: 3-8)
+        const slot = findEmptySlot(components, 12, 8, 'desktop', 2, 2)
+
+        expect(slot.x).toBeGreaterThanOrEqual(3)
+        expect(slot.x).toBeLessThanOrEqual(8)
+        expect(slot.y).toBeGreaterThanOrEqual(0)
+      })
+
+      it('should find slot below when top rows are full', () => {
+        const components: Component[] = [
+          {
+            id: 'c1',
+            name: 'FullWidthTop',
+            semanticTag: 'header',
+            positioning: { type: 'sticky', position: { top: 0 } },
+            layout: { type: 'flex', flex: { direction: 'row' } },
+            canvasLayout: { x: 0, y: 0, width: 12, height: 2 },
+          },
+        ]
+
+        const slot = findEmptySlot(components, 12, 8, 'desktop', 4, 2)
+
+        expect(slot.y).toBeGreaterThanOrEqual(2) // Below the header
+      })
+
+      it('should handle checkerboard pattern', () => {
+        const components: Component[] = [
+          {
+            id: 'c1',
+            name: 'Checker1',
+            semanticTag: 'div',
+            positioning: { type: 'static' },
+            layout: { type: 'none' },
+            canvasLayout: { x: 0, y: 0, width: 2, height: 2 },
+          },
+          {
+            id: 'c2',
+            name: 'Checker2',
+            semanticTag: 'div',
+            positioning: { type: 'static' },
+            layout: { type: 'none' },
+            canvasLayout: { x: 4, y: 0, width: 2, height: 2 },
+          },
+          {
+            id: 'c3',
+            name: 'Checker3',
+            semanticTag: 'div',
+            positioning: { type: 'static' },
+            layout: { type: 'none' },
+            canvasLayout: { x: 2, y: 2, width: 2, height: 2 },
+          },
+        ]
+
+        // Should find slot at (2, 0) - gap in first row
+        const slot = findEmptySlot(components, 12, 8, 'desktop', 2, 2)
+
+        expect(slot.x).toBe(2)
+        expect(slot.y).toBe(0)
+      })
+    })
+
+    describe('Boundary Conditions', () => {
+      it('should place aside with zero topOffset when no header/nav', () => {
+        const asideTemplate: ComponentTemplate = {
+          id: 'sidebar',
+          name: 'Sidebar',
+          description: 'Test sidebar',
+          category: 'navigation',
+          icon: 'Sidebar',
+          template: {
+            name: 'Sidebar',
+            semanticTag: 'aside',
+            positioning: { type: 'sticky', position: { top: 64 } },
+            layout: { type: 'flex', flex: { direction: 'column' } },
+            canvasLayout: { x: 0, y: 0, width: 3, height: 8 },
+          },
+        }
+
+        const position = calculateSmartPosition(asideTemplate, 12, 8, [], 'desktop')
+
+        expect(position.y).toBe(0) // No header/nav, so topOffset = 0
+        expect(position.height).toBe(7) // gridRows - topOffset(0) - 1
+      })
+
+      it('should place main with all offsets (header + footer + sidebars)', () => {
+        const components: Component[] = [
+          {
+            id: 'header',
+            name: 'Header',
+            semanticTag: 'header',
+            positioning: { type: 'sticky', position: { top: 0 } },
+            layout: { type: 'flex', flex: { direction: 'row' } },
+            canvasLayout: { x: 0, y: 0, width: 12, height: 1 },
+          },
+          {
+            id: 'footer',
+            name: 'Footer',
+            semanticTag: 'footer',
+            positioning: { type: 'static' },
+            layout: { type: 'flex', flex: { direction: 'row' } },
+            canvasLayout: { x: 0, y: 7, width: 12, height: 1 },
+          },
+          {
+            id: 'left',
+            name: 'LeftSidebar',
+            semanticTag: 'aside',
+            positioning: { type: 'sticky', position: { top: 64 } },
+            layout: { type: 'flex', flex: { direction: 'column' } },
+            canvasLayout: { x: 0, y: 1, width: 3, height: 6 },
+          },
+          {
+            id: 'right',
+            name: 'RightSidebar',
+            semanticTag: 'aside',
+            positioning: { type: 'sticky', position: { top: 64 } },
+            layout: { type: 'flex', flex: { direction: 'column' } },
+            canvasLayout: { x: 9, y: 1, width: 3, height: 6 },
+          },
+        ]
+
+        const mainTemplate: ComponentTemplate = {
+          id: 'main',
+          name: 'Main',
+          description: 'Test main',
+          category: 'layout',
+          icon: 'LayoutMain',
+          template: {
+            name: 'Main',
+            semanticTag: 'main',
+            positioning: { type: 'static' },
+            layout: { type: 'flex', flex: { direction: 'column' } },
+            canvasLayout: { x: 3, y: 1, width: 6, height: 6 },
+          },
+        }
+
+        const position = calculateSmartPosition(mainTemplate, 12, 8, components, 'desktop')
+
+        expect(position.x).toBe(3) // After left sidebar
+        expect(position.y).toBe(1) // After header
+        expect(position.width).toBe(6) // Between sidebars (9 - 3)
+        expect(position.height).toBe(6) // gridRows(8) - topOffset(1) - bottomOffset(1)
+      })
+
+      it('should handle nav with only header (no nav)', () => {
+        const headerComponent: Component = {
+          id: 'header',
+          name: 'Header',
+          semanticTag: 'header',
+          positioning: { type: 'sticky', position: { top: 0 } },
+          layout: { type: 'flex', flex: { direction: 'row' } },
+          canvasLayout: { x: 0, y: 0, width: 12, height: 1 },
+        }
+
+        const asideTemplate: ComponentTemplate = {
+          id: 'sidebar',
+          name: 'Sidebar',
+          description: 'Test sidebar',
+          category: 'navigation',
+          icon: 'Sidebar',
+          template: {
+            name: 'Sidebar',
+            semanticTag: 'aside',
+            positioning: { type: 'sticky', position: { top: 64 } },
+            layout: { type: 'flex', flex: { direction: 'column' } },
+            canvasLayout: { x: 0, y: 1, width: 3, height: 7 },
+          },
+        }
+
+        const position = calculateSmartPosition(asideTemplate, 12, 8, [headerComponent], 'desktop')
+
+        expect(position.y).toBe(1) // Below header (topOffset = 1)
+      })
+
+      it('should handle main with only nav (no header)', () => {
+        const navComponent: Component = {
+          id: 'nav',
+          name: 'Nav',
+          semanticTag: 'nav',
+          positioning: { type: 'sticky', position: { top: 0 } },
+          layout: { type: 'flex', flex: { direction: 'row' } },
+          canvasLayout: { x: 0, y: 0, width: 12, height: 1 },
+        }
+
+        const mainTemplate: ComponentTemplate = {
+          id: 'main',
+          name: 'Main',
+          description: 'Test main',
+          category: 'layout',
+          icon: 'LayoutMain',
+          template: {
+            name: 'Main',
+            semanticTag: 'main',
+            positioning: { type: 'static' },
+            layout: { type: 'flex', flex: { direction: 'column' } },
+            canvasLayout: { x: 0, y: 1, width: 12, height: 7 },
+          },
+        }
+
+        const position = calculateSmartPosition(mainTemplate, 12, 8, [navComponent], 'desktop')
+
+        expect(position.y).toBe(1) // Below nav (topOffset = 1)
+      })
+    })
+
+    describe('Responsive Canvas Layout', () => {
+      it('should use responsive layout for mobile breakpoint', () => {
+        const componentWithResponsive: Component = {
+          id: 'responsive',
+          name: 'Responsive',
+          semanticTag: 'section',
+          positioning: { type: 'static' },
+          layout: { type: 'flex', flex: { direction: 'column' } },
+          canvasLayout: { x: 0, y: 0, width: 12, height: 2 },
+          responsiveCanvasLayout: {
+            mobile: { x: 0, y: 0, width: 4, height: 4 },
+            tablet: { x: 0, y: 0, width: 8, height: 3 },
+            desktop: { x: 0, y: 0, width: 12, height: 2 },
+          },
+        }
+
+        const sectionTemplate: ComponentTemplate = {
+          id: 'section',
+          name: 'Section',
+          description: 'Test section',
+          category: 'content',
+          icon: 'Section',
+          template: {
+            name: 'Section',
+            semanticTag: 'section',
+            positioning: { type: 'static' },
+            layout: { type: 'flex', flex: { direction: 'column' } },
+            canvasLayout: { x: 0, y: 5, width: 1, height: 1 },
+          },
+        }
+
+        // On mobile, existing component is 4-tall (y: 0-3), so new component should be at y: 4 or later
+        const position = calculateSmartPosition(
+          sectionTemplate,
+          4,
+          8,
+          [componentWithResponsive],
+          'mobile'
+        )
+
+        expect(position.y).toBeGreaterThanOrEqual(4) // Below the 4-tall component
+      })
+
+      it('should fall back to canvasLayout when responsive layout missing', () => {
+        const componentWithoutResponsive: Component = {
+          id: 'no-responsive',
+          name: 'NoResponsive',
+          semanticTag: 'section',
+          positioning: { type: 'static' },
+          layout: { type: 'flex', flex: { direction: 'column' } },
+          canvasLayout: { x: 0, y: 0, width: 12, height: 2 },
+          // No responsiveCanvasLayout
+        }
+
+        const sectionTemplate: ComponentTemplate = {
+          id: 'section',
+          name: 'Section',
+          description: 'Test section',
+          category: 'content',
+          icon: 'Section',
+          template: {
+            name: 'Section',
+            semanticTag: 'section',
+            positioning: { type: 'static' },
+            layout: { type: 'flex', flex: { direction: 'column' } },
+            canvasLayout: { x: 0, y: 3, width: 1, height: 1 },
+          },
+        }
+
+        // Should use canvasLayout (height: 2), so new component at y: 2 or later
+        const position = calculateSmartPosition(
+          sectionTemplate,
+          12,
+          8,
+          [componentWithoutResponsive],
+          'mobile'
+        )
+
+        expect(position.y).toBeGreaterThanOrEqual(2)
+      })
+
+      it('should handle component with no canvasLayout at all', () => {
+        const componentWithoutCanvas: Component = {
+          id: 'no-canvas',
+          name: 'NoCanvas',
+          semanticTag: 'section',
+          positioning: { type: 'static' },
+          layout: { type: 'flex', flex: { direction: 'column' } },
+          // No canvasLayout
+          canvasLayout: undefined as any,
+        }
+
+        const sectionTemplate: ComponentTemplate = {
+          id: 'section',
+          name: 'Section',
+          description: 'Test section',
+          category: 'content',
+          icon: 'Section',
+          template: {
+            name: 'Section',
+            semanticTag: 'section',
+            positioning: { type: 'static' },
+            layout: { type: 'flex', flex: { direction: 'column' } },
+            canvasLayout: { x: 0, y: 0, width: 1, height: 1 },
+          },
+        }
+
+        // Should ignore component without canvasLayout and place at (0,0)
+        const position = calculateSmartPosition(
+          sectionTemplate,
+          12,
+          8,
+          [componentWithoutCanvas],
+          'desktop'
+        )
+
+        expect(position.x).toBe(0)
+        expect(position.y).toBe(0)
+      })
+    })
+
+    describe('Empty Components List', () => {
+      it('should place header at top with empty components list', () => {
+        const headerTemplate: ComponentTemplate = {
+          id: 'header',
+          name: 'Header',
+          description: 'Test header',
+          category: 'layout',
+          icon: 'LayoutHeader',
+          template: {
+            name: 'Header',
+            semanticTag: 'header',
+            positioning: { type: 'sticky', position: { top: 0 } },
+            layout: { type: 'flex', flex: { direction: 'row' } },
+            canvasLayout: { x: 0, y: 0, width: 12, height: 1 },
+          },
+        }
+
+        const position = calculateSmartPosition(headerTemplate, 12, 8, [], 'desktop')
+
+        expect(position.x).toBe(0)
+        expect(position.y).toBe(0)
+        expect(position.width).toBe(12)
+        expect(position.height).toBe(1)
+      })
+
+      it('should place aside on left with empty components list', () => {
+        const asideTemplate: ComponentTemplate = {
+          id: 'sidebar',
+          name: 'Sidebar',
+          description: 'Test sidebar',
+          category: 'navigation',
+          icon: 'Sidebar',
+          template: {
+            name: 'Sidebar',
+            semanticTag: 'aside',
+            positioning: { type: 'sticky', position: { top: 64 } },
+            layout: { type: 'flex', flex: { direction: 'column' } },
+            canvasLayout: { x: 0, y: 0, width: 3, height: 8 },
+          },
+        }
+
+        const position = calculateSmartPosition(asideTemplate, 12, 8, [], 'desktop')
+
+        expect(position.x).toBe(0) // Left side
+        expect(position.width).toBe(3)
+      })
+
+      it('should place main with full width when no sidebars', () => {
+        const mainTemplate: ComponentTemplate = {
+          id: 'main',
+          name: 'Main',
+          description: 'Test main',
+          category: 'layout',
+          icon: 'LayoutMain',
+          template: {
+            name: 'Main',
+            semanticTag: 'main',
+            positioning: { type: 'static' },
+            layout: { type: 'flex', flex: { direction: 'column' } },
+            canvasLayout: { x: 0, y: 0, width: 12, height: 8 },
+          },
+        }
+
+        const position = calculateSmartPosition(mainTemplate, 12, 8, [], 'desktop')
+
+        expect(position.x).toBe(0)
+        expect(position.width).toBe(12) // Full width
+      })
+    })
+  })
 })
