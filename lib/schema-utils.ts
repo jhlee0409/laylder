@@ -8,6 +8,8 @@ import type {
   Component,
   Breakpoint,
   LayoutConfig,
+  CanvasLayout,
+  ResponsiveCanvasLayout,
 } from "@/types/schema"
 import { sortComponentsByCanvasCoordinates } from "./canvas-sort-utils"
 
@@ -361,7 +363,8 @@ export function normalizeSchema(schema: LaydlerSchema): LaydlerSchema {
   // FIX: Support dynamic breakpoint names (not just mobile/tablet/desktop)
   normalized.components = normalized.components.map(comp => {
     if (comp.responsiveCanvasLayout) {
-      const rcl = { ...comp.responsiveCanvasLayout }
+      // Type-safe dynamic key access using Record type
+      const rcl: Record<string, CanvasLayout | undefined> = { ...comp.responsiveCanvasLayout }
 
       // Cascade from previous breakpoint to next (based on minWidth sorting)
       for (let i = 1; i < sortedBreakpoints.length; i++) {
@@ -369,17 +372,17 @@ export function normalizeSchema(schema: LaydlerSchema): LaydlerSchema {
         const previousBP = sortedBreakpoints[i - 1].name
 
         // If current breakpoint has no Canvas layout, inherit from previous
-        if (!rcl[currentBP as keyof typeof rcl]) {
-          const previousLayout = rcl[previousBP as keyof typeof rcl]
+        if (!rcl[currentBP]) {
+          const previousLayout = rcl[previousBP]
           if (previousLayout) {
-            rcl[currentBP as keyof typeof rcl] = { ...previousLayout }
+            rcl[currentBP] = { ...previousLayout }
           }
         }
       }
 
       return {
         ...comp,
-        responsiveCanvasLayout: rcl,
+        responsiveCanvasLayout: rcl as ResponsiveCanvasLayout,
       }
     }
 
@@ -398,9 +401,11 @@ export function normalizeSchema(schema: LaydlerSchema): LaydlerSchema {
 
     // Edge Case: Auto-create layout if it doesn't exist but components have Canvas data
     if (!normalized.layouts[breakpointName]) {
-      const hasCanvasData = normalized.components.some(
-        comp => comp.responsiveCanvasLayout?.[breakpointName as keyof typeof comp.responsiveCanvasLayout]
-      )
+      // Type-safe dynamic key access using helper function
+      const hasCanvasData = normalized.components.some(comp => {
+        const rcl = comp.responsiveCanvasLayout as Record<string, CanvasLayout | undefined> | undefined
+        return rcl?.[breakpointName] !== undefined
+      })
 
       if (hasCanvasData) {
         // Auto-create missing layout
@@ -414,8 +419,12 @@ export function normalizeSchema(schema: LaydlerSchema): LaydlerSchema {
       }
     }
 
+    // Type-safe filtering using Record type
     const componentsWithCanvas = normalized.components
-      .filter(comp => comp.responsiveCanvasLayout?.[breakpointName as keyof typeof comp.responsiveCanvasLayout])
+      .filter(comp => {
+        const rcl = comp.responsiveCanvasLayout as Record<string, CanvasLayout | undefined> | undefined
+        return rcl?.[breakpointName] !== undefined
+      })
       .map(comp => comp.id)
 
     // 기존 components와 Canvas components를 합침 (중복 제거)
