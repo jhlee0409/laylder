@@ -147,6 +147,9 @@ export const useLayoutStore = create<LayoutState>()(
           const currentLayout = state.schema.layouts[state.currentBreakpoint as keyof typeof state.schema.layouts]
 
           // 업데이트된 스키마 (현재 breakpoint에만 추가)
+          // ⚠️ CRITICAL: normalizeSchema()를 호출하지 않음
+          // 이유: 사용자가 breakpoint별로 독립적으로 컴포넌트를 추가할 수 있도록 함
+          // Component Links로 cross-breakpoint relationships를 명시적으로 관리
           const updatedSchema: LaydlerSchema = {
             ...state.schema,
             components: [...state.schema.components, newComponent],
@@ -159,11 +162,8 @@ export const useLayoutStore = create<LayoutState>()(
             },
           }
 
-          // Breakpoint Inheritance 적용: Mobile → Tablet → Desktop
-          const normalizedSchema = normalizeSchema(updatedSchema)
-
           return {
-            schema: normalizedSchema,
+            schema: updatedSchema,
           }
         }, false, "addComponent")
       },
