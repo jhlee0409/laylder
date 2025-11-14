@@ -378,8 +378,9 @@ describe("Component Linking Store Actions", () => {
       const store = useLayoutStore.getState()
 
       // Verify that these methods no longer exist
-      expect(store.mergeLinkedComponents).toBeUndefined()
-      expect(store.autoLinkSimilarComponents).toBeUndefined()
+      // Use 'in' operator to avoid TypeScript errors
+      expect("mergeLinkedComponents" in store).toBe(false)
+      expect("autoLinkSimilarComponents" in store).toBe(false)
     })
 
     it("Component links are now only stored, not merged", () => {

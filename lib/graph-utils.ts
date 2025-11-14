@@ -185,6 +185,7 @@ export function areComponentsLinked(
   componentId2: string,
   links: ComponentLink[]
 ): boolean {
-  const group = getComponentGroup(componentId1, links)
-  return group.includes(componentId2)
+  const group = getComponentGroup(componentId1, links, false) // validateId=false ensures non-undefined return
+  // Type assertion safe because validateId=false always returns string[]
+  return (group as string[]).includes(componentId2)
 }
