@@ -16,20 +16,20 @@ describe("Component Linking Concurrent Operations", () => {
       store.addComponent({
         name: "Header",
         semanticTag: "header",
-        positioning: { type: "sticky", top: 0 },
-        layout: { type: "flex", direction: "row" },
+        positioning: { type: "sticky", position: { top: 0 } },
+        layout: { type: "flex", flex: { direction: "row" } },
       })
       store.addComponent({
         name: "Sidebar",
         semanticTag: "aside",
         positioning: { type: "static" },
-        layout: { type: "flex", direction: "column" },
+        layout: { type: "flex", flex: { direction: "column" } },
       })
       store.addComponent({
         name: "Main",
         semanticTag: "main",
         positioning: { type: "static" },
-        layout: { type: "flex", direction: "column" },
+        layout: { type: "flex", flex: { direction: "column" } },
       })
 
       // Get updated state and actual generated IDs
@@ -65,7 +65,7 @@ describe("Component Linking Concurrent Operations", () => {
           name: `Component${i + 1}`,
           semanticTag: "section",
           positioning: { type: "static" },
-          layout: { type: "flex", direction: "column" },
+          layout: { type: "flex", flex: { direction: "column" } },
         })
       }
 
@@ -100,19 +100,19 @@ describe("Component Linking Concurrent Operations", () => {
         name: "C1",
         semanticTag: "section",
         positioning: { type: "static" },
-        layout: { type: "flex", direction: "column" },
+        layout: { type: "flex", flex: { direction: "column" } },
       })
       store.addComponent({
         name: "C2",
         semanticTag: "section",
         positioning: { type: "static" },
-        layout: { type: "flex", direction: "column" },
+        layout: { type: "flex", flex: { direction: "column" } },
       })
       store.addComponent({
         name: "C3",
         semanticTag: "section",
         positioning: { type: "static" },
-        layout: { type: "flex", direction: "column" },
+        layout: { type: "flex", flex: { direction: "column" } },
       })
 
       // Get updated state
@@ -149,7 +149,7 @@ describe("Component Linking Concurrent Operations", () => {
           name: `Component${i + 1}`,
           semanticTag: "section",
           positioning: { type: "static" },
-          layout: { type: "flex", direction: "column" },
+          layout: { type: "flex", flex: { direction: "column" } },
         })
       }
 
@@ -186,19 +186,19 @@ describe("Component Linking Concurrent Operations", () => {
         name: "C1",
         semanticTag: "section",
         positioning: { type: "static" },
-        layout: { type: "flex", direction: "column" },
+        layout: { type: "flex", flex: { direction: "column" } },
       })
       store.addComponent({
         name: "C2",
         semanticTag: "section",
         positioning: { type: "static" },
-        layout: { type: "flex", direction: "column" },
+        layout: { type: "flex", flex: { direction: "column" } },
       })
       store.addComponent({
         name: "C3",
         semanticTag: "section",
         positioning: { type: "static" },
-        layout: { type: "flex", direction: "column" },
+        layout: { type: "flex", flex: { direction: "column" } },
       })
 
       // Get updated state
@@ -233,7 +233,7 @@ describe("Component Linking Concurrent Operations", () => {
           name: `Component${i + 1}`,
           semanticTag: "section",
           positioning: { type: "static" },
-          layout: { type: "flex", direction: "column" },
+          layout: { type: "flex", flex: { direction: "column" } },
         })
       }
 
@@ -266,8 +266,8 @@ describe("Component Linking Concurrent Operations", () => {
       store.addComponent({
         name: "Header",
         semanticTag: "header",
-        positioning: { type: "sticky", top: 0 },
-        layout: { type: "flex", direction: "row" },
+        positioning: { type: "sticky", position: { top: 0 } },
+        layout: { type: "flex", flex: { direction: "row" } },
         responsiveCanvasLayout: {
           mobile: { x: 0, y: 0, width: 12, height: 1 },
         },
@@ -278,8 +278,8 @@ describe("Component Linking Concurrent Operations", () => {
       store.addComponent({
         name: "Header",
         semanticTag: "header",
-        positioning: { type: "sticky", top: 0 },
-        layout: { type: "flex", direction: "row" },
+        positioning: { type: "sticky", position: { top: 0 } },
+        layout: { type: "flex", flex: { direction: "row" } },
         responsiveCanvasLayout: {
           tablet: { x: 0, y: 0, width: 12, height: 1 },
         },
@@ -315,22 +315,22 @@ describe("Component Linking Concurrent Operations", () => {
       store.addComponent({
         name: "Header",
         semanticTag: "header",
-        positioning: { type: "sticky", top: 0 },
-        layout: { type: "flex", direction: "row" },
+        positioning: { type: "sticky", position: { top: 0 } },
+        layout: { type: "flex", flex: { direction: "row" } },
       })
 
       store.addComponent({
         name: "Header",
         semanticTag: "header",
-        positioning: { type: "sticky", top: 0 },
-        layout: { type: "flex", direction: "row" },
+        positioning: { type: "sticky", position: { top: 0 } },
+        layout: { type: "flex", flex: { direction: "row" } },
       })
 
       store.addComponent({
         name: "Footer",
         semanticTag: "footer",
         positioning: { type: "static" },
-        layout: { type: "flex", direction: "row" },
+        layout: { type: "flex", flex: { direction: "row" } },
       })
 
       // Get updated state
@@ -364,7 +364,7 @@ describe("Component Linking Concurrent Operations", () => {
           name: `Component${i + 1}`,
           semanticTag: "section",
           positioning: { type: "static" },
-          layout: { type: "flex", direction: "column" },
+          layout: { type: "flex", flex: { direction: "column" } },
         })
       }
 
