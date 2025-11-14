@@ -128,7 +128,7 @@ export function generatePrompt(
 
     sections.push("## Component Links (Cross-Breakpoint Relationships)\n\n")
     sections.push(
-      "The following components are linked and MUST be treated as the SAME component:\n\n"
+      "The following components are **linked** and represent the **SAME UI element** across different breakpoints:\n\n"
     )
 
     // Calculate groups using DFS algorithm
@@ -144,25 +144,47 @@ export function generatePrompt(
     })
     sections.push(
       "\n🚨 **CRITICAL IMPLEMENTATION RULE - Component Links:**\n\n" +
-      "Components in the same link group MUST be rendered as a **SINGLE component** in your code.\n" +
+      "Components in the same link group MUST be rendered as a **SINGLE React component** with responsive styling.\n" +
       "DO NOT create separate React components for each component ID in a group.\n\n" +
-      "**Validation Rule:**\n" +
-      "- Each link group = 1 React component\n" +
-      `- Total components in your code: ${groups.length} (NOT ${componentLinks.length * 2})\n\n` +
-      "**Example (CORRECT):**\n" +
+      "**Implementation Strategy:**\n" +
+      "- Each link group = 1 React component definition\n" +
+      `- Total unique components: ${groups.length} (NOT ${normalizedSchema.components.length})\n` +
+      "- Use Tailwind responsive classes for breakpoint-specific styling\n" +
+      "- Apply grid positioning for each breakpoint using responsive grid utilities\n\n" +
+      "**Example (CORRECT - 2025 Pattern):**\n" +
       "```tsx\n" +
-      "// Group 1: Header (c1), Header (c2) → SINGLE component\n" +
-      "const Header = () => (\n" +
-      "  <header className=\"sticky top-0 z-50\">\n" +
-      "    {/* Responsive via Tailwind: grid-cols-4 lg:grid-cols-12 */}\n" +
-      "  </header>\n" +
-      ")\n" +
+      "// Group 1: Header (c1 @ mobile), Header (c2 @ desktop) → SINGLE component\n" +
+      "interface HeaderProps {}\n\n" +
+      "function Header({}: HeaderProps) {\n" +
+      "  return (\n" +
+      "    <header className=\"\n" +
+      "      sticky top-0 z-50 bg-white border-b shadow-sm\n" +
+      "      col-span-full row-span-1\n" +
+      "    \">\n" +
+      "      Header (c1/c2)\n" +
+      "    </header>\n" +
+      "  )\n" +
+      "}\n" +
       "```\n\n" +
       "**Example (WRONG - DO NOT DO THIS):**\n" +
       "```tsx\n" +
-      "// ❌ WRONG: Separate components for c1 and c2\n" +
-      "const HeaderMobile = () => <header>...</header>  // c1\n" +
-      "const HeaderDesktop = () => <header>...</header> // c2\n" +
+      "// ❌ WRONG: Separate components for same UI element\n" +
+      "const HeaderMobile: React.FC = () => <header>...</header>  // c1 ❌\n" +
+      "const HeaderDesktop: React.FC = () => <header>...</header> // c2 ❌\n\n" +
+      "// ❌ WRONG: Using deprecated React.FC\n" +
+      "const Header: React.FC<Props> = ({ children }) => { ... }\n" +
+      "```\n\n" +
+      "**Breakpoint-Specific Components (No Links):**\n\n" +
+      "If a component exists ONLY in certain breakpoints (e.g., Sidebar only on desktop), use conditional rendering:\n\n" +
+      "```tsx\n" +
+      "// Component appears only on desktop (≥1024px)\n" +
+      "function Sidebar({}: SidebarProps) {\n" +
+      "  return (\n" +
+      "    <aside className=\"hidden lg:flex flex-col gap-4 ...\">\n" +
+      "      Sidebar (c4)\n" +
+      "    </aside>\n" +
+      "  )\n" +
+      "}\n" +
       "```\n\n"
     )
     sections.push("---\n")
