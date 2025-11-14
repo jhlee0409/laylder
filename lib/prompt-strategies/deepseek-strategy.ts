@@ -24,7 +24,7 @@
 
 import { BasePromptStrategy } from "./base-strategy"
 import type { AIModelId, PromptGenerationOptions } from "@/types/ai-models"
-import type { Component } from "@/types/schema"
+import type { Component, Breakpoint, LaydlerSchema } from "@/types/schema"
 
 /**
  * DeepSeek Prompt Strategy
@@ -150,9 +150,9 @@ Clean, type-safe code with specified components and layouts.`
    * - Canvas Grid 정보는 "detailed" verbosity에서만 포함
    */
   generateLayoutSection(
-    components: any[],
-    breakpoints: any[],
-    layouts: any,
+    components: Component[],
+    breakpoints: Breakpoint[],
+    layouts: LaydlerSchema["layouts"],
     options?: PromptGenerationOptions
   ): string {
     const verbosity = options?.verbosity || "minimal"
