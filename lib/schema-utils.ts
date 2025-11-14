@@ -112,15 +112,35 @@ export function generateComponentId(existingComponents: Component[]): string {
 }
 
 /**
+ * Safe deep clone helper (generic)
+ *
+ * Uses structuredClone() with fallback to JSON serialization
+ */
+function safeDeepClone<T>(data: T): T {
+  try {
+    return structuredClone(data)
+  } catch (error) {
+    // Fallback: JSON serialization (loses functions, Date becomes string, etc.)
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('structuredClone failed, falling back to JSON serialization:', error)
+    }
+    return JSON.parse(JSON.stringify(data))
+  }
+}
+
+/**
  * Deep clone Schema
  *
  * Uses structuredClone() for efficient deep cloning (available in Node 17+)
  * - More performant than JSON.parse(JSON.stringify())
  * - Preserves more types (Date, Map, Set, etc.)
  * - Handles circular references
+ *
+ * Falls back to JSON serialization if structuredClone fails
+ * (e.g., for non-serializable data like functions, DOM nodes, symbols)
  */
 export function cloneSchema(schema: LaydlerSchema): LaydlerSchema {
-  return structuredClone(schema)
+  return safeDeepClone(schema)
 }
 
 /**
@@ -355,7 +375,7 @@ export function normalizeSchema(schema: LaydlerSchema): LaydlerSchema {
     // - Missing layout (!normalized.layouts[currentBP]) → INHERIT from previous
     // - Empty layout (components.length === 0) → PRESERVE as intentionally empty
     if (!normalized.layouts[currentBP] && normalized.layouts[previousBP]) {
-      normalized.layouts[currentBP] = structuredClone(normalized.layouts[previousBP])
+      normalized.layouts[currentBP] = safeDeepClone(normalized.layouts[previousBP])
     }
   }
 
