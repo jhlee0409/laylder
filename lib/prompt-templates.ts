@@ -9,6 +9,7 @@ import type {
 } from "@/types/schema"
 import { describeVisualLayout } from "./visual-layout-descriptor"
 import { generateGridCSS, generateTailwindClasses } from "./canvas-to-grid"
+import { sortComponentsByCanvasCoordinates, getComponentCanvasLayout } from "./canvas-sort-utils"
 
 /**
  * Prompt Template Types for Schema
@@ -174,33 +175,19 @@ export const reactTailwindTemplate: PromptTemplate = {
       section += `**Component Order (DOM):**\n\n`
       section += `For accessibility and SEO, the DOM order should follow visual layout (top to bottom, left to right):\n\n`
 
-      // Sort components by Canvas Y coordinate (top to bottom), then X (left to right)
-      const sortedComponents = [...layout.components].sort((a, b) => {
-        const compA = components.find(c => c.id === a)
-        const compB = components.find(c => c.id === b)
-
-        const layoutA = compA?.responsiveCanvasLayout?.[layoutKey] || compA?.canvasLayout
-        const layoutB = compB?.responsiveCanvasLayout?.[layoutKey] || compB?.canvasLayout
-
-        // If both have Canvas layout, sort by Y (row) then X (column)
-        if (layoutA && layoutB) {
-          if (layoutA.y !== layoutB.y) {
-            return layoutA.y - layoutB.y // Top to bottom
-          }
-          return layoutA.x - layoutB.x // Left to right
-        }
-
-        // If only one has Canvas layout, keep original order
-        if (layoutA) return -1
-        if (layoutB) return 1
-
-        // Neither has Canvas layout, keep original order
-        return 0
-      })
+      // Performance: Use shared utility function with Map-based O(n log n) sorting
+      // Previous implementation: O(n²) due to Array.find() in sort comparator
+      const sortedComponents = sortComponentsByCanvasCoordinates(
+        layout.components,
+        components,
+        layoutKey
+      )
 
       sortedComponents.forEach((componentId: string, idx: number) => {
         const comp = components.find(c => c.id === componentId)
-        const canvasLayout = comp?.responsiveCanvasLayout?.[layoutKey] || comp?.canvasLayout
+        if (!comp) return
+
+        const canvasLayout = getComponentCanvasLayout(comp, layoutKey)
         section += `${idx + 1}. ${componentId}`
         if (canvasLayout) {
           section += ` (Canvas row ${canvasLayout.y})`

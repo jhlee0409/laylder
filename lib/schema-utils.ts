@@ -7,7 +7,9 @@ import type {
   LaydlerSchema,
   Component,
   Breakpoint,
+  LayoutConfig,
 } from "@/types/schema"
+import { sortComponentsByCanvasCoordinates } from "./canvas-sort-utils"
 
 /**
  * Default Grid Configuration for each breakpoint type
@@ -369,43 +371,47 @@ export function normalizeSchema(schema: LaydlerSchema): LaydlerSchema {
   // Canvas layout이 있는 컴포넌트를 자동으로 layouts[breakpoint].components에 추가
   // 이렇게 하면 Desktop으로 시작 → Mobile 추가 → Mobile Canvas 배치 시
   // layouts.mobile.components가 자동으로 업데이트됨
-  for (const breakpointName of ['mobile', 'tablet', 'desktop'] as const) {
-    if (normalized.layouts[breakpointName]) {
-      const componentsWithCanvas = normalized.components
-        .filter(comp => comp.responsiveCanvasLayout?.[breakpointName])
-        .map(comp => comp.id)
 
-      // 기존 components와 Canvas components를 합침 (중복 제거)
-      const existingComponents = normalized.layouts[breakpointName].components
-      const allComponents = new Set([...existingComponents, ...componentsWithCanvas])
+  // FIX: Use dynamic breakpoint names from schema.breakpoints instead of hardcoded values
+  // This supports custom breakpoint names beyond 'mobile', 'tablet', 'desktop'
+  for (const breakpoint of normalized.breakpoints) {
+    const breakpointName = breakpoint.name
 
-      // Canvas 좌표 기준으로 정렬 (위에서 아래로, 왼쪽에서 오른쪽으로)
-      // 이렇게 하면 DOM 순서가 시각적 순서와 일치함
-      const sortedComponents = Array.from(allComponents).sort((a, b) => {
-        const compA = normalized.components.find(c => c.id === a)
-        const compB = normalized.components.find(c => c.id === b)
+    // Edge Case: Auto-create layout if it doesn't exist but components have Canvas data
+    if (!normalized.layouts[breakpointName]) {
+      const hasCanvasData = normalized.components.some(
+        comp => comp.responsiveCanvasLayout?.[breakpointName as keyof typeof comp.responsiveCanvasLayout]
+      )
 
-        const layoutA = compA?.responsiveCanvasLayout?.[breakpointName]
-        const layoutB = compB?.responsiveCanvasLayout?.[breakpointName]
-
-        // If both have Canvas layout, sort by Y (row) then X (column)
-        if (layoutA && layoutB) {
-          if (layoutA.y !== layoutB.y) {
-            return layoutA.y - layoutB.y // Top to bottom
-          }
-          return layoutA.x - layoutB.x // Left to right
-        }
-
-        // If only one has Canvas layout, prioritize it
-        if (layoutA) return -1
-        if (layoutB) return 1
-
-        // Neither has Canvas layout, keep original order
-        return 0
-      })
-
-      normalized.layouts[breakpointName].components = sortedComponents
+      if (hasCanvasData) {
+        // Auto-create missing layout
+        normalized.layouts[breakpointName] = {
+          structure: 'vertical',
+          components: [],
+        } as LayoutConfig
+      } else {
+        // Skip this breakpoint if no Canvas data and no layout
+        continue
+      }
     }
+
+    const componentsWithCanvas = normalized.components
+      .filter(comp => comp.responsiveCanvasLayout?.[breakpointName as keyof typeof comp.responsiveCanvasLayout])
+      .map(comp => comp.id)
+
+    // 기존 components와 Canvas components를 합침 (중복 제거)
+    const existingComponents = normalized.layouts[breakpointName].components
+    const allComponents = new Set([...existingComponents, ...componentsWithCanvas])
+
+    // Performance: Use shared utility function with Map-based O(n log n) sorting
+    // Previous implementation: O(n²) due to Array.find() in sort comparator
+    const sortedComponents = sortComponentsByCanvasCoordinates(
+      Array.from(allComponents),
+      normalized.components,
+      breakpointName
+    )
+
+    normalized.layouts[breakpointName].components = sortedComponents
   }
 
   return normalized
