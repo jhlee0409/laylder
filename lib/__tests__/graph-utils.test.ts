@@ -285,10 +285,17 @@ describe("Graph Utils", () => {
       expect(result).not.toContain("c2")
     })
 
-    it("should return undefined for empty links", () => {
-      const result = getComponentGroup("c1", [])
+    it("should return undefined for empty links when validateId=true", () => {
+      const result = getComponentGroup("c1", [], true)
 
       expect(result).toBeUndefined()
+    })
+
+    it("should return single-member group for empty links (default behavior)", () => {
+      const result = getComponentGroup("c1", [])
+
+      expect(result).toBeDefined()
+      expect(result).toEqual(["c1"])
     })
   })
 

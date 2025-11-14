@@ -178,14 +178,20 @@ export function getComponentGroup(
  * @param componentId1 - First component ID
  * @param componentId2 - Second component ID
  * @param links - Array of component links
- * @returns True if components are in the same group
+ * @returns True if components are in the same group, false if either component is not in any link
  */
 export function areComponentsLinked(
   componentId1: string,
   componentId2: string,
   links: ComponentLink[]
 ): boolean {
-  const group = getComponentGroup(componentId1, links, false) // validateId=false ensures non-undefined return
-  // Type assertion safe because validateId=false always returns string[]
-  return (group as string[]).includes(componentId2)
+  // Use validateId=true to check if component is actually in a link group
+  const group = getComponentGroup(componentId1, links, true)
+
+  // If component is not in any link, return false
+  if (!group) {
+    return false
+  }
+
+  return group.includes(componentId2)
 }
