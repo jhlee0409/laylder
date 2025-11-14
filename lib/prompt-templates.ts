@@ -208,6 +208,12 @@ export const reactTailwindTemplate: PromptTemplate = {
         section += `\n`
       })
       section += "\n"
+      section += `**⚠️ IMPORTANT - Layout Priority:**\n\n`
+      section += `1. **PRIMARY**: Use the **Visual Layout (Canvas Grid)** positioning above as your main guide\n`
+      section += `2. **SECONDARY**: The DOM order below is for reference only (accessibility/SEO)\n`
+      section += `3. **RULE**: Components with the same Y-coordinate range MUST be placed side-by-side horizontally\n`
+      section += `4. **DO NOT** stack components vertically if they share the same row in the Canvas Grid\n\n`
+      section += `**Note:** Visual positioning (above) may differ from DOM order.\n\n`
 
       // Roles (if structure is sidebar-main)
       if (layout.roles && Object.keys(layout.roles).length > 0) {
