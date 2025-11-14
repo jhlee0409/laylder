@@ -328,8 +328,8 @@ describe('normalizeSchema - Dynamic Breakpoint Support', () => {
         width: 12,
         height: 1,
       })
-      expect(component!.responsiveCanvasLayout!.desktop.width).toBe(12)
-      expect(component!.responsiveCanvasLayout!.desktop.width).not.toBe(4)
+      expect(component!.responsiveCanvasLayout!.desktop!.width).toBe(12)
+      expect(component!.responsiveCanvasLayout!.desktop!.width).not.toBe(4)
     })
   })
 
