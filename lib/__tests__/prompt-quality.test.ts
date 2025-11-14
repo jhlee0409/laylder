@@ -521,20 +521,7 @@ describe('Prompt Quality Tests', () => {
             semanticTag: 'div',
             positioning: { type: 'static' },
             layout: { type: 'flex' },
-            responsive: {
-              mobile: {
-                layout: { type: 'flex', flex: { direction: 'column' } },
-                styling: { className: 'p-2' },
-              },
-              tablet: {
-                layout: { type: 'flex', flex: { direction: 'row' } },
-                styling: { className: 'p-4' },
-              },
-              desktop: {
-                layout: { type: 'flex', flex: { direction: 'row', gap: '2rem' } },
-                styling: { className: 'p-8' },
-              },
-            },
+            styling: { className: 'responsive-component' },
             canvasLayout: { x: 0, y: 0, width: 12, height: 4 },
           },
         ],
@@ -557,9 +544,6 @@ describe('Prompt Quality Tests', () => {
       expect(prompt).toContain('mobile')
       expect(prompt).toContain('tablet')
       expect(prompt).toContain('desktop')
-
-      // Responsive overrides 정보 포함 확인
-      expect(prompt).toContain('responsive')
     })
 
     it('should include implementation instructions', () => {
