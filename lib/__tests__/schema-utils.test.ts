@@ -404,4 +404,224 @@ describe('Schema Utils', () => {
       expect(component.responsiveCanvasLayout).toBeUndefined()
     })
   })
+
+  describe('normalizeSchema - layouts.components synchronization', () => {
+    it('should sync layouts.mobile.components with components that have mobile Canvas layout', () => {
+      const schema: LaydlerSchema = {
+        schemaVersion: '2.0',
+        components: [
+          {
+            id: 'c1',
+            name: 'Header',
+            semanticTag: 'header',
+            positioning: { type: 'sticky', position: { top: 0 } },
+            layout: { type: 'flex', flex: { direction: 'row' } },
+            responsiveCanvasLayout: {
+              mobile: { x: 0, y: 0, width: 4, height: 1 },
+            },
+          },
+          {
+            id: 'c2',
+            name: 'Main',
+            semanticTag: 'main',
+            positioning: { type: 'static' },
+            layout: { type: 'flex', flex: { direction: 'column' } },
+            responsiveCanvasLayout: {
+              mobile: { x: 0, y: 1, width: 4, height: 6 },
+            },
+          },
+        ],
+        breakpoints: [
+          { name: 'mobile', minWidth: 0, gridCols: 4, gridRows: 8 },
+        ],
+        layouts: {
+          mobile: { structure: 'vertical', components: [] }, // Empty initially
+        },
+      }
+
+      const normalized = normalizeSchema(schema)
+
+      // layouts.mobile.components should now include c1 and c2
+      expect(normalized.layouts.mobile.components).toContain('c1')
+      expect(normalized.layouts.mobile.components).toContain('c2')
+      expect(normalized.layouts.mobile.components).toHaveLength(2)
+    })
+
+    it('should handle Desktop-first workflow: Desktop → add Mobile → place components on Mobile Canvas', () => {
+      const schema: LaydlerSchema = {
+        schemaVersion: '2.0',
+        components: [
+          {
+            id: 'c1',
+            name: 'Header',
+            semanticTag: 'header',
+            positioning: { type: 'sticky', position: { top: 0 } },
+            layout: { type: 'flex', flex: { direction: 'row' } },
+            responsiveCanvasLayout: {
+              desktop: { x: 0, y: 0, width: 12, height: 1 },
+              mobile: { x: 0, y: 0, width: 4, height: 2 }, // Placed on mobile Canvas
+            },
+          },
+          {
+            id: 'c2',
+            name: 'Main',
+            semanticTag: 'main',
+            positioning: { type: 'static' },
+            layout: { type: 'flex', flex: { direction: 'column' } },
+            responsiveCanvasLayout: {
+              desktop: { x: 0, y: 1, width: 12, height: 6 },
+              mobile: { x: 0, y: 2, width: 4, height: 5 }, // Placed on mobile Canvas
+            },
+          },
+        ],
+        breakpoints: [
+          { name: 'mobile', minWidth: 0, gridCols: 4, gridRows: 8 },
+          { name: 'desktop', minWidth: 1024, gridCols: 12, gridRows: 8 },
+        ],
+        layouts: {
+          mobile: { structure: 'vertical', components: [] }, // Empty (not manually added)
+          desktop: { structure: 'vertical', components: ['c1', 'c2'] },
+        },
+      }
+
+      const normalized = normalizeSchema(schema)
+
+      // layouts.mobile.components should be auto-synced
+      expect(normalized.layouts.mobile.components).toContain('c1')
+      expect(normalized.layouts.mobile.components).toContain('c2')
+      expect(normalized.layouts.mobile.components).toHaveLength(2)
+
+      // layouts.desktop.components should remain unchanged
+      expect(normalized.layouts.desktop.components).toContain('c1')
+      expect(normalized.layouts.desktop.components).toContain('c2')
+      expect(normalized.layouts.desktop.components).toHaveLength(2)
+    })
+
+    it('should preserve existing components in layouts and merge with Canvas components', () => {
+      const schema: LaydlerSchema = {
+        schemaVersion: '2.0',
+        components: [
+          {
+            id: 'c1',
+            name: 'Header',
+            semanticTag: 'header',
+            positioning: { type: 'sticky', position: { top: 0 } },
+            layout: { type: 'flex', flex: { direction: 'row' } },
+            responsiveCanvasLayout: {
+              mobile: { x: 0, y: 0, width: 4, height: 1 },
+            },
+          },
+          {
+            id: 'c2',
+            name: 'Main',
+            semanticTag: 'main',
+            positioning: { type: 'static' },
+            layout: { type: 'flex', flex: { direction: 'column' } },
+            // No Canvas layout - manually added to layout.components only
+          },
+          {
+            id: 'c3',
+            name: 'Footer',
+            semanticTag: 'footer',
+            positioning: { type: 'static' },
+            layout: { type: 'flex', flex: { direction: 'row' } },
+            responsiveCanvasLayout: {
+              mobile: { x: 0, y: 7, width: 4, height: 1 },
+            },
+          },
+        ],
+        breakpoints: [
+          { name: 'mobile', minWidth: 0, gridCols: 4, gridRows: 8 },
+        ],
+        layouts: {
+          mobile: { structure: 'vertical', components: ['c2'] }, // Only c2
+        },
+      }
+
+      const normalized = normalizeSchema(schema)
+
+      // Should include c2 (existing) + c1, c3 (from Canvas)
+      expect(normalized.layouts.mobile.components).toContain('c1')
+      expect(normalized.layouts.mobile.components).toContain('c2')
+      expect(normalized.layouts.mobile.components).toContain('c3')
+      expect(normalized.layouts.mobile.components).toHaveLength(3)
+    })
+
+    it('should not duplicate components already in layouts.components', () => {
+      const schema: LaydlerSchema = {
+        schemaVersion: '2.0',
+        components: [
+          {
+            id: 'c1',
+            name: 'Header',
+            semanticTag: 'header',
+            positioning: { type: 'sticky', position: { top: 0 } },
+            layout: { type: 'flex', flex: { direction: 'row' } },
+            responsiveCanvasLayout: {
+              mobile: { x: 0, y: 0, width: 4, height: 1 },
+            },
+          },
+        ],
+        breakpoints: [
+          { name: 'mobile', minWidth: 0, gridCols: 4, gridRows: 8 },
+        ],
+        layouts: {
+          mobile: { structure: 'vertical', components: ['c1'] }, // Already exists
+        },
+      }
+
+      const normalized = normalizeSchema(schema)
+
+      // Should not duplicate c1
+      expect(normalized.layouts.mobile.components).toEqual(['c1'])
+      expect(normalized.layouts.mobile.components).toHaveLength(1)
+    })
+
+    it('should handle multiple breakpoints independently', () => {
+      const schema: LaydlerSchema = {
+        schemaVersion: '2.0',
+        components: [
+          {
+            id: 'c1',
+            name: 'Header',
+            semanticTag: 'header',
+            positioning: { type: 'sticky', position: { top: 0 } },
+            layout: { type: 'flex', flex: { direction: 'row' } },
+            responsiveCanvasLayout: {
+              mobile: { x: 0, y: 0, width: 4, height: 1 },
+              desktop: { x: 0, y: 0, width: 12, height: 1 },
+            },
+          },
+          {
+            id: 'c2',
+            name: 'Sidebar',
+            semanticTag: 'aside',
+            positioning: { type: 'static' },
+            layout: { type: 'flex', flex: { direction: 'column' } },
+            responsiveCanvasLayout: {
+              desktop: { x: 0, y: 1, width: 3, height: 6 }, // Only on desktop
+            },
+          },
+        ],
+        breakpoints: [
+          { name: 'mobile', minWidth: 0, gridCols: 4, gridRows: 8 },
+          { name: 'desktop', minWidth: 1024, gridCols: 12, gridRows: 8 },
+        ],
+        layouts: {
+          mobile: { structure: 'vertical', components: [] },
+          desktop: { structure: 'vertical', components: [] },
+        },
+      }
+
+      const normalized = normalizeSchema(schema)
+
+      // Mobile should only have c1 (c2 has no mobile Canvas layout)
+      expect(normalized.layouts.mobile.components).toEqual(['c1'])
+
+      // Desktop should have both c1 and c2
+      expect(normalized.layouts.desktop.components).toContain('c1')
+      expect(normalized.layouts.desktop.components).toContain('c2')
+      expect(normalized.layouts.desktop.components).toHaveLength(2)
+    })
+  })
 })

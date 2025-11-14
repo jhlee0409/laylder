@@ -365,5 +365,23 @@ export function normalizeSchema(schema: LaydlerSchema): LaydlerSchema {
     return comp
   })
 
+  // 3. Sync layouts[breakpoint].components with Canvas layouts
+  // Canvas layout이 있는 컴포넌트를 자동으로 layouts[breakpoint].components에 추가
+  // 이렇게 하면 Desktop으로 시작 → Mobile 추가 → Mobile Canvas 배치 시
+  // layouts.mobile.components가 자동으로 업데이트됨
+  for (const breakpointName of ['mobile', 'tablet', 'desktop'] as const) {
+    if (normalized.layouts[breakpointName]) {
+      const componentsWithCanvas = normalized.components
+        .filter(comp => comp.responsiveCanvasLayout?.[breakpointName])
+        .map(comp => comp.id)
+
+      // 기존 components와 Canvas components를 합침 (중복 제거, 순서 유지)
+      const existingComponents = normalized.layouts[breakpointName].components
+      const allComponents = new Set([...existingComponents, ...componentsWithCanvas])
+
+      normalized.layouts[breakpointName].components = Array.from(allComponents)
+    }
+  }
+
   return normalized
 }
