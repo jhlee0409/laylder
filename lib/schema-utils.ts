@@ -438,57 +438,20 @@ export function normalizeSchema(schema: LaydlerSchema): LaydlerSchema {
     return comp
   })
 
-  // 3. Sync layouts[breakpoint].components with Canvas layouts
-  // Canvas layout이 있는 컴포넌트를 자동으로 layouts[breakpoint].components에 추가
-  // 이렇게 하면 Desktop으로 시작 → Mobile 추가 → Mobile Canvas 배치 시
-  // layouts.mobile.components가 자동으로 업데이트됨
+  // 3. Auto-create missing layouts for breakpoints (if needed)
+  // IMPORTANT: Do NOT auto-sync Canvas data to layout.components
+  // User requirement: All component management is MANUAL via DnD or explicit actions
 
-  // FIX: Use dynamic breakpoint names from schema.breakpoints instead of hardcoded values
-  // This supports custom breakpoint names beyond 'mobile', 'tablet', 'desktop'
   for (const breakpoint of normalized.breakpoints) {
     const breakpointName = breakpoint.name
 
-    // Edge Case: Auto-create layout if it doesn't exist but components have Canvas data
+    // Only auto-create layout if it doesn't exist at all
     if (!normalized.layouts[breakpointName]) {
-      // Type-safe dynamic key access using helper function
-      const hasCanvasData = normalized.components.some(comp => {
-        const rcl = comp.responsiveCanvasLayout as Record<string, CanvasLayout | undefined> | undefined
-        return rcl?.[breakpointName] !== undefined
-      })
-
-      if (hasCanvasData) {
-        // Auto-create missing layout
-        normalized.layouts[breakpointName] = {
-          structure: 'vertical',
-          components: [],
-        } as LayoutConfig
-      } else {
-        // Skip this breakpoint if no Canvas data and no layout
-        continue
-      }
+      normalized.layouts[breakpointName] = {
+        structure: 'vertical',
+        components: [],  // Always empty - user adds components manually
+      } as LayoutConfig
     }
-
-    // Type-safe filtering using Record type
-    const componentsWithCanvas = normalized.components
-      .filter(comp => {
-        const rcl = comp.responsiveCanvasLayout as Record<string, CanvasLayout | undefined> | undefined
-        return rcl?.[breakpointName] !== undefined
-      })
-      .map(comp => comp.id)
-
-    // 기존 components와 Canvas components를 합침 (중복 제거)
-    const existingComponents = normalized.layouts[breakpointName].components
-    const allComponents = new Set([...existingComponents, ...componentsWithCanvas])
-
-    // Performance: Use shared utility function with Map-based O(n log n) sorting
-    // Previous implementation: O(n²) due to Array.find() in sort comparator
-    const sortedComponents = sortComponentsByCanvasCoordinates(
-      Array.from(allComponents),
-      normalized.components,
-      breakpointName
-    )
-
-    normalized.layouts[breakpointName].components = sortedComponents
   }
 
   return normalized

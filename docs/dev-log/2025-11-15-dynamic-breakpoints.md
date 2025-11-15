@@ -283,6 +283,102 @@ This architectural improvement **removes a fundamental limitation** of the Layld
 
 ---
 
+## 🐛 Critical Bug Fix: Component Auto-Inheritance (Post-Merge)
+
+### Issue Discovered
+After initial PR approval, a **critical architectural bug** was discovered: components were being automatically added to breakpoints when Canvas layouts were inherited, violating **Component Independence**.
+
+**Bug Manifestation**:
+```typescript
+// User adds laptop breakpoint (intentionally empty)
+layouts: {
+  mobile: { components: ['c1', 'c2'] },
+  laptop: { components: [] }  // User wants this empty
+}
+
+// After normalizeSchema() - BUG ❌
+layouts: {
+  mobile: { components: ['c1', 'c2'] },
+  laptop: { components: ['c1', 'c2'] }  // ❌ Auto-inherited!
+}
+```
+
+**Root Cause** (lib/schema-utils.ts:441-492):
+- Section 3 of `normalizeSchema()` auto-synced ALL components with Canvas data
+- Problem: Canvas inheritance (mobile → laptop) created Canvas data for laptop
+- Then auto-sync added those components to `layouts.laptop.components`
+- Result: Cross-breakpoint auto-inheritance (architectural violation)
+
+### Solution: Complete Removal of Auto-Sync
+
+**User Requirement**: All component management is **MANUAL via DnD**. No auto-sync.
+
+**Implementation** (lib/schema-utils.ts:450-464):
+
+```typescript
+// 3. Auto-create missing layouts for breakpoints (if needed)
+// IMPORTANT: Do NOT auto-sync Canvas data to layout.components
+// User requirement: All component management is MANUAL via DnD or explicit actions
+
+for (const breakpoint of normalized.breakpoints) {
+  const breakpointName = breakpoint.name
+
+  // Only auto-create layout if it doesn't exist at all
+  if (!normalized.layouts[breakpointName]) {
+    normalized.layouts[breakpointName] = {
+      structure: 'vertical',
+      components: [],  // Always empty - user adds components manually
+    } as LayoutConfig
+  }
+}
+```
+
+**Removed Features**:
+- ❌ Auto-sync Canvas → layout.components (completely removed)
+- ❌ Auto-sorting by Canvas coordinates (removed)
+- ❌ Auto-merge of existing + Canvas components (removed)
+
+**Preserved Features**:
+- ✅ Canvas layout inheritance (mobile → tablet → desktop)
+- ✅ Layout inheritance when completely missing (not empty)
+- ✅ Manual component management via DnD/actions
+
+### Test Coverage
+
+**New Tests** (lib/__tests__/):
+- `component-isolation.test.ts` (3 tests) - Verify no cross-breakpoint inheritance
+- `canvas-layout-inheritance.test.ts` (3 tests) - Verify Canvas inherits but components don't
+
+**Removed Tests**:
+- Removed 9 auto-sync tests from `schema-utils.test.ts` (tested unwanted behavior)
+
+**Key Assertions**:
+```typescript
+// ✅ Canvas layouts SHOULD inherit
+expect(c1.responsiveCanvasLayout?.laptop).toEqual({ x: 0, y: 0, width: 4, height: 1 })
+
+// ✅ layout.components should NOT inherit or auto-sync
+expect(normalized.layouts.laptop.components).toEqual([])  // Stays empty
+```
+
+### Results
+
+- ✅ **All 456 tests pass** (6 new, 9 removed)
+- ✅ **Component Independence fully enforced** - each breakpoint independently managed
+- ✅ **Canvas inheritance works** - positioning data cascades
+- ✅ **All sync is manual** - DnD only adds to specific breakpoint
+- ✅ **Zero regressions** - all existing tests pass
+
+**Commit**: Remove auto-sync, enforce manual component management
+
+**Impact**: This fix ensures that:
+1. Canvas layouts inherit for positioning (intended behavior)
+2. Components are NEVER auto-added (manual DnD only)
+3. Users have complete control over which components appear in each breakpoint
+4. No cross-breakpoint auto-inheritance (Component Independence preserved)
+
+---
+
 ## 📎 Related Files
 
 ### Modified (15 files):
