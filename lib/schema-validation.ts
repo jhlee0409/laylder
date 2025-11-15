@@ -379,6 +379,39 @@ function validateBreakpoints(breakpoints: Breakpoint[]): ValidationResult {
     return { valid: false, errors, warnings }
   }
 
+  // 최대 10개 제한 (DoS 방지)
+  if (breakpoints.length > 10) {
+    errors.push({
+      code: "TOO_MANY_BREAKPOINTS",
+      message: `Too many breakpoints: ${breakpoints.length}. Maximum allowed is 10.`,
+      field: "breakpoints",
+    })
+  }
+
+  // 브레이크포인트 이름 형식 검증
+  const VALID_NAME_PATTERN = /^[a-z0-9][a-z0-9_-]*$/i
+  const RESERVED_NAMES = ['constructor', 'toString', 'valueOf', 'hasOwnProperty', '__proto__', 'prototype']
+
+  breakpoints.forEach((bp) => {
+    // 형식 검증 (alphanumeric + hyphen/underscore만 허용)
+    if (!VALID_NAME_PATTERN.test(bp.name)) {
+      errors.push({
+        code: "INVALID_BREAKPOINT_NAME",
+        message: `Invalid breakpoint name "${bp.name}". Name must start with a letter or number and contain only letters, numbers, hyphens, and underscores.`,
+        field: `breakpoints.${bp.name}.name`,
+      })
+    }
+
+    // 예약어 검증 (prototype pollution 방지)
+    if (RESERVED_NAMES.includes(bp.name.toLowerCase())) {
+      errors.push({
+        code: "RESERVED_BREAKPOINT_NAME",
+        message: `Breakpoint name "${bp.name}" is reserved and cannot be used.`,
+        field: `breakpoints.${bp.name}.name`,
+      })
+    }
+  })
+
   // 브레이크포인트 이름 중복 검사
   const breakpointNames = breakpoints.map((bp) => bp.name)
   const duplicateNames = breakpointNames.filter(

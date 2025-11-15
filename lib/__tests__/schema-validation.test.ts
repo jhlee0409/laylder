@@ -364,6 +364,289 @@ describe('Schema Validation', () => {
     })
   })
 
+  describe('Breakpoint validation', () => {
+    it('should reject schema with more than 10 breakpoints', () => {
+      const tooManyBreakpointsSchema: LaydlerSchema = {
+        schemaVersion: '2.0',
+        components: [
+          {
+            id: 'c1',
+            name: 'Header',
+            semanticTag: 'header',
+            positioning: { type: 'sticky', position: { top: 0 } },
+            layout: { type: 'flex', flex: { direction: 'row' } },
+            canvasLayout: { x: 0, y: 0, width: 12, height: 1 },
+          },
+        ],
+        breakpoints: [
+          { name: 'bp1', minWidth: 0, gridCols: 4, gridRows: 8 },
+          { name: 'bp2', minWidth: 320, gridCols: 4, gridRows: 8 },
+          { name: 'bp3', minWidth: 480, gridCols: 6, gridRows: 8 },
+          { name: 'bp4', minWidth: 640, gridCols: 8, gridRows: 8 },
+          { name: 'bp5', minWidth: 768, gridCols: 8, gridRows: 8 },
+          { name: 'bp6', minWidth: 1024, gridCols: 12, gridRows: 8 },
+          { name: 'bp7', minWidth: 1280, gridCols: 12, gridRows: 8 },
+          { name: 'bp8', minWidth: 1440, gridCols: 12, gridRows: 8 },
+          { name: 'bp9', minWidth: 1920, gridCols: 16, gridRows: 8 },
+          { name: 'bp10', minWidth: 2560, gridCols: 16, gridRows: 8 },
+          { name: 'bp11', minWidth: 3840, gridCols: 20, gridRows: 8 }, // 11th breakpoint
+        ],
+        layouts: {
+          bp1: { structure: 'vertical', components: ['c1'] },
+          bp2: { structure: 'vertical', components: ['c1'] },
+          bp3: { structure: 'vertical', components: ['c1'] },
+          bp4: { structure: 'vertical', components: ['c1'] },
+          bp5: { structure: 'vertical', components: ['c1'] },
+          bp6: { structure: 'vertical', components: ['c1'] },
+          bp7: { structure: 'vertical', components: ['c1'] },
+          bp8: { structure: 'vertical', components: ['c1'] },
+          bp9: { structure: 'vertical', components: ['c1'] },
+          bp10: { structure: 'vertical', components: ['c1'] },
+          bp11: { structure: 'vertical', components: ['c1'] },
+        },
+      }
+
+      const result = validateSchema(tooManyBreakpointsSchema)
+
+      expect(result.valid).toBe(false)
+      expect(result.errors).toContainEqual(
+        expect.objectContaining({
+          code: 'TOO_MANY_BREAKPOINTS',
+          field: 'breakpoints',
+        })
+      )
+    })
+
+    it('should reject breakpoint names with invalid characters', () => {
+      const invalidNameSchema: LaydlerSchema = {
+        schemaVersion: '2.0',
+        components: [
+          {
+            id: 'c1',
+            name: 'Header',
+            semanticTag: 'header',
+            positioning: { type: 'sticky', position: { top: 0 } },
+            layout: { type: 'flex', flex: { direction: 'row' } },
+            canvasLayout: { x: 0, y: 0, width: 12, height: 1 },
+          },
+        ],
+        breakpoints: [
+          { name: 'mobile@tablet', minWidth: 0, gridCols: 4, gridRows: 8 }, // Invalid: @
+        ],
+        layouts: {
+          'mobile@tablet': { structure: 'vertical', components: ['c1'] },
+        },
+      }
+
+      const result = validateSchema(invalidNameSchema)
+
+      expect(result.valid).toBe(false)
+      expect(result.errors).toContainEqual(
+        expect.objectContaining({
+          code: 'INVALID_BREAKPOINT_NAME',
+        })
+      )
+    })
+
+    it('should reject breakpoint names with spaces', () => {
+      const invalidNameSchema: LaydlerSchema = {
+        schemaVersion: '2.0',
+        components: [
+          {
+            id: 'c1',
+            name: 'Header',
+            semanticTag: 'header',
+            positioning: { type: 'sticky', position: { top: 0 } },
+            layout: { type: 'flex', flex: { direction: 'row' } },
+            canvasLayout: { x: 0, y: 0, width: 12, height: 1 },
+          },
+        ],
+        breakpoints: [
+          { name: 'mobile tablet', minWidth: 0, gridCols: 4, gridRows: 8 }, // Invalid: space
+        ],
+        layouts: {
+          'mobile tablet': { structure: 'vertical', components: ['c1'] },
+        },
+      }
+
+      const result = validateSchema(invalidNameSchema)
+
+      expect(result.valid).toBe(false)
+      expect(result.errors).toContainEqual(
+        expect.objectContaining({
+          code: 'INVALID_BREAKPOINT_NAME',
+        })
+      )
+    })
+
+    it('should accept breakpoint names starting with number', () => {
+      const validNameSchema: LaydlerSchema = {
+        schemaVersion: '2.0',
+        components: [
+          {
+            id: 'c1',
+            name: 'Header',
+            semanticTag: 'header',
+            positioning: { type: 'sticky', position: { top: 0 } },
+            layout: { type: 'flex', flex: { direction: 'row' } },
+            canvasLayout: { x: 0, y: 0, width: 12, height: 1 },
+          },
+        ],
+        breakpoints: [
+          { name: '4k', minWidth: 0, gridCols: 4, gridRows: 8 }, // Valid: numbers allowed
+        ],
+        layouts: {
+          '4k': { structure: 'vertical', components: ['c1'] },
+        },
+      }
+
+      const result = validateSchema(validNameSchema)
+
+      expect(result.valid).toBe(true)
+      expect(result.errors).toHaveLength(0)
+    })
+
+    it('should reject reserved breakpoint names', () => {
+      const layouts: Record<string, any> = {
+        constructor: { structure: 'vertical', components: ['c1'] },
+      }
+      const reservedNameSchema: LaydlerSchema = {
+        schemaVersion: '2.0',
+        components: [
+          {
+            id: 'c1',
+            name: 'Header',
+            semanticTag: 'header',
+            positioning: { type: 'sticky', position: { top: 0 } },
+            layout: { type: 'flex', flex: { direction: 'row' } },
+            canvasLayout: { x: 0, y: 0, width: 12, height: 1 },
+          },
+        ],
+        breakpoints: [
+          { name: 'constructor', minWidth: 0, gridCols: 4, gridRows: 8 }, // Reserved
+        ],
+        layouts,
+      }
+
+      const result = validateSchema(reservedNameSchema)
+
+      expect(result.valid).toBe(false)
+      expect(result.errors).toContainEqual(
+        expect.objectContaining({
+          code: 'RESERVED_BREAKPOINT_NAME',
+        })
+      )
+    })
+
+    it('should reject __proto__ as breakpoint name', () => {
+      const layouts: Record<string, any> = {
+        __proto__: { structure: 'vertical', components: ['c1'] },
+      }
+      const protoNameSchema: LaydlerSchema = {
+        schemaVersion: '2.0',
+        components: [
+          {
+            id: 'c1',
+            name: 'Header',
+            semanticTag: 'header',
+            positioning: { type: 'sticky', position: { top: 0 } },
+            layout: { type: 'flex', flex: { direction: 'row' } },
+            canvasLayout: { x: 0, y: 0, width: 12, height: 1 },
+          },
+        ],
+        breakpoints: [
+          { name: '__proto__', minWidth: 0, gridCols: 4, gridRows: 8 }, // Reserved (prototype pollution)
+        ],
+        layouts,
+      }
+
+      const result = validateSchema(protoNameSchema)
+
+      expect(result.valid).toBe(false)
+      expect(result.errors).toContainEqual(
+        expect.objectContaining({
+          code: 'RESERVED_BREAKPOINT_NAME',
+        })
+      )
+    })
+
+    it('should accept valid breakpoint names with hyphens and underscores', () => {
+      const validNameSchema: LaydlerSchema = {
+        schemaVersion: '2.0',
+        components: [
+          {
+            id: 'c1',
+            name: 'Header',
+            semanticTag: 'header',
+            positioning: { type: 'sticky', position: { top: 0 } },
+            layout: { type: 'flex', flex: { direction: 'row' } },
+            canvasLayout: { x: 0, y: 0, width: 12, height: 1 },
+          },
+        ],
+        breakpoints: [
+          { name: 'mobile-sm', minWidth: 0, gridCols: 4, gridRows: 8 },
+          { name: 'tablet_md', minWidth: 768, gridCols: 8, gridRows: 8 },
+          { name: 'desktop-2xl', minWidth: 1024, gridCols: 12, gridRows: 8 },
+        ],
+        layouts: {
+          'mobile-sm': { structure: 'vertical', components: ['c1'] },
+          'tablet_md': { structure: 'vertical', components: ['c1'] },
+          'desktop-2xl': { structure: 'vertical', components: ['c1'] },
+        },
+      }
+
+      const result = validateSchema(validNameSchema)
+
+      expect(result.valid).toBe(true)
+      expect(result.errors).toHaveLength(0)
+    })
+
+    it('should accept exactly 10 breakpoints', () => {
+      const tenBreakpointsSchema: LaydlerSchema = {
+        schemaVersion: '2.0',
+        components: [
+          {
+            id: 'c1',
+            name: 'Header',
+            semanticTag: 'header',
+            positioning: { type: 'sticky', position: { top: 0 } },
+            layout: { type: 'flex', flex: { direction: 'row' } },
+            canvasLayout: { x: 0, y: 0, width: 12, height: 1 },
+          },
+        ],
+        breakpoints: [
+          { name: 'bp1', minWidth: 0, gridCols: 4, gridRows: 8 },
+          { name: 'bp2', minWidth: 320, gridCols: 4, gridRows: 8 },
+          { name: 'bp3', minWidth: 480, gridCols: 6, gridRows: 8 },
+          { name: 'bp4', minWidth: 640, gridCols: 8, gridRows: 8 },
+          { name: 'bp5', minWidth: 768, gridCols: 8, gridRows: 8 },
+          { name: 'bp6', minWidth: 1024, gridCols: 12, gridRows: 8 },
+          { name: 'bp7', minWidth: 1280, gridCols: 12, gridRows: 8 },
+          { name: 'bp8', minWidth: 1440, gridCols: 12, gridRows: 8 },
+          { name: 'bp9', minWidth: 1920, gridCols: 16, gridRows: 8 },
+          { name: 'bp10', minWidth: 2560, gridCols: 16, gridRows: 8 }, // Exactly 10
+        ],
+        layouts: {
+          bp1: { structure: 'vertical', components: ['c1'] },
+          bp2: { structure: 'vertical', components: ['c1'] },
+          bp3: { structure: 'vertical', components: ['c1'] },
+          bp4: { structure: 'vertical', components: ['c1'] },
+          bp5: { structure: 'vertical', components: ['c1'] },
+          bp6: { structure: 'vertical', components: ['c1'] },
+          bp7: { structure: 'vertical', components: ['c1'] },
+          bp8: { structure: 'vertical', components: ['c1'] },
+          bp9: { structure: 'vertical', components: ['c1'] },
+          bp10: { structure: 'vertical', components: ['c1'] },
+        },
+      }
+
+      const result = validateSchema(tenBreakpointsSchema)
+
+      expect(result.valid).toBe(true)
+      expect(result.errors).toHaveLength(0)
+    })
+  })
+
   describe('formatValidationResult', () => {
     it('should format successful validation', () => {
       const result: ValidationResult = {

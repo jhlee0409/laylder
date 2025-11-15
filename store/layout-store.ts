@@ -200,12 +200,14 @@ export const useLayoutStore = create<LayoutState>()(
             // Remove from roles if present
             if (layout.roles) {
               const newRoles = { ...layout.roles }
-              for (const role in newRoles) {
-                // Type assertion needed: roles has fixed keys (header/sidebar/main/footer)
-                if (newRoles[role as keyof typeof newRoles] === id) {
-                  delete newRoles[role as keyof typeof newRoles]
+              // Use Object.keys with proper typing to avoid type assertions
+              ;(Object.keys(newRoles) as Array<keyof typeof newRoles>).forEach(
+                (role) => {
+                  if (newRoles[role] === id) {
+                    delete newRoles[role]
+                  }
                 }
-              }
+              )
               layouts[breakpoint] = {
                 ...layouts[breakpoint],
                 roles: Object.keys(newRoles).length > 0 ? newRoles : undefined,

@@ -264,11 +264,11 @@ describe('Dynamic Breakpoints Support', () => {
       })
     })
 
-    it('should handle 10+ breakpoints without hardcoding issues', () => {
+    it('should handle exactly 10 breakpoints (max limit)', () => {
       const breakpoints: Breakpoint[] = []
       const layouts: LaydlerSchema['layouts'] = {}
 
-      for (let i = 0; i < 15; i++) {
+      for (let i = 0; i < 10; i++) {
         const name = `bp${i}`
         breakpoints.push({
           name,
@@ -296,11 +296,48 @@ describe('Dynamic Breakpoints Support', () => {
       }
 
       const validation = validateSchema(schema)
-      if (!validation.valid) {
-        console.error('Validation errors for 10+ breakpoints:', validation.errors)
-      }
       expect(validation.valid).toBe(true)
-      expect(schema.breakpoints).toHaveLength(15)
+      expect(schema.breakpoints).toHaveLength(10)
+    })
+
+    it('should reject more than 10 breakpoints', () => {
+      const breakpoints: Breakpoint[] = []
+      const layouts: LaydlerSchema['layouts'] = {}
+
+      for (let i = 0; i < 11; i++) {
+        const name = `bp${i}`
+        breakpoints.push({
+          name,
+          minWidth: i * 200,
+          gridCols: 12,
+          gridRows: 8,
+        })
+        layouts[name] = { structure: 'vertical', components: ['c1'] }
+      }
+
+      const schema: LaydlerSchema = {
+        schemaVersion: '2.0',
+        components: [
+          {
+            id: 'c1',
+            name: 'Test',
+            semanticTag: 'div',
+            positioning: { type: 'static' },
+            layout: { type: 'flex' },
+            canvasLayout: { x: 0, y: 0, width: 12, height: 1 },
+          },
+        ],
+        breakpoints,
+        layouts,
+      }
+
+      const validation = validateSchema(schema)
+      expect(validation.valid).toBe(false)
+      expect(validation.errors).toContainEqual(
+        expect.objectContaining({
+          code: 'TOO_MANY_BREAKPOINTS',
+        })
+      )
     })
   })
 })
