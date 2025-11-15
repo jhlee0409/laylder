@@ -76,6 +76,124 @@ interface LayoutConfig {
 - **V1 문제**: 모든 컴포넌트를 grid-template-areas로 강제 배치 → 비현실적
 - **V2 해결**: 각 컴포넌트가 자신의 positioning 전략을 가짐 → 실제 프로덕션 패턴
 
+### ⚠️ Breaking Changes & Migration Guide (2025-11-15)
+
+**Dynamic Breakpoint Support**: 시스템이 이제 무제한 커스텀 breakpoint를 지원합니다.
+
+#### 타입 변경사항
+
+**이전 (하드코딩된 breakpoint):**
+```typescript
+// ❌ Old: 고정된 3개 breakpoint만 지원
+interface LaydlerSchema {
+  layouts: {
+    mobile: LayoutConfig
+    tablet?: LayoutConfig
+    desktop?: LayoutConfig
+  }
+}
+```
+
+**현재 (동적 breakpoint):**
+```typescript
+// ✅ New: 무제한 커스텀 breakpoint 지원
+interface LaydlerSchema {
+  layouts: Record<string, LayoutConfig>  // 모든 string 키 허용
+}
+
+// 예시: 커스텀 breakpoint 사용
+const schema: LaydlerSchema = {
+  layouts: {
+    mobile: { ... },
+    laptop: { ... },      // ✅ 커스텀
+    ultrawide: { ... },   // ✅ 커스텀
+    '4k': { ... }         // ✅ 커스텀
+  }
+}
+```
+
+#### 마이그레이션 가이드
+
+**1. TypeScript 코드 수정**
+
+명시적으로 타입을 지정한 경우:
+```typescript
+// ❌ Before: 에러 발생
+const layouts: { mobile: LayoutConfig; tablet?: LayoutConfig } = schema.layouts
+
+// ✅ After: Record 타입 사용
+const layouts: Record<string, LayoutConfig> = schema.layouts
+
+// ✅ Better: 타입 추론 활용
+const layouts = schema.layouts  // TypeScript가 자동 추론
+```
+
+**2. Breakpoint 접근 방식 변경**
+
+```typescript
+// ❌ Before: Type assertion 필요 (제거됨)
+const layout = schema.layouts[breakpoint as keyof typeof schema.layouts]
+
+// ✅ After: 직접 접근
+const layout = schema.layouts[breakpoint]
+```
+
+**3. 커스텀 Breakpoint 추가**
+
+```typescript
+// 이제 어떤 이름이든 사용 가능
+const breakpoints: Breakpoint[] = [
+  { name: 'mobile', minWidth: 0, gridCols: 4, gridRows: 8 },
+  { name: 'laptop', minWidth: 1440, gridCols: 10, gridRows: 10 },
+  { name: 'ultrawide', minWidth: 2560, gridCols: 16, gridRows: 8 },
+]
+```
+
+**4. DEFAULT_GRID_CONFIG Fallback**
+
+커스텀 breakpoint는 자동으로 **12×8 grid**로 설정됩니다:
+```typescript
+// 알려진 breakpoint (사전 정의됨)
+mobile    → 4×8 grid
+tablet    → 8×8 grid
+desktop   → 12×8 grid
+custom    → 6×8 grid
+
+// 커스텀 breakpoint (fallback)
+laptop    → 12×8 grid (기본값)
+ultrawide → 12×8 grid (기본값)
+my-bp     → 12×8 grid (기본값)
+```
+
+원하는 grid 크기를 명시적으로 지정하려면:
+```typescript
+addBreakpoint({
+  name: 'laptop',
+  minWidth: 1440,
+  gridCols: 10,  // ✅ 명시적 지정
+  gridRows: 10
+})
+```
+
+#### 기존 스키마 호환성
+
+✅ **변경 불필요**: 기존 mobile/tablet/desktop 스키마는 그대로 작동합니다.
+
+```typescript
+// ✅ 기존 스키마 (변경 없이 작동)
+const schema: LaydlerSchema = {
+  schemaVersion: '2.0',
+  breakpoints: [
+    { name: 'mobile', minWidth: 0, gridCols: 4, gridRows: 8 },
+    { name: 'desktop', minWidth: 1024, gridCols: 12, gridRows: 8 }
+  ],
+  layouts: {
+    mobile: { structure: 'vertical', components: ['c1'] },
+    desktop: { structure: 'sidebar-main', components: ['c1', 'c2'] }
+  }
+}
+```
+
 ### State Management - Zustand
 
 **store/layout-store-v2.ts**가 핵심 상태 관리를 담당합니다.

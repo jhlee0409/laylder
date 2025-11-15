@@ -16,8 +16,34 @@ import { sortComponentsByCanvasCoordinates } from "./canvas-sort-utils"
 /**
  * Default Grid Configuration for common breakpoint types
  *
- * Supports dynamic breakpoint names - these are just defaults.
- * Any custom breakpoint name will fall back to 12x8 grid.
+ * **Dynamic Breakpoint Support**: This configuration supports unlimited custom breakpoint names.
+ * Only predefined breakpoints (mobile, tablet, desktop, custom) have specific grid sizes.
+ *
+ * @example
+ * ```typescript
+ * // Predefined breakpoints (known grid sizes)
+ * DEFAULT_GRID_CONFIG['mobile']    // { gridCols: 4, gridRows: 8 }
+ * DEFAULT_GRID_CONFIG['tablet']    // { gridCols: 8, gridRows: 8 }
+ * DEFAULT_GRID_CONFIG['desktop']   // { gridCols: 12, gridRows: 8 }
+ * DEFAULT_GRID_CONFIG['custom']    // { gridCols: 6, gridRows: 8 }
+ *
+ * // Custom breakpoints (fallback to 12×8)
+ * DEFAULT_GRID_CONFIG['laptop']    // undefined → fallback to 12×8
+ * DEFAULT_GRID_CONFIG['ultrawide'] // undefined → fallback to 12×8
+ * DEFAULT_GRID_CONFIG['4k']        // undefined → fallback to 12×8
+ * ```
+ *
+ * **Usage Pattern**:
+ * ```typescript
+ * const gridCols = DEFAULT_GRID_CONFIG[breakpointName]?.gridCols ?? 12  // fallback
+ * const gridRows = DEFAULT_GRID_CONFIG[breakpointName]?.gridRows ?? 8   // fallback
+ * ```
+ *
+ * **Why Fallback?**
+ * Custom breakpoints are user-defined and can have any name (laptop, ultrawide, my-bp, etc.).
+ * The 12×8 fallback provides a sensible default for flexibility while maintaining consistency.
+ *
+ * @see {@link GRID_CONSTRAINTS} for min/max grid size limits
  */
 export const DEFAULT_GRID_CONFIG: Record<string, { gridCols: number; gridRows: number }> = {
   mobile: { gridCols: 4, gridRows: 8 },
