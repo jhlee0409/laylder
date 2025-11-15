@@ -14,14 +14,43 @@ import type {
 import { sortComponentsByCanvasCoordinates } from "./canvas-sort-utils"
 
 /**
- * Default Grid Configuration for each breakpoint type
+ * Default Grid Configuration for common breakpoint types
+ *
+ * **Dynamic Breakpoint Support**: This configuration supports unlimited custom breakpoint names.
+ * Only predefined breakpoints (mobile, tablet, desktop, custom) have specific grid sizes.
+ *
+ * @example
+ * ```typescript
+ * // Predefined breakpoints (known grid sizes)
+ * DEFAULT_GRID_CONFIG['mobile']    // { gridCols: 4, gridRows: 8 }
+ * DEFAULT_GRID_CONFIG['tablet']    // { gridCols: 8, gridRows: 8 }
+ * DEFAULT_GRID_CONFIG['desktop']   // { gridCols: 12, gridRows: 8 }
+ * DEFAULT_GRID_CONFIG['custom']    // { gridCols: 6, gridRows: 8 }
+ *
+ * // Custom breakpoints (fallback to 12×8)
+ * DEFAULT_GRID_CONFIG['laptop']    // undefined → fallback to 12×8
+ * DEFAULT_GRID_CONFIG['ultrawide'] // undefined → fallback to 12×8
+ * DEFAULT_GRID_CONFIG['4k']        // undefined → fallback to 12×8
+ * ```
+ *
+ * **Usage Pattern**:
+ * ```typescript
+ * const gridCols = DEFAULT_GRID_CONFIG[breakpointName]?.gridCols ?? 12  // fallback
+ * const gridRows = DEFAULT_GRID_CONFIG[breakpointName]?.gridRows ?? 8   // fallback
+ * ```
+ *
+ * **Why Fallback?**
+ * Custom breakpoints are user-defined and can have any name (laptop, ultrawide, my-bp, etc.).
+ * The 12×8 fallback provides a sensible default for flexibility while maintaining consistency.
+ *
+ * @see {@link GRID_CONSTRAINTS} for min/max grid size limits
  */
-export const DEFAULT_GRID_CONFIG = {
+export const DEFAULT_GRID_CONFIG: Record<string, { gridCols: number; gridRows: number }> = {
   mobile: { gridCols: 4, gridRows: 8 },
   tablet: { gridCols: 8, gridRows: 8 },
   desktop: { gridCols: 12, gridRows: 8 },
   custom: { gridCols: 6, gridRows: 8 },
-} as const
+}
 
 /**
  * Grid size constraints
@@ -353,10 +382,16 @@ export function isValidSchema(schema: unknown): schema is LaydlerSchema {
 export function normalizeSchema(schema: LaydlerSchema): LaydlerSchema {
   const normalized = cloneSchema(schema)
 
-  // 1. Layout Inheritance: Dynamic breakpoint cascade (Mobile → Tablet → Desktop, etc.)
-  // Support any breakpoint names (not just hardcoded mobile/tablet/desktop)
-  // FIX: Previously hardcoded .mobile, .tablet, .desktop failed for custom names like "Desktop" (capital D)
-  // EDGE CASE FIX: Deterministic sorting when multiple breakpoints have same minWidth
+  // REMOVED: Layout inheritance (Section 1)
+  // REMOVED: Canvas layout inheritance (Section 2)
+  //
+  // User requirement: Complete breakpoint independence
+  // - DnD to Mobile → Component appears ONLY in Mobile breakpoint
+  // - DnD to Tablet → Component appears ONLY in Tablet breakpoint
+  // - No automatic inheritance of layouts or Canvas positions across breakpoints
+  // - Each breakpoint is completely isolated
+
+  // Sort breakpoints by minWidth for deterministic ordering
   const sortedBreakpoints = [...normalized.breakpoints].sort((a, b) => {
     // Primary sort: by minWidth
     if (a.minWidth !== b.minWidth) {
@@ -366,100 +401,23 @@ export function normalizeSchema(schema: LaydlerSchema): LaydlerSchema {
     return a.name.localeCompare(b.name)
   })
 
-  for (let i = 1; i < sortedBreakpoints.length; i++) {
-    const currentBP = sortedBreakpoints[i].name
-    const previousBP = sortedBreakpoints[i - 1].name
+  // Apply sorted breakpoints
+  normalized.breakpoints = sortedBreakpoints
 
-    // Only inherit if layout is completely missing (not just empty)
-    // Edge case fix: Don't inherit if layout exists but is intentionally empty (components.length === 0)
-    // - Missing layout (!normalized.layouts[currentBP]) → INHERIT from previous
-    // - Empty layout (components.length === 0) → PRESERVE as intentionally empty
-    if (!normalized.layouts[currentBP] && normalized.layouts[previousBP]) {
-      normalized.layouts[currentBP] = safeDeepClone(normalized.layouts[previousBP])
-    }
-  }
+  // Auto-create missing layouts for breakpoints (if needed)
+  // IMPORTANT: Do NOT inherit or auto-sync
+  // User adds components manually via DnD to each breakpoint independently
 
-  // 2. Canvas Layout Inheritance per Component
-  // FIX: Support dynamic breakpoint names (not just mobile/tablet/desktop)
-  normalized.components = normalized.components.map(comp => {
-    if (comp.responsiveCanvasLayout) {
-      // Type-safe dynamic key access using Record type
-      const rcl: Record<string, CanvasLayout | undefined> = { ...comp.responsiveCanvasLayout }
-
-      // Cascade from previous breakpoint to next (based on minWidth sorting)
-      for (let i = 1; i < sortedBreakpoints.length; i++) {
-        const currentBP = sortedBreakpoints[i].name
-        const previousBP = sortedBreakpoints[i - 1].name
-
-        // If current breakpoint has no Canvas layout, inherit from previous
-        if (!rcl[currentBP]) {
-          const previousLayout = rcl[previousBP]
-          if (previousLayout) {
-            rcl[currentBP] = { ...previousLayout }
-          }
-        }
-      }
-
-      return {
-        ...comp,
-        responsiveCanvasLayout: rcl as ResponsiveCanvasLayout,
-      }
-    }
-
-    return comp
-  })
-
-  // 3. Sync layouts[breakpoint].components with Canvas layouts
-  // Canvas layout이 있는 컴포넌트를 자동으로 layouts[breakpoint].components에 추가
-  // 이렇게 하면 Desktop으로 시작 → Mobile 추가 → Mobile Canvas 배치 시
-  // layouts.mobile.components가 자동으로 업데이트됨
-
-  // FIX: Use dynamic breakpoint names from schema.breakpoints instead of hardcoded values
-  // This supports custom breakpoint names beyond 'mobile', 'tablet', 'desktop'
-  for (const breakpoint of normalized.breakpoints) {
+  for (const breakpoint of sortedBreakpoints) {
     const breakpointName = breakpoint.name
 
-    // Edge Case: Auto-create layout if it doesn't exist but components have Canvas data
+    // Only auto-create layout if it doesn't exist at all
     if (!normalized.layouts[breakpointName]) {
-      // Type-safe dynamic key access using helper function
-      const hasCanvasData = normalized.components.some(comp => {
-        const rcl = comp.responsiveCanvasLayout as Record<string, CanvasLayout | undefined> | undefined
-        return rcl?.[breakpointName] !== undefined
-      })
-
-      if (hasCanvasData) {
-        // Auto-create missing layout
-        normalized.layouts[breakpointName] = {
-          structure: 'vertical',
-          components: [],
-        } as LayoutConfig
-      } else {
-        // Skip this breakpoint if no Canvas data and no layout
-        continue
-      }
+      normalized.layouts[breakpointName] = {
+        structure: 'vertical',
+        components: [],  // Always empty - user adds components manually
+      } as LayoutConfig
     }
-
-    // Type-safe filtering using Record type
-    const componentsWithCanvas = normalized.components
-      .filter(comp => {
-        const rcl = comp.responsiveCanvasLayout as Record<string, CanvasLayout | undefined> | undefined
-        return rcl?.[breakpointName] !== undefined
-      })
-      .map(comp => comp.id)
-
-    // 기존 components와 Canvas components를 합침 (중복 제거)
-    const existingComponents = normalized.layouts[breakpointName].components
-    const allComponents = new Set([...existingComponents, ...componentsWithCanvas])
-
-    // Performance: Use shared utility function with Map-based O(n log n) sorting
-    // Previous implementation: O(n²) due to Array.find() in sort comparator
-    const sortedComponents = sortComponentsByCanvasCoordinates(
-      Array.from(allComponents),
-      normalized.components,
-      breakpointName
-    )
-
-    normalized.layouts[breakpointName].components = sortedComponents
   }
 
   return normalized

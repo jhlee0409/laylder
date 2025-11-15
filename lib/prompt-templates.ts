@@ -42,21 +42,66 @@ export const reactTailwindTemplate: PromptTemplate = {
   framework: "react",
   cssSolution: "tailwind",
 
-  systemPrompt: `You are an expert React developer. Generate a responsive layout component based on the following Schema specifications.
+  systemPrompt: `**Note:** This is a specification-based task. Follow the schema exactly without creative deviations.
 
-**Schema Architecture:**
-- **Component Independence**: Each component has its own positioning, layout, styling, and responsive behavior
-- **Flexbox First**: Use Flexbox for page structure, CSS Grid only for card/content layouts
-- **Semantic HTML**: Follow HTML5 semantic principles
-- **Mobile First**: Implement responsive design with mobile-first approach
-- **Breakpoint Inheritance**: Mobile → Tablet → Desktop cascade (명시되지 않은 breakpoint는 이전 breakpoint 설정 자동 상속)
+You are a senior React developer with expertise in modern web development, responsive design, and best practices.
 
-**Requirements:**
-- Use React functional components with TypeScript
-- Use Tailwind CSS utility classes for all styling
-- Each component must implement its specified positioning, layout, and styling
-- Follow the exact specifications provided for each component
-- Apply mobile-first responsive design: base styles for mobile, then md: for tablet, lg: for desktop`,
+**Your Task:**
+Generate a production-quality, responsive layout component based on the provided Laylder Schema specifications.
+
+**Schema Architecture (Component Independence):**
+
+The Laylder Schema follows a **Component-First** approach where each component is independently defined with its own:
+- **Positioning Strategy**: How the component is positioned (fixed, sticky, static, absolute, relative)
+- **Layout System**: Internal layout structure (flexbox, CSS grid, container, or none)
+- **Styling**: Visual properties (width, height, background, border, shadow, custom classes)
+- **Responsive Behavior**: Breakpoint-specific overrides (mobile, tablet, desktop)
+
+**Core Principles:**
+1. **Component Independence**: Each component operates independently with its own positioning and layout
+2. **Flexbox First**: Use Flexbox for page structure, CSS Grid only for card/content layouts
+3. **Semantic HTML First**: Follow HTML5 semantic principles (header, nav, main, aside, footer, section, article)
+4. **Mobile First**: Implement responsive design with mobile-first approach (base styles for mobile, then md: for tablet, lg: for desktop)
+5. **Breakpoint Inheritance**: Mobile → Tablet → Desktop cascade (unspecified breakpoints inherit from previous breakpoint)
+
+**Quality Standards:**
+- Production-ready code quality
+- Type-safe TypeScript implementation
+- Accessible semantic HTML
+- Clean, maintainable code structure
+- Proper use of Tailwind CSS utility classes
+- Responsive design following mobile-first principles
+
+**Code Style (2025 Best Practices):**
+- ❌ **DO NOT** use \`React.FC\` type (deprecated pattern)
+- ✅ **DO** use explicit function signatures: \`function Component(props: Props) { ... }\`
+- ✅ **DO** use modern React patterns (no class components, hooks only)
+- ❌ **DO NOT** add placeholder content or mock data
+- ✅ **DO** only generate layout structure with component name + ID as content
+
+**Layout-Only Code Generation:**
+This is a **layout builder tool**. Generate **ONLY** the structural layout code:
+- Component wrapper with correct semantic tag
+- Positioning classes (sticky, fixed, etc.)
+- Layout classes (flex, grid, container)
+- Styling classes (background, border, shadow)
+- Responsive behavior (hidden, width overrides)
+- **Content**: Just display the component name and ID (e.g., "Header (c1)")
+
+**DO NOT generate:**
+- Detailed placeholder content
+- Mock text, descriptions, or feature highlights
+- Navigation links, buttons, or interactive elements
+- Any creative additions beyond the schema specifications
+
+**Approach:**
+1. Read and understand the complete Schema specification
+2. Plan the component structure and relationships
+3. Implement each component following its specifications exactly
+4. Apply responsive behavior for each breakpoint
+5. Ensure accessibility and semantic HTML compliance
+
+Let's build a high-quality, production-ready layout.`,
 
   componentSection: (components: Component[]) => {
     let section = `## Components\n\n`
@@ -83,17 +128,7 @@ export const reactTailwindTemplate: PromptTemplate = {
         section += formatResponsive(comp.responsive)
       }
 
-      // Props
-      if (comp.props && Object.keys(comp.props).length > 0) {
-        section += `**Default Props:**\n`
-        section += "```json\n"
-        section += JSON.stringify(comp.props, null, 2)
-        section += "\n```\n"
-      } else {
-        section += `**Props:** None (placeholder component)\n`
-      }
-
-      section += `\n`
+      section += `---\n\n`
     })
 
     return section
@@ -104,7 +139,7 @@ export const reactTailwindTemplate: PromptTemplate = {
     section += `Implement the following page structures for each breakpoint:\n\n`
 
     breakpoints.forEach((breakpoint, index) => {
-      const layoutKey = breakpoint.name as "mobile" | "tablet" | "desktop"
+      const layoutKey = breakpoint.name  // Dynamic breakpoint support
       const layout = layouts[layoutKey]
       if (!layout) return
 
@@ -172,11 +207,19 @@ export const reactTailwindTemplate: PromptTemplate = {
       }
 
       // Structure type (기존)
-      section += `**Layout Structure:** \`${layout.structure}\`\n\n`
+      section += `**Page Flow:** \`${layout.structure}\` (vertical scrolling with horizontal content areas)\n\n`
+
+      // 🚨 IMPORTANT - Layout Priority (먼저 표시)
+      section += `**🚨 IMPORTANT - Layout Priority:**\n\n`
+      section += `1. **PRIMARY**: Use the **Visual Layout (Canvas Grid)** positioning above as your main guide\n`
+      section += `2. **SECONDARY**: The DOM order below is for reference only (accessibility/SEO)\n`
+      section += `3. **RULE**: Components with the same Y-coordinate range MUST be placed side-by-side horizontally\n`
+      section += `4. **DO NOT** stack components vertically if they share the same row in the Canvas Grid\n\n`
 
       // Component order (DOM 순서) - Canvas 좌표 기준으로 정렬
       section += `**Component Order (DOM):**\n\n`
-      section += `For accessibility and SEO, the DOM order should follow visual layout (top to bottom, left to right):\n\n`
+      section += `For screen readers and SEO crawlers, the HTML source order is:\n\n`
+      section += `⚠️ **Note:** Visual positioning may differ from DOM order. Use Canvas Grid coordinates for layout.\n\n`
 
       // Performance: Use shared utility function with Map-based O(n log n) sorting
       // Previous implementation: O(n²) due to Array.find() in sort comparator
@@ -185,6 +228,7 @@ export const reactTailwindTemplate: PromptTemplate = {
         components,
         layoutKey
       )
+
 
       sortedComponents.forEach((componentId: string, idx: number) => {
         const comp = components.find(c => c.id === componentId)
@@ -197,13 +241,7 @@ export const reactTailwindTemplate: PromptTemplate = {
         }
         section += `\n`
       })
-      section += "\n"
-      section += `**⚠️ IMPORTANT - Layout Priority:**\n\n`
-      section += `1. **PRIMARY**: Use the **Visual Layout (Canvas Grid)** positioning above as your main guide\n`
-      section += `2. **SECONDARY**: The DOM order below is for reference only (accessibility/SEO)\n`
-      section += `3. **RULE**: Components with the same Y-coordinate range MUST be placed side-by-side horizontally\n`
-      section += `4. **DO NOT** stack components vertically if they share the same row in the Canvas Grid\n\n`
-      section += `**Note:** Visual positioning (above) may differ from DOM order.\n\n`
+      section += `\n**⚠️ WARNING:** This DOM order differs from visual positioning. Always follow Canvas Grid coordinates for layout!\n\n`
 
       // Roles (if structure is sidebar-main)
       if (layout.roles && Object.keys(layout.roles).length > 0) {
@@ -221,40 +259,32 @@ export const reactTailwindTemplate: PromptTemplate = {
 
   instructionsSection: () => {
     return `## Implementation Instructions\n\n` +
-      `1. **Main Layout Component:**\n` +
-      `   - Create a main container component (e.g., \`ResponsiveLayout\` or \`RootLayout\`)\n` +
-      `   - Implement responsive structure changes using Tailwind breakpoints\n` +
-      `   - Follow the structure specifications for each breakpoint (vertical/horizontal/sidebar-main)\n\n` +
-      `2. **Component Implementation:**\n` +
-      `   - Each component MUST use its specified semantic tag\n` +
-      `   - Apply positioning classes according to component specifications\n` +
-      `   - Implement layout (flex/grid/container) as specified\n` +
-      `   - Add styling classes as specified\n` +
-      `   - Implement responsive behavior for each breakpoint\n\n` +
-      `3. **Positioning Guidelines:**\n` +
-      `   - \`static\`: Default flow (no position class needed)\n` +
-      `   - \`fixed\`: Use Tailwind \`fixed\` with specified position values (e.g., \`fixed top-0 left-0 right-0 z-50\`)\n` +
-      `   - \`sticky\`: Use Tailwind \`sticky\` with specified position values\n` +
-      `   - \`absolute\`: Use Tailwind \`absolute\` with specified position values\n` +
-      `   - \`relative\`: Use Tailwind \`relative\`\n\n` +
-      `4. **Layout Guidelines:**\n` +
-      `   - \`flex\`: Use Tailwind flex utilities (\`flex\`, \`flex-col\`, \`justify-center\`, etc.)\n` +
-      `   - \`grid\`: Use Tailwind grid utilities (\`grid\`, \`grid-cols-3\`, \`gap-4\`, etc.)\n` +
-      `   - \`container\`: Wrap content in a container div with max-width and centering\n` +
-      `   - \`none\`: No specific layout - let content flow naturally\n\n` +
-      `5. **Responsive Behavior:**\n` +
-      `   - **Mobile First Approach**: Base styles apply to mobile, use md: and lg: prefixes for larger breakpoints\n` +
-      `   - **Breakpoint Inheritance**: Styles cascade upward (Mobile → Tablet → Desktop)\n` +
-      `   - **Override Strategy**: Use responsive prefixes to override inherited styles (e.g., \`hidden md:block\` = hidden on mobile, visible on tablet+)\n` +
-      `   - Use Tailwind responsive prefixes (\`md:\`, \`lg:\`) for tablet and desktop\n` +
-      `   - Handle visibility changes (hidden/block) as specified\n` +
-      `   - Apply responsive width/order changes as specified\n\n` +
-      `6. **Code Quality:**\n` +
-      `   - Use TypeScript with proper type definitions\n` +
-      `   - Follow React best practices (functional components, hooks)\n` +
-      `   - Use semantic HTML5 tags as specified\n` +
-      `   - Add placeholder content for demonstration\n` +
-      `   - Keep component code clean and maintainable\n`
+      `### Positioning Guidelines\n\n` +
+      `- **static**: Default flow (no position class needed)\n` +
+      `- **fixed**: Use Tailwind \`fixed\` with position values (e.g., \`fixed top-0 left-0 right-0 z-50\`)\n` +
+      `- **sticky**: Use Tailwind \`sticky\` with position values (e.g., \`sticky top-0 z-40\`)\n` +
+      `- **absolute**: Use Tailwind \`absolute\` with position values\n` +
+      `- **relative**: Use Tailwind \`relative\`\n\n` +
+      `### Layout Guidelines\n\n` +
+      `- **flex**: Use Tailwind flex utilities (\`flex\`, \`flex-col\`, \`justify-center\`, \`items-center\`, \`gap-4\`, etc.)\n` +
+      `- **grid**: Use Tailwind grid utilities (\`grid\`, \`grid-cols-3\`, \`gap-4\`, etc.)\n` +
+      `- **container**: Wrap content in a container div with max-width and centering\n` +
+      `- **none**: No specific layout - let content flow naturally\n\n` +
+      `### Responsive Design Guidelines\n\n` +
+      `- **Mobile First**: Base styles apply to mobile, use \`md:\` and \`lg:\` prefixes for larger breakpoints\n` +
+      `- **Breakpoint Inheritance**: Styles cascade upward (Mobile → Tablet → Desktop)\n` +
+      `- **Override Strategy**: Use responsive prefixes to override inherited styles\n` +
+      `  - Example: \`hidden md:block\` = hidden on mobile, visible on tablet+\n` +
+      `  - Example: \`w-full md:w-1/2 lg:w-1/3\` = full width on mobile, half on tablet, third on desktop\n\n` +
+      `### Code Quality Checklist\n\n` +
+      `- [ ] All components use specified semantic tags\n` +
+      `- [ ] TypeScript types are properly defined (use explicit function signatures, NOT React.FC)\n` +
+      `- [ ] Positioning and layout follow specifications exactly\n` +
+      `- [ ] Responsive behavior is implemented for all breakpoints\n` +
+      `- [ ] Code is clean, readable, and well-commented\n` +
+      `- [ ] Accessibility is considered (ARIA labels, keyboard navigation)\n` +
+      `- [ ] **Content: ONLY display component name + ID** (e.g., "Header (c1)")\n` +
+      `- [ ] **NO placeholder content, mock data, or creative additions**\n`
   },
 }
 
@@ -350,44 +380,39 @@ function formatStyling(styling: ComponentStyling): string {
 
 /**
  * Helper function to format responsive behavior specification
+ *
+ * Supports dynamic breakpoint names (not just mobile/tablet/desktop)
+ * Iterates over all properties in ResponsiveBehavior object
  */
 function formatResponsive(responsive: ResponsiveBehavior): string {
   let text = `**Responsive Behavior:**\n`
 
-  if (responsive.mobile) {
-    const behaviors: string[] = []
-    if (responsive.mobile.hidden) behaviors.push("hidden")
-    if (responsive.mobile.width) behaviors.push(`width: ${responsive.mobile.width}`)
-    if (responsive.mobile.order !== undefined)
-      behaviors.push(`order: ${responsive.mobile.order}`)
-    if (behaviors.length > 0) {
-      text += `- Mobile: ${behaviors.join(", ")}\n`
-    }
-  }
+  // Dynamically iterate over all breakpoints in responsive object
+  // Supports any number of breakpoints (mobile, tablet, laptop, desktop, ultrawide, etc.)
+  Object.entries(responsive).forEach(([breakpointName, config]) => {
+    if (!config) return  // Skip undefined entries
 
-  if (responsive.tablet) {
     const behaviors: string[] = []
-    if (responsive.tablet.hidden !== undefined)
-      behaviors.push(responsive.tablet.hidden ? "hidden" : "visible")
-    if (responsive.tablet.width) behaviors.push(`width: ${responsive.tablet.width}`)
-    if (responsive.tablet.order !== undefined)
-      behaviors.push(`order: ${responsive.tablet.order}`)
-    if (behaviors.length > 0) {
-      text += `- Tablet (md:): ${behaviors.join(", ")}\n`
-    }
-  }
 
-  if (responsive.desktop) {
-    const behaviors: string[] = []
-    if (responsive.desktop.hidden !== undefined)
-      behaviors.push(responsive.desktop.hidden ? "hidden" : "visible")
-    if (responsive.desktop.width) behaviors.push(`width: ${responsive.desktop.width}`)
-    if (responsive.desktop.order !== undefined)
-      behaviors.push(`order: ${responsive.desktop.order}`)
-    if (behaviors.length > 0) {
-      text += `- Desktop (lg:): ${behaviors.join(", ")}\n`
+    if (config.hidden !== undefined) {
+      behaviors.push(config.hidden ? "hidden" : "visible")
     }
-  }
+    if (config.width) {
+      behaviors.push(`width: ${config.width}`)
+    }
+    if (config.order !== undefined) {
+      behaviors.push(`order: ${config.order}`)
+    }
+    if (config.positioning) {
+      behaviors.push(`positioning: ${config.positioning.type}`)
+    }
+
+    if (behaviors.length > 0) {
+      // Capitalize first letter for display
+      const displayName = breakpointName.charAt(0).toUpperCase() + breakpointName.slice(1)
+      text += `- ${displayName}: ${behaviors.join(", ")}\n`
+    }
+  })
 
   text += "\n"
   return text

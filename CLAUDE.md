@@ -76,6 +76,217 @@ interface LayoutConfig {
 - **V1 문제**: 모든 컴포넌트를 grid-template-areas로 강제 배치 → 비현실적
 - **V2 해결**: 각 컴포넌트가 자신의 positioning 전략을 가짐 → 실제 프로덕션 패턴
 
+### ⚠️ Breaking Changes & Migration Guide (2025-11-15)
+
+**Dynamic Breakpoint Support**: 시스템이 이제 무제한 커스텀 breakpoint를 지원합니다.
+
+#### 타입 변경사항
+
+**이전 (하드코딩된 breakpoint):**
+```typescript
+// ❌ Old: 고정된 3개 breakpoint만 지원
+interface LaydlerSchema {
+  layouts: {
+    mobile: LayoutConfig
+    tablet?: LayoutConfig
+    desktop?: LayoutConfig
+  }
+}
+```
+
+**현재 (동적 breakpoint):**
+```typescript
+// ✅ New: 무제한 커스텀 breakpoint 지원
+interface LaydlerSchema {
+  layouts: Record<string, LayoutConfig>  // 모든 string 키 허용
+}
+
+// 예시: 커스텀 breakpoint 사용
+const schema: LaydlerSchema = {
+  layouts: {
+    mobile: { ... },
+    laptop: { ... },      // ✅ 커스텀
+    ultrawide: { ... },   // ✅ 커스텀
+    '4k': { ... }         // ✅ 커스텀
+  }
+}
+```
+
+#### 마이그레이션 가이드
+
+**1. TypeScript 코드 수정**
+
+명시적으로 타입을 지정한 경우:
+```typescript
+// ❌ Before: 에러 발생
+const layouts: { mobile: LayoutConfig; tablet?: LayoutConfig } = schema.layouts
+
+// ✅ After: Record 타입 사용
+const layouts: Record<string, LayoutConfig> = schema.layouts
+
+// ✅ Better: 타입 추론 활용
+const layouts = schema.layouts  // TypeScript가 자동 추론
+```
+
+**2. Breakpoint 접근 방식 변경**
+
+```typescript
+// ❌ Before: Type assertion 필요 (제거됨)
+const layout = schema.layouts[breakpoint as keyof typeof schema.layouts]
+
+// ✅ After: 직접 접근
+const layout = schema.layouts[breakpoint]
+```
+
+**3. 커스텀 Breakpoint 추가**
+
+```typescript
+// 이제 어떤 이름이든 사용 가능
+const breakpoints: Breakpoint[] = [
+  { name: 'mobile', minWidth: 0, gridCols: 4, gridRows: 8 },
+  { name: 'laptop', minWidth: 1440, gridCols: 10, gridRows: 10 },
+  { name: 'ultrawide', minWidth: 2560, gridCols: 16, gridRows: 8 },
+]
+```
+
+**4. DEFAULT_GRID_CONFIG Fallback**
+
+커스텀 breakpoint는 자동으로 **12×8 grid**로 설정됩니다:
+```typescript
+// 알려진 breakpoint (사전 정의됨)
+mobile    → 4×8 grid
+tablet    → 8×8 grid
+desktop   → 12×8 grid
+custom    → 6×8 grid
+
+// 커스텀 breakpoint (fallback)
+laptop    → 12×8 grid (기본값)
+ultrawide → 12×8 grid (기본값)
+my-bp     → 12×8 grid (기본값)
+```
+
+원하는 grid 크기를 명시적으로 지정하려면:
+```typescript
+addBreakpoint({
+  name: 'laptop',
+  minWidth: 1440,
+  gridCols: 10,  // ✅ 명시적 지정
+  gridRows: 10
+})
+```
+
+#### 기존 스키마 호환성
+
+✅ **변경 불필요**: 기존 mobile/tablet/desktop 스키마는 그대로 작동합니다.
+
+```typescript
+// ✅ 기존 스키마 (변경 없이 작동)
+const schema: LaydlerSchema = {
+  schemaVersion: '2.0',
+  breakpoints: [
+    { name: 'mobile', minWidth: 0, gridCols: 4, gridRows: 8 },
+    { name: 'desktop', minWidth: 1024, gridCols: 12, gridRows: 8 }
+  ],
+  layouts: {
+    mobile: { structure: 'vertical', components: ['c1'] },
+    desktop: { structure: 'sidebar-main', components: ['c1', 'c2'] }
+  }
+}
+```
+
+#### Common Errors
+
+마이그레이션 시 자주 발생하는 TypeScript 에러와 해결 방법입니다.
+
+**Error 1: Type '{ mobile: LayoutConfig }' is not assignable to type 'Record<string, LayoutConfig>'**
+
+```typescript
+// ❌ Before (TypeScript 에러 발생)
+const layouts: { mobile: LayoutConfig; tablet?: LayoutConfig } = schema.layouts
+
+// ✅ Solution 1: Record 타입 사용
+const layouts: Record<string, LayoutConfig> = schema.layouts
+
+// ✅ Solution 2: 타입 추론 활용 (권장)
+const layouts = schema.layouts  // TypeScript가 자동으로 Record<string, LayoutConfig> 추론
+```
+
+**Error 2: Property 'laptop' does not exist on type 'ResponsiveBehavior'**
+
+```typescript
+// ❌ Before (TypeScript 에러 발생)
+if (component.responsive.laptop) { ... }
+
+// ✅ Solution: Optional chaining + bracket notation 사용
+if (component.responsive?.['laptop']) { ... }
+
+// ✅ Alternative: Type-safe breakpoint access
+const breakpointName: string = 'laptop'
+if (component.responsive?.[breakpointName]) { ... }
+```
+
+**Error 3: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type**
+
+```typescript
+// ❌ Before (TypeScript 에러 발생)
+const layout = schema.layouts[breakpointName]  // breakpointName이 string 타입일 때
+
+// ✅ Solution: 타입이 이미 Record<string, LayoutConfig>이므로 그대로 사용
+const layout = schema.layouts[breakpointName]  // schema.layouts는 Record 타입이므로 OK
+
+// ✅ If error persists: Check schema type is LaydlerSchema
+const schema: LaydlerSchema = { ... }  // 명시적 타입 지정
+```
+
+**Error 4: Breakpoint validation failures**
+
+Breakpoint 이름 검증 규칙 (2025-11-15 추가):
+
+```typescript
+// ❌ Invalid breakpoint names (ValidationError 발생)
+{ name: '' }                  // Empty name → EMPTY_BREAKPOINT_NAME
+{ name: '   ' }               // Whitespace only → EMPTY_BREAKPOINT_NAME
+{ name: 'mobile@tablet' }     // Special characters → INVALID_BREAKPOINT_NAME
+{ name: 'mobile tablet' }     // Spaces → INVALID_BREAKPOINT_NAME
+{ name: '모바일' }             // Unicode → INVALID_BREAKPOINT_NAME
+{ name: 'mobile📱' }           // Emoji → INVALID_BREAKPOINT_NAME
+{ name: 'a'.repeat(101) }     // >100 chars → BREAKPOINT_NAME_TOO_LONG
+{ name: 'constructor' }       // Reserved word → RESERVED_BREAKPOINT_NAME
+{ name: '__proto__' }         // Reserved word → RESERVED_BREAKPOINT_NAME
+
+// ✅ Valid breakpoint names
+{ name: 'mobile' }            // Alphanumeric
+{ name: '4k' }                // Starting with number (allowed)
+{ name: 'mobile-sm' }         // Hyphen
+{ name: 'tablet_md' }         // Underscore
+{ name: 'desktop-2xl' }       // Mixed
+{ name: 'a'.repeat(100) }     // Exactly 100 chars (max)
+```
+
+**Error 5: Too many breakpoints**
+
+```typescript
+// ❌ Invalid: 11개 breakpoint (최대 10개)
+const schema: LaydlerSchema = {
+  breakpoints: [
+    { name: 'bp1', ... },
+    { name: 'bp2', ... },
+    // ... (11개)
+  ]
+}
+// → TOO_MANY_BREAKPOINTS error
+
+// ✅ Valid: 10개 이하
+const schema: LaydlerSchema = {
+  breakpoints: [
+    { name: 'mobile', ... },
+    { name: 'tablet', ... },
+    { name: 'desktop', ... },
+    // ... (최대 10개)
+  ]
+}
+```
+
 ### State Management - Zustand
 
 **store/layout-store-v2.ts**가 핵심 상태 관리를 담당합니다.

@@ -144,9 +144,12 @@ export const useLayoutStore = create<LayoutState>()(
 
           //: Components are independent, just add to array
           // Layout is managed through LayoutConfig.components array
-          const currentLayout = state.schema.layouts[state.currentBreakpoint as keyof typeof state.schema.layouts]
+          const currentLayout = state.schema.layouts[state.currentBreakpoint]
 
           // 업데이트된 스키마 (현재 breakpoint에만 추가)
+          // ⚠️ CRITICAL: normalizeSchema()를 호출하지 않음
+          // 이유: 사용자가 breakpoint별로 독립적으로 컴포넌트를 추가할 수 있도록 함
+          // Component Links로 cross-breakpoint relationships를 명시적으로 관리
           const updatedSchema: LaydlerSchema = {
             ...state.schema,
             components: [...state.schema.components, newComponent],
@@ -159,11 +162,8 @@ export const useLayoutStore = create<LayoutState>()(
             },
           }
 
-          // Breakpoint Inheritance 적용: Mobile → Tablet → Desktop
-          const normalizedSchema = normalizeSchema(updatedSchema)
-
           return {
-            schema: normalizedSchema,
+            schema: updatedSchema,
           }
         }, false, "addComponent")
       },
@@ -191,8 +191,8 @@ export const useLayoutStore = create<LayoutState>()(
           // Remove component from all layout configs
           const layouts = { ...state.schema.layouts }
           for (const breakpoint in layouts) {
-            const layout = layouts[breakpoint as keyof typeof layouts]
-            layouts[breakpoint as keyof typeof layouts] = {
+            const layout = layouts[breakpoint]
+            layouts[breakpoint] = {
               ...layout,
               components: layout.components.filter((cid: string) => cid !== id),
             }
@@ -200,13 +200,16 @@ export const useLayoutStore = create<LayoutState>()(
             // Remove from roles if present
             if (layout.roles) {
               const newRoles = { ...layout.roles }
-              for (const role in newRoles) {
-                if (newRoles[role as keyof typeof newRoles] === id) {
-                  delete newRoles[role as keyof typeof newRoles]
+              // Use Object.keys with proper typing to avoid type assertions
+              ;(Object.keys(newRoles) as Array<keyof typeof newRoles>).forEach(
+                (role) => {
+                  if (newRoles[role] === id) {
+                    delete newRoles[role]
+                  }
                 }
-              }
-              layouts[breakpoint as keyof typeof layouts] = {
-                ...layouts[breakpoint as keyof typeof layouts],
+              )
+              layouts[breakpoint] = {
+                ...layouts[breakpoint],
                 roles: Object.keys(newRoles).length > 0 ? newRoles : undefined,
               }
             }
@@ -245,7 +248,7 @@ export const useLayoutStore = create<LayoutState>()(
           }
 
           // Add duplicate to current breakpoint's layout
-          const currentLayout = state.schema.layouts[state.currentBreakpoint as keyof typeof state.schema.layouts]
+          const currentLayout = state.schema.layouts[state.currentBreakpoint]
 
           return {
             schema: {
@@ -342,7 +345,7 @@ export const useLayoutStore = create<LayoutState>()(
 
       addComponentToLayout: (breakpoint, componentId) => {
         set((state) => {
-          const currentLayout = state.schema.layouts[breakpoint as keyof typeof state.schema.layouts]
+          const currentLayout = state.schema.layouts[breakpoint]
 
           // Check if component already exists in layout
           if (currentLayout.components.includes(componentId)) {
@@ -372,7 +375,7 @@ export const useLayoutStore = create<LayoutState>()(
 
       reorderComponentsInLayout: (breakpoint, newOrder) => {
         set((state) => {
-          const currentLayout = state.schema.layouts[breakpoint as keyof typeof state.schema.layouts]
+          const currentLayout = state.schema.layouts[breakpoint]
 
           return {
             schema: {
@@ -405,8 +408,8 @@ export const useLayoutStore = create<LayoutState>()(
           // Apply default grid config if not provided
           const breakpointWithDefaults = {
             ...breakpoint,
-            gridCols: breakpoint.gridCols ?? DEFAULT_GRID_CONFIG[breakpoint.name as keyof typeof DEFAULT_GRID_CONFIG]?.gridCols ?? 12,
-            gridRows: breakpoint.gridRows ?? DEFAULT_GRID_CONFIG[breakpoint.name as keyof typeof DEFAULT_GRID_CONFIG]?.gridRows ?? 8,
+            gridCols: breakpoint.gridCols ?? DEFAULT_GRID_CONFIG[breakpoint.name]?.gridCols ?? 12,
+            gridRows: breakpoint.gridRows ?? DEFAULT_GRID_CONFIG[breakpoint.name]?.gridRows ?? 8,
           }
 
           // Create empty layout for new breakpoint
@@ -446,10 +449,10 @@ export const useLayoutStore = create<LayoutState>()(
           // If name changed, update layouts keys
           let layouts = state.schema.layouts
           if (oldName !== newBreakpoint.name) {
-            const oldLayout = layouts[oldName as keyof typeof layouts]
+            const oldLayout = layouts[oldName]
             layouts = { ...layouts }
-            delete layouts[oldName as keyof typeof layouts]
-            layouts[newBreakpoint.name as keyof typeof layouts] = oldLayout
+            delete layouts[oldName]
+            layouts[newBreakpoint.name] = oldLayout
           }
 
           return {
@@ -475,13 +478,13 @@ export const useLayoutStore = create<LayoutState>()(
             (bp) => bp.name !== name
           )
           const layouts = { ...state.schema.layouts }
-          delete layouts[name as keyof typeof layouts]
+          delete layouts[name]
 
           // Remove responsiveCanvasLayout for deleted breakpoint from all components
           const components = state.schema.components.map((component) => {
             if (component.responsiveCanvasLayout) {
               const rcl = { ...component.responsiveCanvasLayout }
-              delete rcl[name as keyof typeof rcl]
+              delete rcl[name]
 
               // If no layouts left, remove responsiveCanvasLayout entirely
               const hasLayouts = Object.keys(rcl).length > 0
@@ -552,7 +555,7 @@ export const useLayoutStore = create<LayoutState>()(
       removeGridRow: (breakpointName) => {
         set((state) => {
           // Get components in current breakpoint's layout
-          const currentLayout = state.schema.layouts[breakpointName as keyof typeof state.schema.layouts]
+          const currentLayout = state.schema.layouts[breakpointName]
           const componentIds = new Set(currentLayout.components)
           const components = state.schema.components.filter((c) => componentIds.has(c.id))
 
@@ -594,7 +597,7 @@ export const useLayoutStore = create<LayoutState>()(
       removeGridColumn: (breakpointName) => {
         set((state) => {
           // Get components in current breakpoint's layout
-          const currentLayout = state.schema.layouts[breakpointName as keyof typeof state.schema.layouts]
+          const currentLayout = state.schema.layouts[breakpointName]
           const componentIds = new Set(currentLayout.components)
           const components = state.schema.components.filter((c) => componentIds.has(c.id))
 
@@ -801,7 +804,7 @@ export const useLayoutStore = create<LayoutState>()(
 export const useCurrentLayout = () => {
   return useLayoutStore((state) => {
     const breakpoint = state.currentBreakpoint
-    return state.schema.layouts[breakpoint as keyof typeof state.schema.layouts]
+    return state.schema.layouts[breakpoint]
   })
 }
 
@@ -823,7 +826,7 @@ export const useComponentsInCurrentLayout = () => {
   return useLayoutStore(
     useShallow((state) => {
       const breakpoint = state.currentBreakpoint
-      const layout = state.schema.layouts[breakpoint as keyof typeof state.schema.layouts]
+      const layout = state.schema.layouts[breakpoint]
       if (!layout) return []
 
       const componentIds = new Set(layout.components)
