@@ -79,20 +79,40 @@ The Laylder Schema follows a **Component-First** approach where each component i
 - ❌ **DO NOT** add placeholder content or mock data
 - ✅ **DO** only generate layout structure with component name + ID as content
 
-**Layout-Only Code Generation:**
-This is a **layout builder tool**. Generate **ONLY** the structural layout code:
+**🎨 Layout-Only Code Generation (2025 Philosophy):**
+
+This is a **pure layout builder tool**. We provide ONLY the structural layout - users will add their own themes and styling.
+
+**✅ DO Generate:**
 - Component wrapper with correct semantic tag
-- Positioning classes (sticky, fixed, etc.)
+- Positioning classes (sticky, fixed, absolute, relative, static)
 - Layout classes (flex, grid, container)
-- Styling classes (background, border, shadow)
-- Responsive behavior (hidden, width overrides)
+- **Minimal** borders for layout division (e.g., \`border-b\`, \`border-r\`, \`border border-gray-300\`)
+- Responsive behavior (hidden, width overrides, responsive utilities)
+- ARIA attributes for accessibility (role, aria-label, etc.)
+- Focus states for keyboard navigation (\`focus-within:ring-2\`)
+- Motion reduce support (\`motion-reduce:transition-none\`)
 - **Content**: Just display the component name and ID (e.g., "Header (c1)")
 
-**DO NOT generate:**
-- Detailed placeholder content
-- Mock text, descriptions, or feature highlights
+**❌ DO NOT Generate:**
+- Theme colors (\`bg-blue\`, \`bg-purple\`, \`text-white\`, gradients)
+- Shadows (\`shadow-sm\`, \`shadow-md\`, \`shadow-lg\`)
+- Rounded corners (\`rounded-lg\`, \`rounded-xl\`) - users will style these
+- Background colors (\`bg-white\`, \`bg-gray-100\`) - keep transparent or minimal gray for division only
+- Typography styles (\`prose\`, \`font-fancy\`) - users will apply their own
+- Detailed placeholder content, mock text, or feature highlights
 - Navigation links, buttons, or interactive elements
 - Any creative additions beyond the schema specifications
+
+**🚨 CRITICAL - User Theme Freedom:**
+The generated layout must be a **blank canvas** for users to apply their own:
+- Brand colors
+- Custom shadows
+- Border radius styles
+- Background patterns
+- Typography systems
+
+Only use gray-scale colors for layout division (e.g., \`border-gray-300\`). All theme colors will be added by the user.
 
 **Approach:**
 1. Read and understand the complete Schema specification
@@ -121,6 +141,11 @@ Let's build a high-quality, production-ready layout.`,
       // Styling
       if (comp.styling) {
         section += formatStyling(comp.styling)
+      }
+
+      // Props (ARIA attributes, accessibility)
+      if (comp.props) {
+        section += formatProps(comp.props)
       }
 
       // Responsive
@@ -373,6 +398,25 @@ function formatStyling(styling: ComponentStyling): string {
   if (styling.border) text += `- Border: \`${styling.border}\`\n`
   if (styling.shadow) text += `- Shadow: \`${styling.shadow}\`\n`
   if (styling.className) text += `- Custom classes: \`${styling.className}\`\n`
+
+  text += "\n"
+  return text
+}
+
+/**
+ * Helper function to format component props specification
+ */
+function formatProps(props: Record<string, unknown>): string {
+  let text = `**Props (Accessibility & Attributes):**\n`
+
+  Object.entries(props).forEach(([key, value]) => {
+    // Skip children prop (content placeholder)
+    if (key === 'children') return
+
+    // Format value appropriately
+    const formattedValue = typeof value === 'string' ? `"${value}"` : String(value)
+    text += `- ${key}: ${formattedValue}\n`
+  })
 
   text += "\n"
   return text
