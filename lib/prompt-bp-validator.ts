@@ -228,8 +228,9 @@ function validateCSSMapping(code: string, schema: LaydlerSchema): {
           // Layout classes
           cls.match(/^(flex|grid)/) ||
           cls.match(/^(container|mx-auto|max-w-)/) ||
-          // Responsive classes
-          cls.match(/^(hidden|block|md:|lg:)/)
+          // Responsive classes (fixed to match md:flex, lg:grid-cols-3, etc.)
+          cls.match(/^(hidden|block)$/) ||
+          cls.match(/^(sm|md|lg|xl|2xl):/)
         )
       })
 
@@ -329,25 +330,36 @@ function validateLayoutOnlyPrinciple(code: string): {
 
   // Check 3: Mock buttons 금지
   totalChecks++
-  const mockButtonPattern = /<button[^>]*>(?!.*\(c\d+\))[\s\S]*?<\/button>/gi
-  const buttonMatches = code.match(mockButtonPattern)
-  if (buttonMatches && buttonMatches.length > 0) {
-    const realButtons = buttonMatches.filter((btn) => {
-      // children을 사용하는 버튼은 허용
-      return !btn.includes("{children}")
-    })
-    if (realButtons.length > 0) {
-      issues.push({
-        severity: "warning",
-        category: "layout-only",
-        message: `Mock buttons detected (${realButtons.length} occurrence(s))`,
-        suggestion: "Remove mock buttons unless part of component structure.",
+
+  // SECURITY: Prevent regex DoS with input length limit (100KB)
+  if (code.length > 100000) {
+    // Skip button validation for very large files
+    passedChecks++
+  } else {
+    // Safe regex pattern with bounded quantifiers to prevent catastrophic backtracking
+    // Matches <button...>content</button> with max 200 chars in tag, 1000 chars in content
+    const mockButtonPattern = /<button[^>]{0,200}>((?:(?!<\/button>).){0,1000})<\/button>/gi
+    const buttonMatches = code.match(mockButtonPattern)
+
+    if (buttonMatches && buttonMatches.length > 0) {
+      const realButtons = buttonMatches.filter((btn) => {
+        // Allow buttons with {children} or component ID pattern (c\d+)
+        return !btn.includes("{children}") && !btn.match(/\(c\d+\)/)
       })
+
+      if (realButtons.length > 0) {
+        issues.push({
+          severity: "warning",
+          category: "layout-only",
+          message: `Mock buttons detected (${realButtons.length} occurrence(s))`,
+          suggestion: "Remove mock buttons unless part of component structure.",
+        })
+      } else {
+        passedChecks++
+      }
     } else {
       passedChecks++
     }
-  } else {
-    passedChecks++
   }
 
   return { issues, totalChecks, passedChecks }
