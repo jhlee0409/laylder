@@ -44,12 +44,13 @@ export const COMPONENT_LIBRARY: ComponentTemplate[] = [
         },
       },
       styling: {
-        background: "white",
         border: "b",
-        shadow: "sm",
+        className: "focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-gray-900 motion-reduce:transition-none",
       },
       props: {
         children: "Header Content",
+        role: "banner",
+        "aria-label": "Main navigation",
       },
     },
   },
@@ -78,6 +79,9 @@ export const COMPONENT_LIBRARY: ComponentTemplate[] = [
       },
       props: {
         children: "Main Content",
+        role: "main",
+        id: "main-content",
+        "aria-label": "Main content",
       },
     },
   },
@@ -102,11 +106,12 @@ export const COMPONENT_LIBRARY: ComponentTemplate[] = [
         },
       },
       styling: {
-        background: "gray-100",
         border: "t",
       },
       props: {
         children: "Footer Content",
+        role: "contentinfo",
+        "aria-label": "Site footer",
       },
     },
   },
@@ -134,11 +139,13 @@ export const COMPONENT_LIBRARY: ComponentTemplate[] = [
       },
       styling: {
         width: "16rem",
-        background: "gray-50",
         border: "r",
+        className: "focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-gray-900 motion-reduce:transition-none",
       },
       props: {
         children: "Sidebar Navigation",
+        role: "complementary",
+        "aria-label": "Sidebar navigation",
       },
     },
   },
@@ -165,12 +172,13 @@ export const COMPONENT_LIBRARY: ComponentTemplate[] = [
         },
       },
       styling: {
-        background: "white",
         border: "b",
-        className: "px-6 py-4",
+        className: "px-6 py-4 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-gray-900 motion-reduce:transition-none",
       },
       props: {
         children: "Navigation Links",
+        role: "navigation",
+        "aria-label": "Primary navigation",
       },
     },
   },
@@ -223,10 +231,11 @@ export const COMPONENT_LIBRARY: ComponentTemplate[] = [
         },
       },
       styling: {
-        className: "prose prose-lg",
+        className: "p-4",
       },
       props: {
         children: "Article Content",
+        role: "article",
       },
     },
   },
@@ -278,10 +287,12 @@ export const COMPONENT_LIBRARY: ComponentTemplate[] = [
         },
       },
       styling: {
-        className: "max-w-md p-6 bg-white rounded-lg shadow",
+        className: "max-w-md p-6 border border-gray-300 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-gray-900 motion-reduce:transition-none",
       },
       props: {
         children: "Form Fields",
+        role: "form",
+        "aria-label": "Form",
       },
     },
   },
@@ -309,10 +320,12 @@ export const COMPONENT_LIBRARY: ComponentTemplate[] = [
         },
       },
       styling: {
-        className: "min-h-[500px] px-4 text-center bg-gradient-to-r from-blue-500 to-purple-600 text-white",
+        className: "min-h-[500px] px-4 text-center border border-gray-300",
       },
       props: {
         children: "Hero Content",
+        role: "region",
+        "aria-label": "Hero section",
       },
     },
   },
@@ -336,7 +349,7 @@ export const COMPONENT_LIBRARY: ComponentTemplate[] = [
         },
       },
       styling: {
-        className: "p-6 bg-white rounded-lg shadow-md border border-gray-200",
+        className: "p-6 border border-gray-300",
       },
       props: {
         children: "Card Content",
@@ -392,10 +405,12 @@ export const COMPONENT_LIBRARY: ComponentTemplate[] = [
         },
       },
       styling: {
-        className: "py-16 px-4 text-center bg-blue-600 text-white rounded-lg",
+        className: "py-16 px-4 text-center border border-gray-300",
       },
       props: {
         children: "CTA Content",
+        role: "region",
+        "aria-label": "Call to action",
       },
     },
   },
@@ -420,10 +435,12 @@ export const COMPONENT_LIBRARY: ComponentTemplate[] = [
         },
       },
       styling: {
-        className: "relative h-[400px] bg-gray-300 overflow-hidden",
+        className: "relative h-[400px] border border-gray-300 overflow-hidden",
       },
       props: {
         children: "Image",
+        role: "img",
+        "aria-label": "Banner image",
       },
     },
   },
@@ -452,6 +469,8 @@ export const COMPONENT_LIBRARY: ComponentTemplate[] = [
       },
       props: {
         children: "Buttons",
+        role: "group",
+        "aria-label": "Button group",
       },
     },
   },
