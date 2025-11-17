@@ -72,12 +72,117 @@ The Laylder Schema follows a **Component-First** approach where each component i
 - Proper use of Tailwind CSS utility classes
 - Responsive design following mobile-first principles
 
-**Code Style (2025 Best Practices):**
-- ❌ **DO NOT** use \`React.FC\` type (deprecated pattern)
-- ✅ **DO** use explicit function signatures: \`function Component(props: Props) { ... }\`
-- ✅ **DO** use modern React patterns (no class components, hooks only)
-- ❌ **DO NOT** add placeholder content or mock data
+**Code Quality Standards (2025):**
+
+**TypeScript Component Patterns:**
+- ❌ **DO NOT** use \`React.FC\` or \`React.FunctionComponent\` (not recommended in 2025)
+- ✅ **DO** use standard function components with direct prop typing
+- ✅ **DO** use utility types: \`PropsWithChildren\`, \`ComponentPropsWithoutRef\`
+- ✅ **DO** use \`React.AriaRole\` for role attributes (type-safe)
+- ✅ **DO** export proper TypeScript types for all components
+- ✅ **DO** include JSDoc comments for all exported components
+
+**Example Component Pattern:**
+\`\`\`typescript
+import type { PropsWithChildren } from 'react'
+import { cn } from '@/lib/utils'
+
+type HeaderProps = PropsWithChildren<{
+  variant?: 'default' | 'sticky' | 'fixed'
+  className?: string
+  role?: React.AriaRole
+  'aria-label'?: string
+}>
+
+/**
+ * Header component for page navigation
+ * @param variant - Positioning strategy (default: 'default')
+ */
+function Header({
+  children,
+  variant = 'default',
+  className,
+  role = 'banner',
+  'aria-label': ariaLabel,
+}: HeaderProps) {
+  return (
+    <header
+      className={cn(
+        'w-full border-b border-gray-300 px-4 py-4',
+        { 'sticky top-0 z-50': variant === 'sticky' },
+        className
+      )}
+      role={role}
+      aria-label={ariaLabel}
+    >
+      {children}
+    </header>
+  )
+}
+
+export { Header }
+export type { HeaderProps }
+\`\`\`
+
+**Component Structure Best Practices:**
+- ✅ **DO** use \`cn()\` utility for conditional className merging
+- ✅ **DO** separate component definition from usage
+- ✅ **DO** use composition patterns for complex components (e.g., \`Card.Header\`, \`Card.Body\`)
+- ❌ **DO NOT** duplicate components for different breakpoints
+- ❌ **DO NOT** mix demo content with component logic
 - ✅ **DO** only generate layout structure with component name + ID as content
+
+**Required Utilities:**
+
+**🔧 cn() Utility - Choose Based on Project Type:**
+
+**For NEW Projects / First Page:**
+Create a new utility file with the \`cn()\` function:
+
+\`\`\`typescript
+// lib/utils.ts (CREATE THIS FILE)
+import { type ClassValue, clsx } from 'clsx'
+import { twMerge } from 'tailwind-merge'
+
+/**
+ * Merge Tailwind CSS classes with proper precedence
+ */
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+\`\`\`
+
+**Install dependencies:**
+\`\`\`bash
+pnpm add clsx tailwind-merge
+# or: npm install clsx tailwind-merge
+\`\`\`
+
+**For EXISTING Projects / Additional Pages:**
+- ✅ **Check if \`cn()\` already exists** in your project (common locations: \`lib/utils.ts\`, \`utils/cn.ts\`)
+- ✅ **Use existing import path** if found (e.g., \`@/lib/utils\`, \`@/utils\`)
+- ✅ **Add to existing utils** if \`cn()\` doesn't exist but utils file exists
+- ❌ **DO NOT overwrite** existing utility files
+
+**Import in all components:**
+\`\`\`typescript
+import { cn } from '@/lib/utils'  // Adjust path to match your project
+\`\`\`
+
+**Responsive Design Without Duplication:**
+\`\`\`typescript
+// ❌ DON'T: Duplicate components
+<div className="block md:hidden"><Header>Mobile</Header></div>
+<div className="hidden md:block"><Header>Desktop</Header></div>
+
+// ✅ DO: Single component with responsive behavior
+<div className="col-span-full">
+  <Header>
+    <nav className="hidden lg:flex gap-6">Desktop Nav</nav>
+    <button className="lg:hidden">Mobile Menu</button>
+  </Header>
+</div>
+\`\`\`
 
 **🎨 Layout-Only Code Generation (2025 Philosophy):**
 
@@ -87,21 +192,23 @@ This is a **pure layout builder tool**. We provide ONLY the structural layout - 
 - Component wrapper with correct semantic tag
 - Positioning classes (sticky, fixed, absolute, relative, static)
 - Layout classes (flex, grid, container)
-- **Minimal** borders for layout division (e.g., \`border-b\`, \`border-r\`, \`border border-gray-300\`)
+- **MANDATORY borders on ALL components** (\`border-gray-300\`) - see Component-Specific Standards below
+- Minimal rounded corners for sections/articles (\`rounded-lg\`, \`rounded-md\`, \`rounded\`)
 - Responsive behavior (hidden, width overrides, responsive utilities)
 - ARIA attributes for accessibility (role, aria-label, etc.)
 - Focus states for keyboard navigation (\`focus-within:ring-2\`)
 - Motion reduce support (\`motion-reduce:transition-none\`)
-- **Content**: Just display the component name and ID (e.g., "Header (c1)")
+- **Content**: Display ONLY component name and ID (e.g., "Header (c1)") - NO additional text
 
 **❌ DO NOT Generate:**
 - Theme colors (\`bg-blue\`, \`bg-purple\`, \`text-white\`, gradients)
 - Shadows (\`shadow-sm\`, \`shadow-md\`, \`shadow-lg\`)
-- Rounded corners (\`rounded-lg\`, \`rounded-xl\`) - users will style these
-- Background colors (\`bg-white\`, \`bg-gray-100\`) - keep transparent or minimal gray for division only
-- Typography styles (\`prose\`, \`font-fancy\`) - users will apply their own
-- Detailed placeholder content, mock text, or feature highlights
-- Navigation links, buttons, or interactive elements
+- Background colors except \`bg-white\` for sticky/fixed headers
+- Typography styles (\`prose\`, \`font-fancy\`, custom font classes)
+- Placeholder content beyond component name + ID
+- Mock text, lorem ipsum, or feature descriptions
+- Navigation links, buttons with text, or interactive elements
+- Icons, images, or decorative elements
 - Any creative additions beyond the schema specifications
 
 **🚨 CRITICAL - User Theme Freedom:**
@@ -113,6 +220,136 @@ The generated layout must be a **blank canvas** for users to apply their own:
 - Typography systems
 
 Only use gray-scale colors for layout division (e.g., \`border-gray-300\`). All theme colors will be added by the user.
+
+**📐 Component-Specific Styling Standards (2025 Wireframe Philosophy):**
+
+**All components MUST include borders for clear layout visualization.**
+
+**\`<header>\` - Page Header:**
+\`\`\`typescript
+<header className={cn(
+  'border-b border-gray-300',  // Clear bottom division
+  'py-4 px-6',                  // Consistent padding
+  'flex items-center justify-between', // Common header layout
+  'sticky top-0 z-50',         // If positioning is sticky/fixed
+  'bg-white',                   // Only for sticky/fixed headers
+)}>
+  Header (c1)
+</header>
+\`\`\`
+
+**\`<nav>\` - Navigation (Horizontal):**
+\`\`\`typescript
+<nav className={cn(
+  'border-b border-gray-300',  // Bottom border for separation
+  'py-2 px-4',
+  'flex gap-6',                // Horizontal layout
+)}>
+  Nav (c2)
+</nav>
+\`\`\`
+
+**\`<nav>\` - Navigation (Sidebar):**
+\`\`\`typescript
+<nav className={cn(
+  'border-r border-gray-300',  // Right border (left sidebar)
+  'py-4 px-4',
+  'w-64',                      // Fixed width
+  'flex flex-col gap-2',       // Vertical layout
+)}>
+  Nav (c2)
+</nav>
+\`\`\`
+
+**\`<main>\` - Main Content:**
+\`\`\`typescript
+<main className={cn(
+  'border border-gray-300',    // All sides bordered
+  'p-4 md:p-6 lg:p-8',        // Responsive padding
+  'flex-1',                    // Grow to fill space
+  'flex flex-col gap-6',       // Vertical content flow
+)}>
+  Main (c3)
+</main>
+\`\`\`
+
+**\`<aside>\` - Sidebar Content:**
+\`\`\`typescript
+<aside className={cn(
+  'border-l border-gray-300',  // Left border (right sidebar)
+  'p-4',
+  'w-64 lg:w-80',             // Responsive width
+  'flex flex-col gap-4',
+)}>
+  Aside (c4)
+</aside>
+\`\`\`
+
+**\`<footer>\` - Page Footer:**
+\`\`\`typescript
+<footer className={cn(
+  'border-t border-gray-300',  // Top border for separation
+  'py-6 px-6',
+  'flex justify-center',       // or justify-between
+)}>
+  Footer (c5)
+</footer>
+\`\`\`
+
+**\`<section>\` - Content Section:**
+\`\`\`typescript
+<section className={cn(
+  'border border-gray-300',    // Full border
+  'p-4 md:p-6',               // Responsive padding
+  'rounded-lg',                // Subtle rounding
+  'flex flex-col gap-4',
+)}>
+  Section (c6)
+</section>
+\`\`\`
+
+**\`<article>\` - Article Content:**
+\`\`\`typescript
+<article className={cn(
+  'border border-gray-300',
+  'p-4',
+  'rounded-md',
+  'flex flex-col gap-3',
+)}>
+  Article (c7)
+</article>
+\`\`\`
+
+**\`<div>\` / \`<form>\` - Generic Container:**
+\`\`\`typescript
+<div className={cn(
+  'border border-gray-300',
+  'p-4',
+  'rounded',
+)}>
+  Container (c8)
+</div>
+\`\`\`
+
+**🎯 Critical Styling Rules:**
+
+1. **EVERY component MUST have a border** (\`border-gray-300\`)
+2. **Content MUST be**: "ComponentName (id)" only (e.g., "Header (c1)")
+3. **No backgrounds** except:
+   - \`bg-white\` for sticky/fixed headers (positioning clarity)
+   - \`bg-gray-50\` for subtle division (optional, rare)
+4. **Consistent padding**: p-4 (mobile), p-6 (tablet), p-8 (desktop)
+5. **Border positions**:
+   - Header: \`border-b\` (bottom only)
+   - Footer: \`border-t\` (top only)
+   - Sidebar Nav/Aside: \`border-r\` or \`border-l\` (side only)
+   - Main/Section/Article/Div: \`border\` (all sides)
+6. **Rounded corners** (minimal):
+   - Section: \`rounded-lg\`
+   - Article: \`rounded-md\`
+   - Generic: \`rounded\`
+   - Header/Footer/Nav: no rounding
+7. **Tailwind Class Order**: positioning → box-model → borders → backgrounds → typography
 
 **Approach:**
 1. Read and understand the complete Schema specification
@@ -302,14 +539,36 @@ Let's build a high-quality, production-ready layout.`,
       `  - Example: \`hidden md:block\` = hidden on mobile, visible on tablet+\n` +
       `  - Example: \`w-full md:w-1/2 lg:w-1/3\` = full width on mobile, half on tablet, third on desktop\n\n` +
       `### Code Quality Checklist\n\n` +
+      `**TypeScript & Component Structure:**\n` +
+      `- [ ] Use standard function components (NOT \`React.FC\`)\n` +
+      `- [ ] Use utility types (\`PropsWithChildren\`, \`ComponentPropsWithoutRef\`)\n` +
+      `- [ ] Use \`React.AriaRole\` for role attributes\n` +
+      `- [ ] Export component and props type separately\n` +
+      `- [ ] Include JSDoc comments for all components\n` +
+      `- [ ] Use \`cn()\` utility for all className operations\n\n` +
+      `**Layout & Responsive:**\n` +
       `- [ ] All components use specified semantic tags\n` +
-      `- [ ] TypeScript types are properly defined (use explicit function signatures, NOT React.FC)\n` +
       `- [ ] Positioning and layout follow specifications exactly\n` +
-      `- [ ] Responsive behavior is implemented for all breakpoints\n` +
-      `- [ ] Code is clean, readable, and well-commented\n` +
-      `- [ ] Accessibility is considered (ARIA labels, keyboard navigation)\n` +
+      `- [ ] Responsive behavior implemented for all breakpoints\n` +
+      `- [ ] NO component duplication across breakpoints (use responsive classes instead)\n` +
+      `- [ ] Single component instances with responsive content\n\n` +
+      `**Accessibility:**\n` +
+      `- [ ] ARIA labels and roles are type-safe\n` +
+      `- [ ] Keyboard navigation support (\`focus:ring-2\`, \`focus:outline-none\`)\n` +
+      `- [ ] Screen reader support (semantic tags + ARIA)\n\n` +
+      `**Styling & Borders (2025 Wireframe Standards):**\n` +
+      `- [ ] **EVERY component has a border** (\`border-gray-300\`)\n` +
+      `- [ ] Border positions follow component type (header: border-b, footer: border-t, main: border)\n` +
+      `- [ ] Consistent padding (p-4 mobile, p-6 tablet, p-8 desktop)\n` +
+      `- [ ] Minimal rounded corners (section: rounded-lg, article: rounded-md, div: rounded)\n` +
+      `- [ ] NO backgrounds except bg-white for sticky/fixed headers\n` +
+      `- [ ] NO theme colors, shadows, or decorative styling\n\n` +
+      `**Content & Code Quality:**\n` +
       `- [ ] **Content: ONLY display component name + ID** (e.g., "Header (c1)")\n` +
-      `- [ ] **NO placeholder content, mock data, or creative additions**\n`
+      `- [ ] **NO placeholder content, mock data, lorem ipsum, or creative text**\n` +
+      `- [ ] Code is clean, readable, and well-commented\n` +
+      `- [ ] Include \`lib/utils.ts\` with \`cn()\` function\n` +
+      `- [ ] Tailwind class order: positioning → box-model → borders → backgrounds → typography\n`
   },
 }
 
