@@ -854,15 +854,16 @@ describe('Prompt Quality Tests', () => {
       // Token estimate: ~1 token per 4 characters (rough estimate)
       const estimatedTokens = Math.ceil(prompt.length / 4)
 
-      // For a simple schema, should be < 3500 tokens (updated for 2025 Code Quality Standards)
-      // Increased from 2500 to account for:
-      // - Code Quality Standards (2025) section (~100 lines)
-      // - Example Component Pattern (~40 lines)
-      // - Required Utilities section (~15 lines)
-      // - Responsive Design examples (~20 lines)
-      // - Enhanced Code Quality Checklist (~30 lines)
-      // Total increase: ~70% more comprehensive guidelines
-      expect(estimatedTokens).toBeLessThan(3500)
+      // For a simple schema, should be < 4500 tokens (updated for 2025 Wireframe Standards)
+      // Increased from 3500 to account for:
+      // - Component-Specific Styling Standards (2025 Wireframe Philosophy) section (~130 lines)
+      //   - Header, Nav (horizontal/sidebar), Main, Aside, Footer, Section, Article, Div/Form examples
+      //   - Each with complete TypeScript code examples
+      // - Critical Styling Rules (7 detailed rules) (~20 lines)
+      // - Updated Layout-Only Code Generation section (~10 lines)
+      // - Enhanced Code Quality Checklist with Styling & Borders section (~10 lines)
+      // Total increase: ~170 lines (~680 characters) = ~170 tokens more
+      expect(estimatedTokens).toBeLessThan(4500)
     })
 
     it('should scale linearly with number of components', () => {

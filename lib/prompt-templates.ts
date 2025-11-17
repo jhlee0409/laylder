@@ -192,21 +192,23 @@ This is a **pure layout builder tool**. We provide ONLY the structural layout - 
 - Component wrapper with correct semantic tag
 - Positioning classes (sticky, fixed, absolute, relative, static)
 - Layout classes (flex, grid, container)
-- **Minimal** borders for layout division (e.g., \`border-b\`, \`border-r\`, \`border border-gray-300\`)
+- **MANDATORY borders on ALL components** (\`border-gray-300\`) - see Component-Specific Standards below
+- Minimal rounded corners for sections/articles (\`rounded-lg\`, \`rounded-md\`, \`rounded\`)
 - Responsive behavior (hidden, width overrides, responsive utilities)
 - ARIA attributes for accessibility (role, aria-label, etc.)
 - Focus states for keyboard navigation (\`focus-within:ring-2\`)
 - Motion reduce support (\`motion-reduce:transition-none\`)
-- **Content**: Just display the component name and ID (e.g., "Header (c1)")
+- **Content**: Display ONLY component name and ID (e.g., "Header (c1)") - NO additional text
 
 **❌ DO NOT Generate:**
 - Theme colors (\`bg-blue\`, \`bg-purple\`, \`text-white\`, gradients)
 - Shadows (\`shadow-sm\`, \`shadow-md\`, \`shadow-lg\`)
-- Rounded corners (\`rounded-lg\`, \`rounded-xl\`) - users will style these
-- Background colors (\`bg-white\`, \`bg-gray-100\`) - keep transparent or minimal gray for division only
-- Typography styles (\`prose\`, \`font-fancy\`) - users will apply their own
-- Detailed placeholder content, mock text, or feature highlights
-- Navigation links, buttons, or interactive elements
+- Background colors except \`bg-white\` for sticky/fixed headers
+- Typography styles (\`prose\`, \`font-fancy\`, custom font classes)
+- Placeholder content beyond component name + ID
+- Mock text, lorem ipsum, or feature descriptions
+- Navigation links, buttons with text, or interactive elements
+- Icons, images, or decorative elements
 - Any creative additions beyond the schema specifications
 
 **🚨 CRITICAL - User Theme Freedom:**
@@ -218,6 +220,136 @@ The generated layout must be a **blank canvas** for users to apply their own:
 - Typography systems
 
 Only use gray-scale colors for layout division (e.g., \`border-gray-300\`). All theme colors will be added by the user.
+
+**📐 Component-Specific Styling Standards (2025 Wireframe Philosophy):**
+
+**All components MUST include borders for clear layout visualization.**
+
+**\`<header>\` - Page Header:**
+\`\`\`typescript
+<header className={cn(
+  'border-b border-gray-300',  // Clear bottom division
+  'py-4 px-6',                  // Consistent padding
+  'flex items-center justify-between', // Common header layout
+  'sticky top-0 z-50',         // If positioning is sticky/fixed
+  'bg-white',                   // Only for sticky/fixed headers
+)}>
+  Header (c1)
+</header>
+\`\`\`
+
+**\`<nav>\` - Navigation (Horizontal):**
+\`\`\`typescript
+<nav className={cn(
+  'border-b border-gray-300',  // Bottom border for separation
+  'py-2 px-4',
+  'flex gap-6',                // Horizontal layout
+)}>
+  Nav (c2)
+</nav>
+\`\`\`
+
+**\`<nav>\` - Navigation (Sidebar):**
+\`\`\`typescript
+<nav className={cn(
+  'border-r border-gray-300',  // Right border (left sidebar)
+  'py-4 px-4',
+  'w-64',                      // Fixed width
+  'flex flex-col gap-2',       // Vertical layout
+)}>
+  Nav (c2)
+</nav>
+\`\`\`
+
+**\`<main>\` - Main Content:**
+\`\`\`typescript
+<main className={cn(
+  'border border-gray-300',    // All sides bordered
+  'p-4 md:p-6 lg:p-8',        // Responsive padding
+  'flex-1',                    // Grow to fill space
+  'flex flex-col gap-6',       // Vertical content flow
+)}>
+  Main (c3)
+</main>
+\`\`\`
+
+**\`<aside>\` - Sidebar Content:**
+\`\`\`typescript
+<aside className={cn(
+  'border-l border-gray-300',  // Left border (right sidebar)
+  'p-4',
+  'w-64 lg:w-80',             // Responsive width
+  'flex flex-col gap-4',
+)}>
+  Aside (c4)
+</aside>
+\`\`\`
+
+**\`<footer>\` - Page Footer:**
+\`\`\`typescript
+<footer className={cn(
+  'border-t border-gray-300',  // Top border for separation
+  'py-6 px-6',
+  'flex justify-center',       // or justify-between
+)}>
+  Footer (c5)
+</footer>
+\`\`\`
+
+**\`<section>\` - Content Section:**
+\`\`\`typescript
+<section className={cn(
+  'border border-gray-300',    // Full border
+  'p-4 md:p-6',               // Responsive padding
+  'rounded-lg',                // Subtle rounding
+  'flex flex-col gap-4',
+)}>
+  Section (c6)
+</section>
+\`\`\`
+
+**\`<article>\` - Article Content:**
+\`\`\`typescript
+<article className={cn(
+  'border border-gray-300',
+  'p-4',
+  'rounded-md',
+  'flex flex-col gap-3',
+)}>
+  Article (c7)
+</article>
+\`\`\`
+
+**\`<div>\` / \`<form>\` - Generic Container:**
+\`\`\`typescript
+<div className={cn(
+  'border border-gray-300',
+  'p-4',
+  'rounded',
+)}>
+  Container (c8)
+</div>
+\`\`\`
+
+**🎯 Critical Styling Rules:**
+
+1. **EVERY component MUST have a border** (\`border-gray-300\`)
+2. **Content MUST be**: "ComponentName (id)" only (e.g., "Header (c1)")
+3. **No backgrounds** except:
+   - \`bg-white\` for sticky/fixed headers (positioning clarity)
+   - \`bg-gray-50\` for subtle division (optional, rare)
+4. **Consistent padding**: p-4 (mobile), p-6 (tablet), p-8 (desktop)
+5. **Border positions**:
+   - Header: \`border-b\` (bottom only)
+   - Footer: \`border-t\` (top only)
+   - Sidebar Nav/Aside: \`border-r\` or \`border-l\` (side only)
+   - Main/Section/Article/Div: \`border\` (all sides)
+6. **Rounded corners** (minimal):
+   - Section: \`rounded-lg\`
+   - Article: \`rounded-md\`
+   - Generic: \`rounded\`
+   - Header/Footer/Nav: no rounding
+7. **Tailwind Class Order**: positioning → box-model → borders → backgrounds → typography
 
 **Approach:**
 1. Read and understand the complete Schema specification
@@ -424,11 +556,19 @@ Let's build a high-quality, production-ready layout.`,
       `- [ ] ARIA labels and roles are type-safe\n` +
       `- [ ] Keyboard navigation support (\`focus:ring-2\`, \`focus:outline-none\`)\n` +
       `- [ ] Screen reader support (semantic tags + ARIA)\n\n` +
+      `**Styling & Borders (2025 Wireframe Standards):**\n` +
+      `- [ ] **EVERY component has a border** (\`border-gray-300\`)\n` +
+      `- [ ] Border positions follow component type (header: border-b, footer: border-t, main: border)\n` +
+      `- [ ] Consistent padding (p-4 mobile, p-6 tablet, p-8 desktop)\n` +
+      `- [ ] Minimal rounded corners (section: rounded-lg, article: rounded-md, div: rounded)\n` +
+      `- [ ] NO backgrounds except bg-white for sticky/fixed headers\n` +
+      `- [ ] NO theme colors, shadows, or decorative styling\n\n` +
       `**Content & Code Quality:**\n` +
       `- [ ] **Content: ONLY display component name + ID** (e.g., "Header (c1)")\n` +
-      `- [ ] **NO placeholder content, mock data, or creative additions**\n` +
+      `- [ ] **NO placeholder content, mock data, lorem ipsum, or creative text**\n` +
       `- [ ] Code is clean, readable, and well-commented\n` +
-      `- [ ] Include \`lib/utils.ts\` with \`cn()\` function\n`
+      `- [ ] Include \`lib/utils.ts\` with \`cn()\` function\n` +
+      `- [ ] Tailwind class order: positioning → box-model → borders → backgrounds → typography\n`
   },
 }
 
