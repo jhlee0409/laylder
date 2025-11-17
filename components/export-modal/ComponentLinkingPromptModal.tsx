@@ -1,5 +1,6 @@
 "use client"
 
+import { useRef, useEffect } from "react"
 import {
   Dialog,
   DialogContent,
@@ -30,12 +31,26 @@ export function ComponentLinkingPromptModal({
   onLinkComponents,
   onSkip,
 }: ComponentLinkingPromptModalProps) {
+  const linkButtonRef = useRef<HTMLButtonElement>(null)
+
   const handleOpenChange = (isOpen: boolean) => {
     // Dialog closed by ESC/outside click → treat as Skip
     if (!isOpen) {
       onSkip()
     }
   }
+
+  // Focus management: Focus primary action button when modal opens
+  useEffect(() => {
+    if (open) {
+      // Delay focus to ensure DOM is ready
+      const timer = setTimeout(() => {
+        linkButtonRef.current?.focus()
+      }, 100)
+
+      return () => clearTimeout(timer)
+    }
+  }, [open])
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -45,7 +60,7 @@ export function ComponentLinkingPromptModal({
             <div className="relative">
               <div className="absolute inset-0 bg-blue-500 rounded-full blur-xl opacity-20 animate-pulse"></div>
               <div className="relative bg-gradient-to-br from-blue-500 to-purple-600 rounded-full p-4">
-                <Link className="w-8 h-8 text-white" />
+                <Link className="w-8 h-8 text-white" aria-hidden="true" />
               </div>
             </div>
           </div>
@@ -61,7 +76,7 @@ export function ComponentLinkingPromptModal({
           {/* Benefits */}
           <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 space-y-3">
             <div className="flex items-start gap-3">
-              <Sparkles className="w-5 h-5 text-purple-600 mt-0.5 flex-shrink-0" />
+              <Sparkles className="w-5 h-5 text-purple-600 mt-0.5 flex-shrink-0" aria-hidden="true" />
               <div>
                 <div className="font-medium text-sm text-gray-900">AI generates more consistent code</div>
                 <div className="text-xs text-gray-600 mt-1">
@@ -70,7 +85,7 @@ export function ComponentLinkingPromptModal({
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <ArrowRight className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+              <ArrowRight className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" aria-hidden="true" />
               <div>
                 <div className="font-medium text-sm text-gray-900">Maintains responsive design integrity</div>
                 <div className="text-xs text-gray-600 mt-1">
@@ -92,11 +107,12 @@ export function ComponentLinkingPromptModal({
           {/* Action Buttons */}
           <div className="flex flex-col gap-2 pt-2">
             <Button
+              ref={linkButtonRef}
               onClick={onLinkComponents}
               className="w-full gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
               size="lg"
             >
-              <Link className="w-4 h-4" />
+              <Link className="w-4 h-4" aria-hidden="true" />
               Link Components Now
             </Button>
             <Button

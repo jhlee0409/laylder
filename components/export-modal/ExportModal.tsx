@@ -107,6 +107,10 @@ export function ExportModal() {
     const hasMultipleBreakpoints = schema.breakpoints.length >= 2
     const hasNoLinks = componentLinks.length === 0
 
+    // Show linking prompt modal if:
+    // 1. Multiple breakpoints exist (responsive design)
+    // 2. No component links defined yet
+    // 3. Modal not already shown (!showLinkingPromptModal prevents re-triggering)
     if (hasMultipleBreakpoints && hasNoLinks && !showLinkingPromptModal) {
       setShowLinkingPromptModal(true)
       return
