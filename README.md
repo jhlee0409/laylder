@@ -4,6 +4,17 @@
 
 Visual layout builder for AI-powered code generation.
 
+## Migration Notice - v1.0.0 Breaking Changes
+
+**IMPORTANT**: Version 1.0.0 introduces breaking changes. If you're upgrading from v0.x, please read the [Migration Guide](./MIGRATION.md).
+
+**Key Changes**:
+- All theme colors removed from component library (layout-only philosophy)
+- Component library now generates pure structural layouts without styling defaults
+- ARIA attributes validation system added for accessibility compliance
+
+See [MIGRATION.md](./MIGRATION.md) for detailed upgrade instructions and migration strategies.
+
 ## Tech Stack
 
 - **Framework**: Next.js 15 (App Router)

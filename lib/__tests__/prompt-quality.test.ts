@@ -854,8 +854,12 @@ describe('Prompt Quality Tests', () => {
       // Token estimate: ~1 token per 4 characters (rough estimate)
       const estimatedTokens = Math.ceil(prompt.length / 4)
 
-      // For a simple schema, should be < 2000 tokens
-      expect(estimatedTokens).toBeLessThan(2000)
+      // For a simple schema, should be < 2500 tokens (updated for 2025 improvements)
+      // Increased from 2000 to account for:
+      // - ARIA attributes section (Props)
+      // - Enhanced layout-only philosophy instructions
+      // - Stronger accessibility guidelines
+      expect(estimatedTokens).toBeLessThan(2500)
     })
 
     it('should scale linearly with number of components', () => {
