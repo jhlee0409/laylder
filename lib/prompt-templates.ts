@@ -133,10 +133,14 @@ export type { HeaderProps }
 - ✅ **DO** only generate layout structure with component name + ID as content
 
 **Required Utilities:**
-Every generated codebase MUST include this utility function:
+
+**🔧 cn() Utility - Choose Based on Project Type:**
+
+**For NEW Projects / First Page:**
+Create a new utility file with the \`cn()\` function:
 
 \`\`\`typescript
-// lib/utils.ts
+// lib/utils.ts (CREATE THIS FILE)
 import { type ClassValue, clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 
@@ -146,6 +150,23 @@ import { twMerge } from 'tailwind-merge'
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
+\`\`\`
+
+**Install dependencies:**
+\`\`\`bash
+pnpm add clsx tailwind-merge
+# or: npm install clsx tailwind-merge
+\`\`\`
+
+**For EXISTING Projects / Additional Pages:**
+- ✅ **Check if \`cn()\` already exists** in your project (common locations: \`lib/utils.ts\`, \`utils/cn.ts\`)
+- ✅ **Use existing import path** if found (e.g., \`@/lib/utils\`, \`@/utils\`)
+- ✅ **Add to existing utils** if \`cn()\` doesn't exist but utils file exists
+- ❌ **DO NOT overwrite** existing utility files
+
+**Import in all components:**
+\`\`\`typescript
+import { cn } from '@/lib/utils'  // Adjust path to match your project
 \`\`\`
 
 **Responsive Design Without Duplication:**
