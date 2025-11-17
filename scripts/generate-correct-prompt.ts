@@ -19,7 +19,6 @@ console.log("🚀 Generating prompt with AI Model System (Canvas Grid informatio
 const strategy = createPromptStrategy("claude-sonnet-4.5")
 const result = strategy.generatePrompt(schema, "react", "tailwind", {
   targetModel: "claude-sonnet-4.5",
-  optimizationLevel: "balanced",
   verbosity: "normal"
 })
 

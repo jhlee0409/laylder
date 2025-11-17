@@ -128,21 +128,14 @@ export interface AIModelMetadata {
 }
 
 /**
- * 프롬프트 최적화 레벨
- */
-export type OptimizationLevel = "quick" | "balanced" | "quality" | "custom"
-
-/**
  * 프롬프트 생성 옵션
  */
 export interface PromptGenerationOptions {
   /** 타겟 AI 모델 */
   targetModel: AIModelId
-  /** 최적화 레벨 */
-  optimizationLevel?: OptimizationLevel
   /** Temperature 설정 (0-1) */
   temperature?: number
-  /** 상세 수준 */
+  /** 프롬프트 상세 수준 (minimal: ~30% fewer tokens, normal: balanced, detailed: ~40% more tokens) */
   verbosity?: "minimal" | "normal" | "detailed"
   /** 예시 코드 포함 여부 */
   includeExamples?: boolean
@@ -290,14 +283,6 @@ export interface IPromptStrategy {
     cssSolution: string,
     options?: PromptGenerationOptions
   ): PromptStrategyResult
-
-  /**
-   * 프롬프트 최적화 (선택적)
-   * @param prompt - 원본 프롬프트
-   * @param options - 최적화 옵션
-   * @returns 최적화된 프롬프트
-   */
-  optimizePrompt?(prompt: string, options?: PromptGenerationOptions): string
 }
 
 /**

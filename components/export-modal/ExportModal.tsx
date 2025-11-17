@@ -13,7 +13,7 @@ import { useToast } from "@/store/toast-store"
 import { ComponentLinkingPromptModal } from "./ComponentLinkingPromptModal"
 
 // New AI Model System
-import type { AIModelId, OptimizationLevel } from "@/types/ai-models"
+import type { AIModelId } from "@/types/ai-models"
 import { createPromptStrategy } from "@/lib/prompt-strategies/strategy-factory"
 import {
   getActiveModels,
@@ -43,7 +43,6 @@ export function ExportModal() {
 
   // AI Model Config (NEW)
   const [selectedModelId, setSelectedModelId] = useState<AIModelId>("claude-sonnet-4.5")
-  const [optimizationLevel, setOptimizationLevel] = useState<OptimizationLevel>("balanced")
   const [verbosity, setVerbosity] = useState<"minimal" | "normal" | "detailed">("normal")
 
   // Results
@@ -127,7 +126,6 @@ export function ExportModal() {
       // Generate prompt with model-specific optimization
       const result = strategy.generatePrompt(schema, framework, cssSolution, {
         targetModel: selectedModelId,
-        optimizationLevel,
         verbosity,
         componentLinks, // Pass component links to prompt generation
       })
@@ -301,52 +299,37 @@ export function ExportModal() {
               )}
             </div>
 
-            {/* Optimization Level */}
+            {/* Prompt Detail Level */}
             <div className="space-y-2">
-              <Label htmlFor="optimization">Optimization Level</Label>
-              <Select
-                value={optimizationLevel}
-                onValueChange={(value) => setOptimizationLevel(value as typeof optimizationLevel)}
-              >
-                <SelectTrigger id="optimization">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="quality">
-                    <div className="flex items-center gap-2">
-                      <Award className="w-4 h-4" />
-                      <span>Quality - Best output, detailed instructions</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="balanced">
-                    <div className="flex items-center gap-2">
-                      <Zap className="w-4 h-4" />
-                      <span>Balanced - Good quality with efficiency</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="quick">
-                    <div className="flex items-center gap-2">
-                      <DollarSign className="w-4 h-4" />
-                      <span>Quick - Faster, more concise prompts</span>
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Verbosity */}
-            <div className="space-y-2">
-              <Label htmlFor="verbosity">Verbosity Level</Label>
+              <Label htmlFor="verbosity">Prompt Detail Level</Label>
               <Select value={verbosity} onValueChange={(value) => setVerbosity(value as typeof verbosity)}>
                 <SelectTrigger id="verbosity">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="minimal">Minimal - Concise, essential info only</SelectItem>
-                  <SelectItem value="normal">Normal - Standard detail level</SelectItem>
-                  <SelectItem value="detailed">Detailed - Comprehensive explanations</SelectItem>
+                  <SelectItem value="minimal">
+                    <div className="flex flex-col items-start gap-0.5">
+                      <span className="font-medium">Concise</span>
+                      <span className="text-xs text-gray-500">Essential info only (~30% fewer tokens)</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="normal">
+                    <div className="flex flex-col items-start gap-0.5">
+                      <span className="font-medium">Standard</span>
+                      <span className="text-xs text-gray-500">Balanced detail level (recommended)</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="detailed">
+                    <div className="flex flex-col items-start gap-0.5">
+                      <span className="font-medium">Comprehensive</span>
+                      <span className="text-xs text-gray-500">All details + examples (~40% more tokens)</span>
+                    </div>
+                  </SelectItem>
                 </SelectContent>
               </Select>
+              <p className="text-xs text-gray-500">
+                Controls the amount of detail in the generated prompt. Higher detail = more tokens but clearer instructions.
+              </p>
             </div>
 
             {/* Framework Selection */}
@@ -408,7 +391,7 @@ export function ExportModal() {
                   Model: <span className="text-blue-700">{selectedModel?.name || selectedModelId}</span>
                 </p>
                 <p className="text-xs text-gray-500">
-                  {optimizationLevel} optimization, {verbosity} verbosity
+                  {verbosity === "minimal" ? "Concise" : verbosity === "normal" ? "Standard" : "Comprehensive"} detail level
                 </p>
               </div>
               <Button variant="ghost" size="sm" onClick={handleBack}>

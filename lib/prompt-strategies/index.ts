@@ -11,9 +11,8 @@
  * // 1. 직접 전략 생성
  * const strategy = createPromptStrategy('claude-sonnet-4.5')
  * const result = strategy.generatePrompt(schema, 'react', 'tailwind', {
- *   optimizationLevel: 'quality',
  *   chainOfThought: true,
- *   verbosity: 'detailed'
+ *   verbosity: 'detailed'  // 'minimal' | 'normal' | 'detailed'
  * })
  *
  * // 2. 모델 추천 받기

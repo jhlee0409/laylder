@@ -47,7 +47,6 @@ describe("Side-by-Side Layout Combinations", () => {
     const strategy = createPromptStrategy("claude-sonnet-4.5")
     const result = strategy.generatePrompt(schema, "react", "tailwind", {
       targetModel: "claude-sonnet-4.5",
-      optimizationLevel: "balanced",
       verbosity: "normal",
     })
 
@@ -511,7 +510,6 @@ describe("Side-by-Side Layout Combinations", () => {
       const strategy = createPromptStrategy("claude-sonnet-4.5")
       const result = strategy.generatePrompt(schema, "react", "tailwind", {
         targetModel: "claude-sonnet-4.5",
-        optimizationLevel: "balanced",
         verbosity: "normal",
       })
 
