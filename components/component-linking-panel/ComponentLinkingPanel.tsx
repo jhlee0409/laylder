@@ -25,6 +25,18 @@ const nodeTypes = {
   componentCard: ComponentCardNode,
 }
 
+// Color palette for multiple links (8 distinct colors for better UX)
+const LINK_COLORS = [
+  "#3b82f6", // blue
+  "#10b981", // green
+  "#f59e0b", // amber
+  "#ef4444", // red
+  "#8b5cf6", // violet
+  "#ec4899", // pink
+  "#14b8a6", // teal
+  "#f97316", // orange
+]
+
 /**
  * Component Linking Panel
  *
@@ -157,7 +169,7 @@ export function ComponentLinkingPanel({ onClose }: { onClose: () => void }) {
   const initialEdges: Edge[] = useMemo(() => {
     const edges: Edge[] = []
 
-    componentLinks.forEach((link) => {
+    componentLinks.forEach((link, index) => {
       // source와 target이 어느 breakpoint에 있는지 찾기
       const sourceBreakpoint = findBreakpointForComponent(link.source, componentsByBreakpoint)
       const targetBreakpoint = findBreakpointForComponent(link.target, componentsByBreakpoint)
@@ -167,14 +179,21 @@ export function ComponentLinkingPanel({ onClose }: { onClose: () => void }) {
       const sourceNodeId = `${sourceBreakpoint}-${link.source}`
       const targetNodeId = `${targetBreakpoint}-${link.target}`
 
+      // Assign color based on link index (cycle through palette)
+      const linkColor = LINK_COLORS[index % LINK_COLORS.length]
+
       edges.push({
         id: `${sourceNodeId}__${targetNodeId}`, // Stable ID based on nodes, not array index
         source: sourceNodeId,
         target: targetNodeId,
         animated: true,
-        style: { stroke: "#3b82f6", strokeWidth: 2 },
+        style: {
+          stroke: linkColor,
+          strokeWidth: 2.5,
+        },
         label: "🔗",
-        type: "smoothstep",
+        type: "default", // Bezier curve (smooth, not straight)
+        data: { linkColor, linkIndex: index }, // Store for hover/selection effects
       })
     })
 
@@ -202,7 +221,7 @@ export function ComponentLinkingPanel({ onClose }: { onClose: () => void }) {
   useEffect(() => {
     const newEdges: Edge[] = []
 
-    componentLinks.forEach((link) => {
+    componentLinks.forEach((link, index) => {
       const sourceBreakpoint = findBreakpointForComponent(link.source, componentsByBreakpoint)
       const targetBreakpoint = findBreakpointForComponent(link.target, componentsByBreakpoint)
 
@@ -211,14 +230,21 @@ export function ComponentLinkingPanel({ onClose }: { onClose: () => void }) {
       const sourceNodeId = `${sourceBreakpoint}-${link.source}`
       const targetNodeId = `${targetBreakpoint}-${link.target}`
 
+      // Assign color based on link index (cycle through palette)
+      const linkColor = LINK_COLORS[index % LINK_COLORS.length]
+
       newEdges.push({
         id: `${sourceNodeId}__${targetNodeId}`, // Stable ID based on nodes, not array index
         source: sourceNodeId,
         target: targetNodeId,
         animated: true,
-        style: { stroke: "#3b82f6", strokeWidth: 2 },
+        style: {
+          stroke: linkColor,
+          strokeWidth: 2.5,
+        },
         label: "🔗",
-        type: "smoothstep",
+        type: "default", // Bezier curve (smooth, not straight)
+        data: { linkColor, linkIndex: index }, // Store for hover/selection effects
       })
     })
 
@@ -279,28 +305,39 @@ export function ComponentLinkingPanel({ onClose }: { onClose: () => void }) {
     <div className="fixed inset-0 z-50 bg-white">
       {/* Custom CSS for edge selection feedback */}
       <style jsx global>{`
-        /* Selected edge styling */
+        /* Selected edge styling - Keep original color, make thicker and add glow */
         .react-flow__edge.selected .react-flow__edge-path {
-          stroke: #ef4444 !important;
-          stroke-width: 3 !important;
+          stroke-width: 4 !important;
+          filter: drop-shadow(0 0 8px currentColor) brightness(1.2);
         }
 
-        /* Selected edge label */
+        /* Selected edge label - Make it pop */
         .react-flow__edge.selected .react-flow__edge-text {
-          fill: #ef4444 !important;
-          font-weight: 600 !important;
+          font-weight: 700 !important;
+          font-size: 16px !important;
+          filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
         }
 
-        /* Hover effect for edges */
+        /* Hover effect for edges - Keep original color, make thicker */
         .react-flow__edge:hover .react-flow__edge-path {
-          stroke: #6366f1 !important;
-          stroke-width: 3 !important;
+          stroke-width: 3.5 !important;
           cursor: pointer;
+          filter: brightness(1.1);
         }
 
-        /* Edge label on hover */
+        /* Edge label on hover - Subtle emphasis */
         .react-flow__edge:hover .react-flow__edge-text {
-          fill: #6366f1 !important;
+          font-weight: 600 !important;
+          font-size: 14px !important;
+        }
+
+        /* Animated edges - smoother animation */
+        .react-flow__edge-path {
+          transition: stroke-width 0.2s ease, filter 0.2s ease;
+        }
+
+        .react-flow__edge-text {
+          transition: font-weight 0.2s ease, font-size 0.2s ease;
         }
       `}</style>
 
@@ -352,8 +389,9 @@ export function ComponentLinkingPanel({ onClose }: { onClose: () => void }) {
         <div className="font-semibold text-sm text-blue-900 mb-2">💡 How to link components:</div>
         <div className="text-xs text-blue-700 space-y-1">
           <div>• Drag from one component&apos;s handle (●) to another component</div>
-          <div>• Linked components will be marked as shared across breakpoints</div>
-          <div>• <span className="font-semibold">Click to select</span> an edge (turns <span className="text-red-600 font-semibold">red</span>)</div>
+          <div>• Each link has a <span className="font-semibold">unique color</span> for easy identification</div>
+          <div>• <span className="font-semibold">Hover</span> over a link to see it highlighted</div>
+          <div>• <span className="font-semibold">Click to select</span> a link (glows brighter with thicker line)</div>
           <div>• Press <kbd className="px-1.5 py-0.5 bg-white border border-blue-300 rounded text-xs font-mono">Delete</kbd> or <kbd className="px-1.5 py-0.5 bg-white border border-blue-300 rounded text-xs font-mono">Backspace</kbd> to unlink</div>
           <div className="text-blue-600 mt-2 pt-2 border-t border-blue-200">
             ℹ️ Links are reflected in the AI prompt for consistent component generation
