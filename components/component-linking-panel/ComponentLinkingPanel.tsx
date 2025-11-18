@@ -11,6 +11,7 @@ import {
   useNodesState,
   useEdgesState,
   BackgroundVariant,
+  OnConnectStartParams,
 } from "@xyflow/react"
 import "@xyflow/react/dist/style.css"
 import { useLayoutStore } from "@/store/layout-store"
@@ -19,6 +20,7 @@ import { X, Link, Trash2 } from "lucide-react"
 import { ComponentCardNode } from "./ComponentCardNode"
 import type { Component } from "@/types/schema"
 import { UnionFind, calculateConnectedGroups } from "@/lib/union-find"
+import styles from "./ComponentLinkingPanel.module.css"
 
 // 커스텀 노드 타입 등록
 const nodeTypes = {
@@ -37,13 +39,63 @@ const LINK_COLORS = [
   "#f97316", // orange
 ]
 
+// Safe delimiter for edge IDs (avoids collision with component IDs)
+const EDGE_ID_DELIMITER = "|||"
+
+/**
+ * Helper: Create edge from component link
+ * Extracted to avoid code duplication and improve maintainability
+ */
+function createEdgeFromLink(
+  link: { source: string; target: string },
+  index: number,
+  componentsByBreakpoint: Record<string, Array<{ component: Component; breakpoint: string }>>
+): Edge | null {
+  const sourceBreakpoint = findBreakpointForComponent(link.source, componentsByBreakpoint)
+  const targetBreakpoint = findBreakpointForComponent(link.target, componentsByBreakpoint)
+
+  if (!sourceBreakpoint || !targetBreakpoint) return null
+
+  const sourceNodeId = `${sourceBreakpoint}-${link.source}`
+  const targetNodeId = `${targetBreakpoint}-${link.target}`
+
+  // Assign color based on link index (cycle through palette)
+  const linkColor = LINK_COLORS[index % LINK_COLORS.length]
+
+  return {
+    id: `${sourceNodeId}${EDGE_ID_DELIMITER}${targetNodeId}`, // Stable, collision-safe ID
+    source: sourceNodeId,
+    target: targetNodeId,
+    animated: true,
+    style: {
+      stroke: linkColor,
+      strokeWidth: 2.5,
+    },
+    label: "🔗",
+    type: "default", // Bezier curve (smooth, not straight)
+    data: { linkColor, linkIndex: index }, // Store for hover/selection effects
+  }
+}
+
+/**
+ * Helper: Find existing link for a component
+ * Returns the link where the component is either source or target
+ */
+function findLinkForComponent(
+  componentId: string,
+  links: Array<{ source: string; target: string }>
+): { source: string; target: string } | null {
+  return links.find((link) => link.source === componentId || link.target === componentId) || null
+}
+
 /**
  * Component Linking Panel
  *
  * FigJam 스타일로 브레이크포인트별 컴포넌트를 시각화하고 연결
  * - 이미 추가된 컴포넌트만 표시 (새 컴포넌트 추가 불가)
  * - 드래그로 컴포넌트 간 연결 생성
- * - Union-Find 알고리즘으로 자동 그룹화 (c-1 → c-2 → c-3 → 모두 연결)
+ * - **1대1 연결 제약**: 하나의 컴포넌트는 최대 하나의 링크만 가능
+ * - 기존 연결된 컴포넌트 handle 클릭 시 기존 링크 제거 후 새 연결 시작
  */
 export function ComponentLinkingPanel({ onClose }: { onClose: () => void }) {
   const schema = useLayoutStore((state) => state.schema)
@@ -164,40 +216,11 @@ export function ComponentLinkingPanel({ onClose }: { onClose: () => void }) {
   }, [componentsByBreakpoint, schema.breakpoints])
 
   // React Flow 엣지 생성 (componentLinks 기반)
-  // ⚠️ CRITICAL FIX: Use source-target as edge ID, not array index
-  // Reason: Array index changes when links are added/removed, causing wrong edge deletion
+  // Uses helper function to avoid code duplication
   const initialEdges: Edge[] = useMemo(() => {
-    const edges: Edge[] = []
-
-    componentLinks.forEach((link, index) => {
-      // source와 target이 어느 breakpoint에 있는지 찾기
-      const sourceBreakpoint = findBreakpointForComponent(link.source, componentsByBreakpoint)
-      const targetBreakpoint = findBreakpointForComponent(link.target, componentsByBreakpoint)
-
-      if (!sourceBreakpoint || !targetBreakpoint) return
-
-      const sourceNodeId = `${sourceBreakpoint}-${link.source}`
-      const targetNodeId = `${targetBreakpoint}-${link.target}`
-
-      // Assign color based on link index (cycle through palette)
-      const linkColor = LINK_COLORS[index % LINK_COLORS.length]
-
-      edges.push({
-        id: `${sourceNodeId}__${targetNodeId}`, // Stable ID based on nodes, not array index
-        source: sourceNodeId,
-        target: targetNodeId,
-        animated: true,
-        style: {
-          stroke: linkColor,
-          strokeWidth: 2.5,
-        },
-        label: "🔗",
-        type: "default", // Bezier curve (smooth, not straight)
-        data: { linkColor, linkIndex: index }, // Store for hover/selection effects
-      })
-    })
-
-    return edges
+    return componentLinks
+      .map((link, index) => createEdgeFromLink(link, index, componentsByBreakpoint))
+      .filter((edge): edge is Edge => edge !== null)
   }, [componentLinks, componentsByBreakpoint])
 
   // Node ID → Component ID 매핑 (type-safe, Map 기반)
@@ -218,40 +241,36 @@ export function ComponentLinkingPanel({ onClose }: { onClose: () => void }) {
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges)
 
   // State synchronization: componentLinks 변경 시 React Flow edges 자동 업데이트
+  // Uses helper function to avoid code duplication
   useEffect(() => {
-    const newEdges: Edge[] = []
-
-    componentLinks.forEach((link, index) => {
-      const sourceBreakpoint = findBreakpointForComponent(link.source, componentsByBreakpoint)
-      const targetBreakpoint = findBreakpointForComponent(link.target, componentsByBreakpoint)
-
-      if (!sourceBreakpoint || !targetBreakpoint) return
-
-      const sourceNodeId = `${sourceBreakpoint}-${link.source}`
-      const targetNodeId = `${targetBreakpoint}-${link.target}`
-
-      // Assign color based on link index (cycle through palette)
-      const linkColor = LINK_COLORS[index % LINK_COLORS.length]
-
-      newEdges.push({
-        id: `${sourceNodeId}__${targetNodeId}`, // Stable ID based on nodes, not array index
-        source: sourceNodeId,
-        target: targetNodeId,
-        animated: true,
-        style: {
-          stroke: linkColor,
-          strokeWidth: 2.5,
-        },
-        label: "🔗",
-        type: "default", // Bezier curve (smooth, not straight)
-        data: { linkColor, linkIndex: index }, // Store for hover/selection effects
-      })
-    })
+    const newEdges = componentLinks
+      .map((link, index) => createEdgeFromLink(link, index, componentsByBreakpoint))
+      .filter((edge): edge is Edge => edge !== null)
 
     setEdges(newEdges)
   }, [componentLinks, componentsByBreakpoint, setEdges])
 
-  // 연결 생성 핸들러
+  // Handle connection start: Remove existing link if component is already connected
+  const onConnectStart = useCallback(
+    (event: MouseEvent | TouchEvent, params: OnConnectStartParams) => {
+      if (!params.nodeId) return
+
+      // Extract component ID from node ID
+      const componentId = nodeIdToComponentId.get(params.nodeId)
+      if (!componentId) return
+
+      // Check if this component already has a link
+      const existingLink = findLinkForComponent(componentId, componentLinks)
+      if (existingLink) {
+        // Remove existing link to allow new connection
+        console.log(`🔄 Removing existing link for ${componentId}:`, existingLink)
+        removeComponentLink(existingLink.source, existingLink.target)
+      }
+    },
+    [nodeIdToComponentId, componentLinks, removeComponentLink]
+  )
+
+  // Handle connection complete: Enforce 1-to-1 constraint
   const onConnect = useCallback(
     (connection: Connection) => {
       if (!connection.source || !connection.target) return
@@ -261,20 +280,28 @@ export function ComponentLinkingPanel({ onClose }: { onClose: () => void }) {
       const targetComponentId = nodeIdToComponentId.get(connection.target)
 
       if (!sourceComponentId || !targetComponentId) {
-        console.warn("Cannot find component IDs for connection")
+        console.warn("❌ Cannot find component IDs for connection")
         return
       }
 
       // 같은 컴포넌트면 연결 불가
       if (sourceComponentId === targetComponentId) {
-        console.warn("Cannot link component to itself")
+        console.warn("❌ Cannot link component to itself")
         return
       }
 
-      // Store에 link 추가 (자동으로 Union-Find 그룹화 및 병합)
+      // Check if target already has a link (1-to-1 constraint)
+      const targetExistingLink = findLinkForComponent(targetComponentId, componentLinks)
+      if (targetExistingLink) {
+        console.log(`🔄 Removing target's existing link:`, targetExistingLink)
+        removeComponentLink(targetExistingLink.source, targetExistingLink.target)
+      }
+
+      // Add new link
+      console.log(`✅ Adding link: ${sourceComponentId} ↔ ${targetComponentId}`)
       addComponentLink(sourceComponentId, targetComponentId)
     },
-    [nodeIdToComponentId, addComponentLink]
+    [nodeIdToComponentId, componentLinks, addComponentLink, removeComponentLink]
   )
 
   // 엣지 삭제 핸들러 (Map 기반, type-safe)
@@ -303,44 +330,6 @@ export function ComponentLinkingPanel({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 bg-white">
-      {/* Custom CSS for edge selection feedback */}
-      <style jsx global>{`
-        /* Selected edge styling - Keep original color, make thicker and add glow */
-        .react-flow__edge.selected .react-flow__edge-path {
-          stroke-width: 4 !important;
-          filter: drop-shadow(0 0 8px currentColor) brightness(1.2);
-        }
-
-        /* Selected edge label - Make it pop */
-        .react-flow__edge.selected .react-flow__edge-text {
-          font-weight: 700 !important;
-          font-size: 16px !important;
-          filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
-        }
-
-        /* Hover effect for edges - Keep original color, make thicker */
-        .react-flow__edge:hover .react-flow__edge-path {
-          stroke-width: 3.5 !important;
-          cursor: pointer;
-          filter: brightness(1.1);
-        }
-
-        /* Edge label on hover - Subtle emphasis */
-        .react-flow__edge:hover .react-flow__edge-text {
-          font-weight: 600 !important;
-          font-size: 14px !important;
-        }
-
-        /* Animated edges - smoother animation */
-        .react-flow__edge-path {
-          transition: stroke-width 0.2s ease, filter 0.2s ease;
-        }
-
-        .react-flow__edge-text {
-          transition: font-weight 0.2s ease, font-size 0.2s ease;
-        }
-      `}</style>
-
       {/* Header */}
       <div className="h-16 border-b flex items-center justify-between px-4 bg-white shadow-sm">
         <div>
@@ -366,12 +355,13 @@ export function ComponentLinkingPanel({ onClose }: { onClose: () => void }) {
       </div>
 
       {/* React Flow Canvas */}
-      <div className="h-[calc(100vh-4rem)]">
+      <div className={`h-[calc(100vh-4rem)] ${styles.container}`}>
         <ReactFlow
           nodes={nodes}
           edges={edges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
+          onConnectStart={onConnectStart}
           onConnect={onConnect}
           onEdgesDelete={onEdgesDelete}
           nodeTypes={nodeTypes}
@@ -389,6 +379,8 @@ export function ComponentLinkingPanel({ onClose }: { onClose: () => void }) {
         <div className="font-semibold text-sm text-blue-900 mb-2">💡 How to link components:</div>
         <div className="text-xs text-blue-700 space-y-1">
           <div>• Drag from one component&apos;s handle (●) to another component</div>
+          <div>• <span className="font-semibold text-orange-600">1-to-1 constraint</span>: Each component can have only <span className="font-semibold">one link</span></div>
+          <div>• If already linked, dragging from handle will <span className="font-semibold">remove old link</span> and start new connection</div>
           <div>• Each link has a <span className="font-semibold">unique color</span> for easy identification</div>
           <div>• <span className="font-semibold">Hover</span> over a link to see it highlighted</div>
           <div>• <span className="font-semibold">Click to select</span> a link (glows brighter with thicker line)</div>

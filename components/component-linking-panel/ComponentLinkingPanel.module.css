@@ -1,0 +1,40 @@
+/* Component Linking Panel - Edge Styling */
+
+.container {
+  /* Root container class for scoping global styles */
+}
+
+/* Selected edge styling - Keep original color, make thicker and add glow */
+.container :global(.react-flow__edge.selected .react-flow__edge-path) {
+  stroke-width: 4 !important;
+  filter: drop-shadow(0 0 8px currentColor) brightness(1.2);
+}
+
+/* Selected edge label - Make it pop */
+.container :global(.react-flow__edge.selected .react-flow__edge-text) {
+  font-weight: 700 !important;
+  font-size: 16px !important;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+/* Hover effect for edges - Keep original color, make thicker */
+.container :global(.react-flow__edge:hover .react-flow__edge-path) {
+  stroke-width: 3.5 !important;
+  cursor: pointer;
+  filter: brightness(1.1);
+}
+
+/* Edge label on hover - Subtle emphasis */
+.container :global(.react-flow__edge:hover .react-flow__edge-text) {
+  font-weight: 600 !important;
+  font-size: 14px !important;
+}
+
+/* Animated edges - smoother animation */
+.container :global(.react-flow__edge-path) {
+  transition: stroke-width 0.2s ease, filter 0.2s ease;
+}
+
+.container :global(.react-flow__edge-text) {
+  transition: font-weight 0.2s ease, font-size 0.2s ease;
+}
