@@ -152,20 +152,25 @@ export function ComponentLinkingPanel({ onClose }: { onClose: () => void }) {
   }, [componentsByBreakpoint, schema.breakpoints])
 
   // React Flow 엣지 생성 (componentLinks 기반)
+  // ⚠️ CRITICAL FIX: Use source-target as edge ID, not array index
+  // Reason: Array index changes when links are added/removed, causing wrong edge deletion
   const initialEdges: Edge[] = useMemo(() => {
     const edges: Edge[] = []
 
-    componentLinks.forEach((link, index) => {
+    componentLinks.forEach((link) => {
       // source와 target이 어느 breakpoint에 있는지 찾기
       const sourceBreakpoint = findBreakpointForComponent(link.source, componentsByBreakpoint)
       const targetBreakpoint = findBreakpointForComponent(link.target, componentsByBreakpoint)
 
       if (!sourceBreakpoint || !targetBreakpoint) return
 
+      const sourceNodeId = `${sourceBreakpoint}-${link.source}`
+      const targetNodeId = `${targetBreakpoint}-${link.target}`
+
       edges.push({
-        id: `e-${index}`,
-        source: `${sourceBreakpoint}-${link.source}`,
-        target: `${targetBreakpoint}-${link.target}`,
+        id: `${sourceNodeId}__${targetNodeId}`, // Stable ID based on nodes, not array index
+        source: sourceNodeId,
+        target: targetNodeId,
         animated: true,
         style: { stroke: "#3b82f6", strokeWidth: 2 },
         label: "🔗",
@@ -197,16 +202,19 @@ export function ComponentLinkingPanel({ onClose }: { onClose: () => void }) {
   useEffect(() => {
     const newEdges: Edge[] = []
 
-    componentLinks.forEach((link, index) => {
+    componentLinks.forEach((link) => {
       const sourceBreakpoint = findBreakpointForComponent(link.source, componentsByBreakpoint)
       const targetBreakpoint = findBreakpointForComponent(link.target, componentsByBreakpoint)
 
       if (!sourceBreakpoint || !targetBreakpoint) return
 
+      const sourceNodeId = `${sourceBreakpoint}-${link.source}`
+      const targetNodeId = `${targetBreakpoint}-${link.target}`
+
       newEdges.push({
-        id: `e-${index}`,
-        source: `${sourceBreakpoint}-${link.source}`,
-        target: `${targetBreakpoint}-${link.target}`,
+        id: `${sourceNodeId}__${targetNodeId}`, // Stable ID based on nodes, not array index
+        source: sourceNodeId,
+        target: targetNodeId,
         animated: true,
         style: { stroke: "#3b82f6", strokeWidth: 2 },
         label: "🔗",
@@ -246,14 +254,21 @@ export function ComponentLinkingPanel({ onClose }: { onClose: () => void }) {
   // 엣지 삭제 핸들러 (Map 기반, type-safe)
   const onEdgesDelete = useCallback(
     (edgesToDelete: Edge[]) => {
+      console.log(`🗑️ Deleting ${edgesToDelete.length} edge(s)`)
+
       edgesToDelete.forEach((edge) => {
         const sourceId = nodeIdToComponentId.get(edge.source)
         const targetId = nodeIdToComponentId.get(edge.target)
 
+        console.log(`  Edge ${edge.id}: ${edge.source} (${sourceId}) → ${edge.target} (${targetId})`)
+
         if (sourceId && targetId) {
+          console.log(`  ✅ Removing link: ${sourceId} ↔ ${targetId}`)
           removeComponentLink(sourceId, targetId)
         } else {
-          console.warn(`Cannot find component IDs for edge: ${edge.id}`)
+          console.warn(`  ❌ Cannot find component IDs for edge: ${edge.id}`)
+          console.warn(`    - Source: ${edge.source} → ${sourceId}`)
+          console.warn(`    - Target: ${edge.target} → ${targetId}`)
         }
       })
     },
@@ -262,6 +277,33 @@ export function ComponentLinkingPanel({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 bg-white">
+      {/* Custom CSS for edge selection feedback */}
+      <style jsx global>{`
+        /* Selected edge styling */
+        .react-flow__edge.selected .react-flow__edge-path {
+          stroke: #ef4444 !important;
+          stroke-width: 3 !important;
+        }
+
+        /* Selected edge label */
+        .react-flow__edge.selected .react-flow__edge-text {
+          fill: #ef4444 !important;
+          font-weight: 600 !important;
+        }
+
+        /* Hover effect for edges */
+        .react-flow__edge:hover .react-flow__edge-path {
+          stroke: #6366f1 !important;
+          stroke-width: 3 !important;
+          cursor: pointer;
+        }
+
+        /* Edge label on hover */
+        .react-flow__edge:hover .react-flow__edge-text {
+          fill: #6366f1 !important;
+        }
+      `}</style>
+
       {/* Header */}
       <div className="h-16 border-b flex items-center justify-between px-4 bg-white shadow-sm">
         <div>
@@ -311,7 +353,8 @@ export function ComponentLinkingPanel({ onClose }: { onClose: () => void }) {
         <div className="text-xs text-blue-700 space-y-1">
           <div>• Drag from one component&apos;s handle (●) to another component</div>
           <div>• Linked components will be marked as shared across breakpoints</div>
-          <div>• Select edge and press Delete/Backspace to unlink</div>
+          <div>• <span className="font-semibold">Click to select</span> an edge (turns <span className="text-red-600 font-semibold">red</span>)</div>
+          <div>• Press <kbd className="px-1.5 py-0.5 bg-white border border-blue-300 rounded text-xs font-mono">Delete</kbd> or <kbd className="px-1.5 py-0.5 bg-white border border-blue-300 rounded text-xs font-mono">Backspace</kbd> to unlink</div>
           <div className="text-blue-600 mt-2 pt-2 border-t border-blue-200">
             ℹ️ Links are reflected in the AI prompt for consistent component generation
           </div>
