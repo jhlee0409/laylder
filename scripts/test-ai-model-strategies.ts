@@ -191,27 +191,24 @@ function testPromptGeneration() {
         modelId: "claude-sonnet-4.5",
         options: {
           targetModel: "claude-sonnet-4.5",
-          optimizationLevel: "quality",
           verbosity: "detailed",
           chainOfThought: true,
         },
-        description: "Claude Sonnet 4.5 (Quality, CoT)",
+        description: "Claude Sonnet 4.5 (Detailed, CoT)",
       },
       {
         modelId: "gpt-4.1",
         options: {
           targetModel: "gpt-4.1",
-          optimizationLevel: "balanced",
           verbosity: "normal",
           includeExamples: true,
         },
-        description: "GPT-4.1 (Balanced, Examples)",
+        description: "GPT-4.1 (Standard, Examples)",
       },
       {
         modelId: "gemini-2.5-pro",
         options: {
           targetModel: "gemini-2.5-pro",
-          optimizationLevel: "balanced",
           verbosity: "normal",
         },
         description: "Gemini 2.5 Pro (Framework-focused)",
@@ -220,7 +217,6 @@ function testPromptGeneration() {
         modelId: "deepseek-r1",
         options: {
           targetModel: "deepseek-r1",
-          optimizationLevel: "quick",
           verbosity: "minimal",
           costSensitive: true,
         },

@@ -508,17 +508,12 @@ export abstract class BasePromptStrategy implements IPromptStrategy {
         .map((s) => s.content)
         .join("\n---\n\n")
 
-      // 5. Optimize prompt (if implemented)
-      const finalPrompt = this.optimizePrompt
-        ? this.optimizePrompt(prompt, options)
-        : prompt
-
-      // 6. Estimate tokens (improved accuracy)
-      const estimatedTokens = this.estimateTokens(finalPrompt)
+      // 5. Estimate tokens (improved accuracy)
+      const estimatedTokens = this.estimateTokens(prompt)
 
       return {
         success: true,
-        prompt: finalPrompt,
+        prompt,
         sections,
         estimatedTokens,
         modelId: this.modelId,
@@ -541,13 +536,6 @@ export abstract class BasePromptStrategy implements IPromptStrategy {
       }
     }
   }
-
-  /**
-   * 프롬프트 최적화 (선택적)
-   *
-   * 하위 클래스에서 구현 가능
-   */
-  optimizePrompt?(prompt: string, options?: PromptGenerationOptions): string
 
   /**
    * 토큰 수 추정 (개선된 정확도)
