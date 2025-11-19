@@ -14,10 +14,10 @@ import { sortComponentsByCanvasCoordinates, getComponentCanvasLayout } from "./c
 /**
  * Prompt Template Types for Schema
  *
- * V1과 동일한 구조지만 스키마 특성 반영:
+ * Similar structure to V1 but with schema characteristics:
  * - Component Independence (positioning, layout, styling, responsive)
  * - Structure-based layouts (vertical/horizontal/sidebar-main)
- * - No direct code generation - 순수 스펙 설명만
+ * - No direct code generation - pure specification only
  */
 
 export interface PromptTemplate {
@@ -36,7 +36,7 @@ export interface PromptTemplate {
 /**
  * React + Tailwind CSS Template for Schema
  *
- * Component Independence 아키텍처 기반
+ * Based on Component Independence architecture
  */
 export const reactTailwindTemplate: PromptTemplate = {
   framework: "react",
@@ -59,7 +59,10 @@ The Laylder Schema follows a **Component-First** approach where each component i
 
 **Core Principles:**
 1. **Component Independence**: Each component operates independently with its own positioning and layout
-2. **Flexbox First**: Use Flexbox for page structure, CSS Grid only for card/content layouts
+2. **Layout Strategy**:
+   - Use CSS Grid for page-level positioning (based on Canvas Grid coordinates)
+   - Use Flexbox for component internal layout (flex-col, flex-row, gap utilities)
+   - Use CSS Grid for content grids within components (grid-cols-3, auto-fit, etc.)
 3. **Semantic HTML First**: Follow HTML5 semantic principles (header, nav, main, aside, footer, section, article)
 4. **Mobile First**: Implement responsive design with mobile-first approach (base styles for mobile, then md: for tablet, lg: for desktop)
 5. **Breakpoint Inheritance**: Mobile → Tablet → Desktop cascade (unspecified breakpoints inherit from previous breakpoint)
@@ -85,7 +88,14 @@ The Laylder Schema follows a **Component-First** approach where each component i
 **Example Component Pattern:**
 \`\`\`typescript
 import type { PropsWithChildren } from 'react'
-import { cn } from '@/lib/utils'
+import { clsx, type ClassValue } from 'clsx'
+import { twMerge } from 'tailwind-merge'
+
+// Inline cn utility - included for maximum portability
+// (Optional: Move to shared file like lib/utils.ts if preferred)
+function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
 
 type HeaderProps = PropsWithChildren<{
   variant?: 'default' | 'sticky' | 'fixed'
@@ -134,40 +144,47 @@ export type { HeaderProps }
 
 **Required Utilities:**
 
-**🔧 cn() Utility - Choose Based on Project Type:**
+**🔧 cn() Utility - Inline Approach (Maximum Compatibility):**
 
-**For NEW Projects / First Page:**
-Create a new utility file with the \`cn()\` function:
+For maximum portability across different project structures, include the \`cn()\` utility **inline in each component**:
 
 \`\`\`typescript
-// lib/utils.ts (CREATE THIS FILE)
-import { type ClassValue, clsx } from 'clsx'
+import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 
-/**
- * Merge Tailwind CSS classes with proper precedence
- */
-export function cn(...inputs: ClassValue[]) {
+// Inline cn utility - works in any project structure
+function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 \`\`\`
 
-**Install dependencies:**
+**Why Inline?**
+- ✅ **No file path assumptions**: Works regardless of project structure (Next.js, Vite, CRA, etc.)
+- ✅ **Copy-paste friendly**: Users can paste components directly without setup
+- ✅ **Zero configuration**: No need to create utility files or configure import aliases
+- ✅ **Beginner friendly**: Users see exactly what \`cn()\` does
+
+**Install dependencies (Required):**
 \`\`\`bash
-pnpm add clsx tailwind-merge
-# or: npm install clsx tailwind-merge
+npm install clsx tailwind-merge
+# or: pnpm add clsx tailwind-merge
+# or: yarn add clsx tailwind-merge
 \`\`\`
 
-**For EXISTING Projects / Additional Pages:**
-- ✅ **Check if \`cn()\` already exists** in your project (common locations: \`lib/utils.ts\`, \`utils/cn.ts\`)
-- ✅ **Use existing import path** if found (e.g., \`@/lib/utils\`, \`@/utils\`)
-- ✅ **Add to existing utils** if \`cn()\` doesn't exist but utils file exists
-- ❌ **DO NOT overwrite** existing utility files
+**Optional Refactoring (For Experienced Users):**
 
-**Import in all components:**
-\`\`\`typescript
-import { cn } from '@/lib/utils'  // Adjust path to match your project
-\`\`\`
+If you prefer to reduce duplication, you can extract \`cn()\` to a shared file:
+
+1. Create a utility file at your preferred location:
+   - Next.js: \`lib/utils.ts\` → \`import { cn } from '@/lib/utils'\`
+   - Vite: \`src/utils/cn.ts\` → \`import { cn } from '@/utils/cn'\`
+   - CRA: \`src/lib/utils.js\` → \`import { cn } from '../lib/utils'\`
+
+2. Move the inline \`cn()\` function to that file
+
+3. Replace inline utilities in all components with the import
+
+**Note:** Modern bundlers (Webpack, Vite, etc.) will tree-shake duplicate \`cn()\` functions, so inline duplication has minimal bundle impact.
 
 **Responsive Design Without Duplication:**
 \`\`\`typescript
@@ -407,7 +424,7 @@ Let's build a high-quality, production-ready layout.`,
 
       section += `### ${index + 1}. ${breakpoint.name.charAt(0).toUpperCase() + breakpoint.name.slice(1)} (≥${breakpoint.minWidth}px)\n\n`
 
-      // 🆕 VISUAL LAYOUT DESCRIPTION (Canvas Grid 정보)
+      // Visual Layout Description (Canvas Grid information)
       try {
         const layoutDesc = describeVisualLayout(
           components,
@@ -434,7 +451,7 @@ Let's build a high-quality, production-ready layout.`,
           section += "\n"
         }
 
-        // 🆕 CSS GRID POSITIONING (2025 pattern)
+        // CSS Grid Positioning
         const gridCSS = generateGridCSS(layoutDesc.visualLayout)
         const tailwindClasses = generateTailwindClasses(layoutDesc.visualLayout)
 
@@ -444,8 +461,9 @@ Let's build a high-quality, production-ready layout.`,
         section += gridCSS
         section += `\`\`\`\n\n`
 
-        section += `Or with Tailwind CSS:\n\n`
+        section += `Or with Tailwind CSS (Arbitrary Values):\n\n`
         section += `Container: \`${tailwindClasses.container}\`\n\n`
+        section += `**Note:** \`grid-rows-[repeat(N,auto)]\` uses Tailwind arbitrary values (v3.0+) for auto-sizing rows.\n\n`
         section += `Components:\n`
         Object.entries(tailwindClasses.components).forEach(([id, classes]) => {
           const comp = components.find(c => c.id === id)
@@ -453,7 +471,7 @@ Let's build a high-quality, production-ready layout.`,
         })
         section += "\n"
 
-        // 🆕 IMPLEMENTATION STRATEGY (강화)
+        // Implementation Strategy
         section += `**Implementation Strategy:**\n\n`
         layoutDesc.implementationHints.forEach((hint) => {
           section += `- ${hint}\n`
@@ -461,24 +479,32 @@ Let's build a high-quality, production-ready layout.`,
         section += "\n"
 
       } catch (error) {
-        // Fallback: Canvas 좌표 정보가 없는 경우 (backward compatibility)
+        // Fallback: When Canvas coordinate information is missing (backward compatibility)
         // Only log in development environment (not production)
         if (process.env.NODE_ENV !== 'production') {
           console.warn(`Visual layout description failed for ${layoutKey}:`, error)
         }
       }
 
-      // Structure type (기존)
-      section += `**Page Flow:** \`${layout.structure}\` (vertical scrolling with horizontal content areas)\n\n`
+      // Structure type with dynamic descriptions
+      const flowDescriptions: Record<string, string> = {
+        vertical: "vertical scrolling layout",
+        horizontal: "horizontal scrolling layout",
+        "sidebar-main": "sidebar layout with main content area",
+        "sidebar-main-sidebar": "three-column layout with left and right sidebars",
+        custom: "custom layout structure"
+      }
+      const flowDescription = flowDescriptions[layout.structure] || layout.structure
+      section += `**Page Flow:** \`${layout.structure}\` (${flowDescription})\n\n`
 
-      // 🚨 IMPORTANT - Layout Priority (먼저 표시)
+      // IMPORTANT: Layout Priority (shown first)
       section += `**🚨 IMPORTANT - Layout Priority:**\n\n`
       section += `1. **PRIMARY**: Use the **Visual Layout (Canvas Grid)** positioning above as your main guide\n`
       section += `2. **SECONDARY**: The DOM order below is for reference only (accessibility/SEO)\n`
       section += `3. **RULE**: Components with the same Y-coordinate range MUST be placed side-by-side horizontally\n`
       section += `4. **DO NOT** stack components vertically if they share the same row in the Canvas Grid\n\n`
 
-      // Component order (DOM 순서) - Canvas 좌표 기준으로 정렬
+      // Component order (DOM order) - Sorted by Canvas coordinates
       section += `**Component Order (DOM):**\n\n`
       section += `For screen readers and SEO crawlers, the HTML source order is:\n\n`
       section += `⚠️ **Note:** Visual positioning may differ from DOM order. Use Canvas Grid coordinates for layout.\n\n`
@@ -521,6 +547,147 @@ Let's build a high-quality, production-ready layout.`,
 
   instructionsSection: () => {
     return `## Implementation Instructions\n\n` +
+      `### 🎯 Universal Layout Pattern (Reusable Architecture)\n\n` +
+      `**This pattern works for ALL Canvas layouts - vertical, horizontal, side-by-side, or mixed:**\n\n` +
+      `\`\`\`tsx\n` +
+      `// Container: Grid with auto rows (Tailwind arbitrary values)\n` +
+      `<div className="grid grid-cols-12 grid-rows-[repeat(8,auto)] gap-4">\n` +
+      `  {/* Wrapper: Grid positioning */}\n` +
+      `  <div className="col-span-full row-start-1 row-end-2">\n` +
+      `    {/* Component: Border + Padding + Layout */}\n` +
+      `    <header className={cn(\n` +
+      `      'border-b border-gray-300 py-4 px-6',  // Styling HERE\n` +
+      `      'flex items-center justify-between',   // Layout HERE\n` +
+      `      'sticky top-0 z-50 bg-white'           // Positioning HERE\n` +
+      `    )}>\n` +
+      `      Header (c1)  {/* Content: Name + ID only */}\n` +
+      `    </header>\n` +
+      `  </div>\n\n` +
+      `  {/* Side-by-side: Use h-full for equal heights */}\n` +
+      `  <div className="col-start-1 col-end-4 row-start-2 row-end-8 h-full">\n` +
+      `    <aside className={cn(\n` +
+      `      'border-r border-gray-300 p-4',\n` +
+      `      'flex flex-col gap-4',\n` +
+      `      'h-full'  // Fill grid cell vertically\n` +
+      `    )}>\n` +
+      `      Sidebar (c2)\n` +
+      `    </aside>\n` +
+      `  </div>\n\n` +
+      `  <div className="col-start-4 col-end-13 row-start-2 row-end-8 h-full">\n` +
+      `    <main className={cn(\n` +
+      `      'border border-gray-300 p-6',\n` +
+      `      'flex flex-col gap-6',\n` +
+      `      'h-full'  // Fill grid cell vertically\n` +
+      `    )}>\n` +
+      `      Main (c3)\n` +
+      `    </main>\n` +
+      `  </div>\n` +
+      `</div>\n` +
+      `\`\`\`\n\n` +
+      `**🚨 CRITICAL RULES (Non-Negotiable):**\n\n` +
+      `1. **Container MUST use arbitrary values** \`grid-rows-[repeat(N,auto)]\` for auto-sizing rows (Tailwind v3.0+)\n` +
+      `2. **Wrapper div** handles grid positioning (\`col-span-*\`, \`row-start-*\`, \`row-end-*\`)\n` +
+      `3. **Component tag** contains ALL styling (border, padding, layout) - NOT children div\n` +
+      `4. **Side-by-side components** MUST use \`h-full\` on both wrapper AND component\n` +
+      `5. **Content** is ONLY component name + ID (e.g., "Header (c1)") - NO placeholder text\n\n` +
+      `---\n\n` +
+      `### ♻️ Component Reusability Patterns\n\n` +
+      `**Level 1: Extract Reusable GridCell Wrapper**\n\n` +
+      `\`\`\`tsx\n` +
+      `type GridCellProps = PropsWithChildren<{\n` +
+      `  colSpan?: string\n` +
+      `  rowStart?: number\n` +
+      `  rowEnd?: number\n` +
+      `  className?: string\n` +
+      `}>\n\n` +
+      `function GridCell({ colSpan = 'col-span-full', rowStart, rowEnd, className, children }: GridCellProps) {\n` +
+      `  return (\n` +
+      `    <div className={cn(\n` +
+      `      colSpan,\n` +
+      `      rowStart && \`row-start-\${rowStart}\`,\n` +
+      `      rowEnd && \`row-end-\${rowEnd}\`,\n` +
+      `      className\n` +
+      `    )}>\n` +
+      `      {children}\n` +
+      `    </div>\n` +
+      `  )\n` +
+      `}\n\n` +
+      `// Usage: Cleaner, reusable\n` +
+      `<GridCell colSpan="col-span-full" rowStart={1} rowEnd={2}>\n` +
+      `  <header className="border-b py-4 px-6">Header (c1)</header>\n` +
+      `</GridCell>\n` +
+      `\`\`\`\n\n` +
+      `**Level 2: Extract GridLayout Container**\n\n` +
+      `\`\`\`tsx\n` +
+      `type GridLayoutProps = PropsWithChildren<{\n` +
+      `  cols?: number\n` +
+      `  rows?: number\n` +
+      `  gap?: number\n` +
+      `  className?: string\n` +
+      `}>\n\n` +
+      `function GridLayout({ cols = 12, rows = 8, gap = 4, className, children }: GridLayoutProps) {\n` +
+      `  return (\n` +
+      `    <div className={cn(\n` +
+      `      'grid',\n` +
+      `      \`grid-cols-\${cols}\`,\n` +
+      `      \`grid-rows-[repeat(\${rows},auto)]\`,  // Auto-sizing rows\n` +
+      `      \`gap-\${gap}\`,\n` +
+      `      className\n` +
+      `    )}>\n` +
+      `      {children}\n` +
+      `    </div>\n` +
+      `  )\n` +
+      `}\n\n` +
+      `// Usage: Fully configurable\n` +
+      `<GridLayout cols={12} rows={8}>\n` +
+      `  <GridCell rowStart={1} rowEnd={2}>...</GridCell>\n` +
+      `</GridLayout>\n` +
+      `\`\`\`\n\n` +
+      `**Level 3: Composition Pattern (Compound Components)**\n\n` +
+      `\`\`\`tsx\n` +
+      `// Compound component pattern for complex layouts\n` +
+      `function PageLayout({ children }: PropsWithChildren) {\n` +
+      `  return (\n` +
+      `    <GridLayout cols={12} rows={8}>\n` +
+      `      {children}\n` +
+      `    </GridLayout>\n` +
+      `  )\n` +
+      `}\n\n` +
+      `PageLayout.Header = ({ children }: PropsWithChildren) => (\n` +
+      `  <GridCell rowStart={1} rowEnd={2}>\n` +
+      `    <header className="border-b py-4 px-6 sticky top-0 z-50 bg-white">\n` +
+      `      {children}\n` +
+      `    </header>\n` +
+      `  </GridCell>\n` +
+      `)\n\n` +
+      `PageLayout.Sidebar = ({ children }: PropsWithChildren) => (\n` +
+      `  <GridCell colSpan="col-start-1 col-end-4" rowStart={2} rowEnd={8} className="h-full">\n` +
+      `    <aside className="border-r p-4 flex flex-col gap-4 h-full">\n` +
+      `      {children}\n` +
+      `    </aside>\n` +
+      `  </GridCell>\n` +
+      `)\n\n` +
+      `PageLayout.Main = ({ children }: PropsWithChildren) => (\n` +
+      `  <GridCell colSpan="col-start-4 col-end-13" rowStart={2} rowEnd={8} className="h-full">\n` +
+      `    <main className="border p-6 flex flex-col gap-6 h-full">\n` +
+      `      {children}\n` +
+      `    </main>\n` +
+      `  </GridCell>\n` +
+      `)\n\n` +
+      `// Usage: Highly readable, composable\n` +
+      `<PageLayout>\n` +
+      `  <PageLayout.Header>Header (c1)</PageLayout.Header>\n` +
+      `  <PageLayout.Sidebar>Sidebar (c2)</PageLayout.Sidebar>\n` +
+      `  <PageLayout.Main>Main (c3)</PageLayout.Main>\n` +
+      `</PageLayout>\n` +
+      `\`\`\`\n\n` +
+      `**🎯 Reusability Best Practices:**\n\n` +
+      `1. **Start simple** (inline code), then extract when patterns emerge\n` +
+      `2. **Props over duplication**: Use props for variants instead of copying components\n` +
+      `3. **Composition over configuration**: Prefer compound components for complex layouts\n` +
+      `4. **Type safety**: Always export TypeScript types for reusable components\n` +
+      `5. **Single Responsibility**: Each component should have ONE clear purpose\n\n` +
+      `---\n\n` +
       `### Positioning Guidelines\n\n` +
       `- **static**: Default flow (no position class needed)\n` +
       `- **fixed**: Use Tailwind \`fixed\` with position values (e.g., \`fixed top-0 left-0 right-0 z-50\`)\n` +
@@ -556,8 +723,21 @@ Let's build a high-quality, production-ready layout.`,
       `- [ ] ARIA labels and roles are type-safe\n` +
       `- [ ] Keyboard navigation support (\`focus:ring-2\`, \`focus:outline-none\`)\n` +
       `- [ ] Screen reader support (semantic tags + ARIA)\n\n` +
+      `**Layout Architecture (Universal Pattern):**\n` +
+      `- [ ] **Grid container uses Tailwind arbitrary values** \`grid-rows-[repeat(N,auto)]\` (NOT fixed \`grid-rows-N\`)\n` +
+      `- [ ] **Wrapper div** handles grid positioning only (\`col-span-*\`, \`row-start-*\`, \`row-end-*\`)\n` +
+      `- [ ] **Component tag** contains ALL styling (border, padding, layout) - NOT children div\n` +
+      `- [ ] **Side-by-side components** use \`h-full\` on both wrapper AND component tag\n` +
+      `- [ ] Follow the 3-tier pattern: Container (grid) → Wrapper (positioning) → Component (styling)\n\n` +
+      `**Component Reusability:**\n` +
+      `- [ ] Extract repeated patterns into reusable components (GridCell, GridLayout)\n` +
+      `- [ ] Use props for variants instead of duplicating code\n` +
+      `- [ ] Consider composition patterns (compound components) for complex layouts\n` +
+      `- [ ] Export TypeScript types for all reusable components\n` +
+      `- [ ] Each component has a single, clear responsibility\n\n` +
       `**Styling & Borders (2025 Wireframe Standards):**\n` +
-      `- [ ] **EVERY component has a border** (\`border-gray-300\`)\n` +
+      `- [ ] **EVERY component has a border** (\`border-gray-300\`) ON THE COMPONENT TAG\n` +
+      `- [ ] **Border/padding MUST be in component tag** - NOT in children div ❌\n` +
       `- [ ] Border positions follow component type (header: border-b, footer: border-t, main: border)\n` +
       `- [ ] Consistent padding (p-4 mobile, p-6 tablet, p-8 desktop)\n` +
       `- [ ] Minimal rounded corners (section: rounded-lg, article: rounded-md, div: rounded)\n` +
@@ -566,14 +746,22 @@ Let's build a high-quality, production-ready layout.`,
       `**Content & Code Quality:**\n` +
       `- [ ] **Content: ONLY display component name + ID** (e.g., "Header (c1)")\n` +
       `- [ ] **NO placeholder content, mock data, lorem ipsum, or creative text**\n` +
+      `- [ ] **NO children div with styling** - Component tag is self-contained\n` +
       `- [ ] Code is clean, readable, and well-commented\n` +
-      `- [ ] Include \`lib/utils.ts\` with \`cn()\` function\n` +
+      `- [ ] Include inline \`cn()\` utility in each component (or extract to shared file)\n` +
+      `- [ ] Install dependencies: \`npm install clsx tailwind-merge\`\n` +
       `- [ ] Tailwind class order: positioning → box-model → borders → backgrounds → typography\n`
   },
 }
 
 /**
- * Helper function to format positioning specification
+ * Helper function to format positioning specification for AI prompt
+ *
+ * Converts ComponentPositioning object to formatted markdown text
+ * describing the component's positioning strategy and CSS values.
+ *
+ * @param positioning - Component positioning configuration
+ * @returns Formatted markdown text describing positioning (strategy, top, right, bottom, left, zIndex)
  */
 function formatPositioning(positioning: ComponentPositioning): string {
   let text = `**Positioning:**\n`
@@ -599,7 +787,13 @@ function formatPositioning(positioning: ComponentPositioning): string {
 }
 
 /**
- * Helper function to format layout specification
+ * Helper function to format layout specification for AI prompt
+ *
+ * Converts ComponentLayout object to formatted markdown text
+ * describing the component's internal layout system (flex, grid, container, or none).
+ *
+ * @param layout - Component layout configuration
+ * @returns Formatted markdown text describing layout type and configuration
  */
 function formatLayout(layout: ComponentLayout): string {
   let text = `**Layout:**\n`
@@ -646,7 +840,13 @@ function formatLayout(layout: ComponentLayout): string {
 }
 
 /**
- * Helper function to format styling specification
+ * Helper function to format styling specification for AI prompt
+ *
+ * Converts ComponentStyling object to formatted markdown text
+ * describing the component's visual styling properties (width, height, background, border, etc.).
+ *
+ * @param styling - Component styling configuration
+ * @returns Formatted markdown text describing styling properties
  */
 function formatStyling(styling: ComponentStyling): string {
   let text = `**Styling:**\n`

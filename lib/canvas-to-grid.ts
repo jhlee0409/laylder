@@ -136,14 +136,20 @@ export function generateGridCSS(visualLayout: VisualLayout): string {
 /**
  * Tailwind CSS Grid 클래스 생성 (최신 Tailwind v3.4 지원)
  *
+ * **IMPORTANT: Requires Tailwind CSS v3.0 or higher**
+ *
+ * Uses Tailwind arbitrary values for auto rows (maintainable, responsive).
+ * Arbitrary value syntax `grid-rows-[repeat(N,auto)]` was introduced in Tailwind v3.0.
+ *
+ * @requires tailwindcss@^3.0.0 - Arbitrary values support
  * @param visualLayout - Visual layout info
- * @returns Tailwind class recommendations
+ * @returns Tailwind class recommendations with arbitrary values
  *
  * @example
  * const tailwind = generateTailwindClasses(visualLayout)
  * // Output:
  * // {
- * //   container: "grid grid-cols-12 grid-rows-8 gap-4",
+ * //   container: "grid grid-cols-12 grid-rows-[repeat(8,auto)] gap-4",
  * //   components: {
  * //     c1: "col-span-12 row-span-1",
  * //     c2: "col-start-1 col-end-3 row-start-2 row-end-8"
@@ -154,7 +160,9 @@ export function generateTailwindClasses(visualLayout: VisualLayout): {
   container: string
   components: Record<string, string>
 } {
-  const container = `grid grid-cols-${visualLayout.gridCols} grid-rows-${visualLayout.gridRows} gap-4`
+  // Container classes with arbitrary value for auto rows (Tailwind v3.0+)
+  // Arbitrary values: [repeat(N,auto)] for flexible row heights
+  const container = `grid grid-cols-${visualLayout.gridCols} grid-rows-[repeat(${visualLayout.gridRows},auto)] gap-4`
 
   const components: Record<string, string> = {}
 
