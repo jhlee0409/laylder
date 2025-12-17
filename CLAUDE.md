@@ -663,29 +663,38 @@ function Dashboard() {
   /initial-breakpoint-modal
   /ui             # shadcn/ui 컴포넌트
 /lib              # 핵심 비즈니스 로직
-  schema-validation.ts        # Schema 검증 + 에러/경고
-  schema-utils.ts             # Schema 생성, 복제, 정규화
-  component-library.ts        # 사전 정의 템플릿
-  prompt-generator.ts         # AI 프롬프트 생성
-  code-generator.ts           # React 코드 생성
-  file-exporter.ts            # 파일 내보내기
+  ai-model-registry.ts        # AI 모델 메타데이터 및 추천 시스템
+  ai-service.ts               # AI 서비스 인터페이스
+  canvas-sort-utils.ts        # Canvas 정렬 유틸리티
   canvas-to-grid.ts           # Canvas Grid → CSS Grid 변환
-  visual-layout-descriptor.ts # Canvas를 자연어로 설명
   canvas-utils.ts             # 공통 Canvas 유틸리티
-  smart-layout.ts             # 스마트 배치 로직
+  code-generator.ts           # React 코드 생성
+  component-library.ts        # 사전 정의 컴포넌트 템플릿
+  file-exporter.ts            # 파일 내보내기 (ZIP, JSON)
   graph-utils.ts              # Component Linking 그래프 알고리즘
-  grid-constraints.ts         # Grid 제약 조건
+  grid-constraints.ts         # Grid 제약 조건 검증
+  prompt-bp-validator.ts      # Breakpoint 프롬프트 검증
+  prompt-generator.ts         # AI 프롬프트 생성
+  prompt-templates.ts         # 프롬프트 템플릿 정의
+  props-validator.ts          # ARIA Props 검증
+  sample-data.ts              # 샘플 스키마 데이터
+  schema-utils.ts             # Schema 생성, 복제, 정규화
+  schema-validation.ts        # Schema 검증 + 에러/경고
+  smart-layout.ts             # 스마트 배치 로직
   snap-to-grid.ts             # Grid 스냅 로직
-  ai-model-registry.ts        # AI 모델 메타데이터
+  union-find.ts               # Union-Find 알고리즘 (링킹용)
+  utils.ts                    # 공통 유틸리티 (cn 함수 등)
+  visual-layout-descriptor.ts # Canvas를 자연어로 설명
   /prompt-strategies/         # AI 모델별 프롬프트 전략
     base-strategy.ts
     claude-strategy.ts
-    gpt-strategy.ts
-    gemini-strategy.ts
     deepseek-strategy.ts
+    gemini-strategy.ts
+    gpt-strategy.ts
     grok-strategy.ts
     strategy-factory.ts
-  /__tests__/                 # Vitest 유닛 테스트
+    index.ts
+  /__tests__/                 # Vitest 유닛 테스트 (579+ tests)
 /store            # Zustand 상태 관리
   layout-store.ts
   toast-store.ts
@@ -765,26 +774,36 @@ pnpm test:coverage     # With coverage
 
 ```
 lib/__tests__/
-├── canvas-comprehensive-validation.test.ts  # Canvas 검증 (33 tests)
+├── canvas-comprehensive-validation.test.ts  # Canvas 검증 (18 tests)
 ├── canvas-edge-cases.test.ts                # Canvas 엣지 케이스 (13 tests)
-├── canvas-integration.test.ts               # Canvas 통합 (39 tests)
+├── canvas-integration.test.ts               # Canvas 통합 (21 tests)
 ├── canvas-json-export.test.ts               # Canvas JSON export (22 tests)
+├── canvas-layout-inheritance.test.ts        # Canvas 레이아웃 상속 (3 tests)
 ├── canvas-to-prompt-e2e.test.ts             # Canvas to Prompt E2E (16 tests)
-├── canvas-utils.test.ts                     # Canvas 유틸리티 (13 tests)
-├── component-linking-store.test.ts          # Component Linking (25 tests)
-├── dynamic-breakpoints.test.ts              # 동적 Breakpoint (24 tests)
-├── graph-utils.test.ts                      # 그래프 알고리즘 (20 tests)
-├── grid-constraints.test.ts                 # 그리드 제약 조건 (33 tests)
-├── performance.test.ts                      # 성능 테스트 (10 tests)
+├── canvas-utils.test.ts                     # Canvas 유틸리티 (19 tests)
+├── component-isolation.test.ts              # 컴포넌트 독립성 (2 tests)
+├── component-linking-concurrent.test.ts     # Component Linking 동시성 (7 tests)
+├── component-linking-store.test.ts          # Component Linking 스토어 (16 tests)
+├── dynamic-breakpoints.test.ts              # 동적 Breakpoint (10 tests)
+├── export-modal-linking-logic.test.ts       # Export Modal 링킹 (13 tests)
+├── graph-utils.test.ts                      # 그래프 알고리즘 (36 tests)
+├── grid-constraints.test.ts                 # 그리드 제약 조건 (29 tests)
+├── performance.test.ts                      # 성능 테스트 (21 tests)
+├── prompt-bp-validator.test.ts              # Breakpoint 검증 (31 tests)
 ├── prompt-generation-negative.test.ts       # 프롬프트 생성 음수 케이스 (18 tests)
-├── prompt-generator.test.ts                 # 프롬프트 생성 (7 tests)
-├── prompt-quality.test.ts                   # 프롬프트 품질 (46 tests)
-├── schema-utils.test.ts                     # 스키마 유틸리티 (27 tests)
-├── schema-validation.test.ts                # 스키마 검증 (78 tests)
-├── side-by-side-layouts.test.ts             # Side-by-side 레이아웃 (21 tests)
-├── smart-layout.test.ts                     # 스마트 레이아웃 (41 tests)
-├── snap-to-grid.test.ts                     # 그리드 스냅 (7 tests)
-└── union-find.test.ts                       # Union-Find (13 tests)
+├── prompt-generator.test.ts                 # 프롬프트 생성 (19 tests)
+├── prompt-quality.test.ts                   # 프롬프트 품질 (22 tests)
+├── props-validator.test.ts                  # Props 검증 (41 tests)
+├── schema-utils.test.ts                     # 스키마 유틸리티 (39 tests)
+├── schema-utils-dynamic-breakpoints.test.ts # 동적 Breakpoint 스키마 (9 tests)
+├── schema-validation.test.ts                # 스키마 검증 (27 tests)
+├── side-by-side-layouts.test.ts             # Side-by-side 레이아웃 (16 tests)
+├── smart-layout.test.ts                     # 스마트 레이아웃 (56 tests)
+├── snap-to-grid.test.ts                     # 그리드 스냅 (21 tests)
+├── union-find.test.ts                       # Union-Find (27 tests)
+└── fixtures/                                # 테스트 픽스처
+    ├── component-fixtures.ts
+    └── test-schemas.ts
 ```
 
 **명명 규칙**:
@@ -807,7 +826,7 @@ pnpm test:e2e:headed   # Headed mode (브라우저 보임)
 ### 테스트 커버리지
 
 **현재 커버리지 (핵심 비즈니스 로직)**:
-- **전체**: 500+ 테스트, 12,000+ lines of test code
+- **전체**: 579+ 테스트 (28개 테스트 파일), ~14,000 lines of test code
 - **canvas-to-grid.ts**: 100% ✅
 - **snap-to-grid.ts**: 100% ✅
 - **prompt-generator.ts**: 95%+ ✅
@@ -815,6 +834,14 @@ pnpm test:e2e:headed   # Headed mode (브라우저 보임)
 - **schema-validation.ts**: 85%+ ✅
 - **schema-utils.ts**: 80%+ ✅
 - **smart-layout.ts**: 75%+ ✅
+
+**E2E 테스트**: 6개 spec 파일 (Playwright)
+- `01-basic-flow.spec.ts`: 기본 워크플로우
+- `02-panels.spec.ts`: 패널 상호작용
+- `03-breakpoints.spec.ts`: Breakpoint 전환
+- `04-export.spec.ts`: Export 기능
+- `05-smart-layout.spec.ts`: 스마트 레이아웃
+- `resizable-panels.spec.ts`: 리사이즈 가능 패널
 
 **커버리지 리포트 위치**: `coverage/` 디렉토리 (HTML 형식으로 확인 가능)
 
