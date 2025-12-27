@@ -294,7 +294,7 @@ export interface IPromptStrategy {
 
   /**
    * 최종 프롬프트 생성 (전체 조합)
-   * @param schema - Laylder Schema
+   * @param schema - Visual Layout Builder Schema
    * @param framework - 타겟 프레임워크
    * @param cssSolution - CSS 솔루션
    * @param options - 생성 옵션
