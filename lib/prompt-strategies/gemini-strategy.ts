@@ -3,6 +3,11 @@
  *
  * Gemini (Google) 모델에 최적화된 프롬프트 전략
  *
+ * 지원 모델 (2025년 12월):
+ * - Gemini 2.0 Pro, 2.0 Flash
+ * - Gemini 2.5 Pro
+ * - Gemini 3 Pro, 3 Flash (2025 신규)
+ *
  * 특화 영역:
  * - 프레임워크 특화 (frameworkSpecialization: 10/10)
  * - Next.js, React 등 프레임워크 통합 (91% on Next.js)
@@ -10,6 +15,10 @@
  * - 멀티모달 지원 (이미지, 다이어그램)
  * - 비용 효율 최고 (Claude 대비 1/20)
  * - WebDev Arena 1위
+ *
+ * 2025년 12월 업데이트:
+ * - Gemini 3 Pro: LiveCodeBench Elo 2439, SWE-bench 76.2%
+ * - Gemini 3 Flash: SWE-bench 78%, 빠르고 저렴하면서 강력한 성능
  *
  * Best Practices (2025):
  * - 프레임워크/라이브러리 명시적 지정
@@ -309,4 +318,13 @@ export function createGemini20ProStrategy(): GeminiStrategy {
 
 export function createGemini20FlashStrategy(): GeminiStrategy {
   return new GeminiStrategy("gemini-2.0-flash")
+}
+
+// 2025년 12월 신규 모델
+export function createGemini3ProStrategy(): GeminiStrategy {
+  return new GeminiStrategy("gemini-3-pro")
+}
+
+export function createGemini3FlashStrategy(): GeminiStrategy {
+  return new GeminiStrategy("gemini-3-flash")
 }
